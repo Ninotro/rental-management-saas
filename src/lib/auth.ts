@@ -19,7 +19,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('Login attempt for:', credentials?.email)
+
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials')
           throw new Error('Email e password sono richiesti')
         }
 
@@ -29,7 +32,10 @@ export const authOptions: NextAuthOptions = {
           },
         })
 
+        console.log('User found:', !!user)
+
         if (!user) {
+          console.log('User not found')
           throw new Error('Credenziali non valide')
         }
 
@@ -38,8 +44,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isPasswordValid = await compare(credentials.password, user.password)
+        console.log('Password valid:', isPasswordValid)
 
         if (!isPasswordValid) {
+          console.log('Invalid password')
           throw new Error('Credenziali non valide')
         }
 
