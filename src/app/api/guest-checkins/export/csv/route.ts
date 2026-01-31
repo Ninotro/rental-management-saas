@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    const where: any = {}
+    const where: any = {
+      // Solo check-in con prenotazione collegata
+      bookingId: { not: null },
+    }
 
     if (startDate || endDate) {
       where.submittedAt = {}
@@ -77,12 +80,12 @@ export async function GET(request: NextRequest) {
       'Data Check-in Compilato',
     ]
 
-    const rows = checkIns.map((checkIn) => [
-      new Date(checkIn.booking.checkIn).toLocaleDateString('it-IT'),
-      checkIn.booking.property.name,
-      checkIn.booking.property.address,
-      checkIn.booking.property.city,
-      checkIn.booking.room?.name || 'N/A',
+    const rows = checkIns.filter(c => c.booking).map((checkIn) => [
+      new Date(checkIn.booking!.checkIn).toLocaleDateString('it-IT'),
+      checkIn.booking!.property.name,
+      checkIn.booking!.property.address,
+      checkIn.booking!.property.city,
+      checkIn.booking!.room?.name || 'N/A',
       checkIn.firstName,
       checkIn.lastName,
       new Date(checkIn.dateOfBirth).toLocaleDateString('it-IT'),

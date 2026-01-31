@@ -12,10 +12,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
     }
 
-    // Ottieni tutti i check-in non comunicati
+    // Ottieni tutti i check-in non comunicati (solo con prenotazione collegata)
     const checkIns = await prisma.guestCheckIn.findMany({
       where: {
         submittedToPolice: false,
+        bookingId: { not: null },
       },
       include: {
         booking: {
@@ -37,6 +38,7 @@ export async function GET() {
     today.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
     
     const overdueCheckIns = checkIns.filter((checkIn) => {
+      if (!checkIn.booking) return false
       const checkInDate = new Date(checkIn.booking.checkIn)
       checkInDate.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
       

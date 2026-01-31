@@ -168,6 +168,7 @@ model Room {
   calendarEvents   RoomCalendarEvent[]
   staffAssignments StaffAssignment[]
   icalSyncs        ICalSync[]
+  guestCheckIns    GuestCheckIn[]
 
   @@index([propertyId])
   @@index([active])
@@ -433,10 +434,25 @@ model StaffAssignment {
   @@index([status])
 }
 
+// Stato del check-in
+enum CheckInStatus {
+  PENDING   // In attesa di approvazione/collegamento
+  APPROVED  // Approvato e collegato a prenotazione
+  REJECTED  // Rifiutato
+}
+
 // Modello GuestCheckIn - Dati check-in ospiti per la questura
 model GuestCheckIn {
-  id                  String       @id @default(cuid())
-  bookingId           String
+  id                  String        @id @default(cuid())
+  bookingId           String?       // Opzionale - può essere collegato dopo
+  status              CheckInStatus @default(PENDING) // Stato del check-in
+
+  // Dati selezionati dall'ospite (per matching)
+  selectedRoomId      String?       // Stanza selezionata dall'ospite
+  selectedCheckIn     DateTime?     // Data check-in selezionata
+  selectedCheckOut    DateTime?     // Data check-out selezionata
+
+  // Dati anagrafici
   firstName           String       // Nome
   lastName            String       // Cognome
   dateOfBirth         DateTime     // Data di nascita
@@ -453,11 +469,11 @@ model GuestCheckIn {
   documentExpiryDate  DateTime     // Data scadenza
   documentFrontUrl    String?      // URL foto fronte documento
   documentBackUrl     String?      // URL foto retro documento
-  
+
   // Esenzione Tassa di Soggiorno
   isExempt            Boolean      @default(false)
   exemptionReason     String?      // Motivo esenzione
-  
+
   submittedAt         DateTime     @default(now()) // Quando il guest ha compilato il form
   submittedToPolice   Boolean      @default(false) // Se comunicato alla Questura
   submittedToPoliceAt DateTime?    // Quando è stato comunicato alla Questura
@@ -465,9 +481,12 @@ model GuestCheckIn {
   updatedAt           DateTime     @updatedAt
 
   // Relazioni
-  booking             Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking             Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  selectedRoom        Room?        @relation(fields: [selectedRoomId], references: [id])
 
   @@index([bookingId])
+  @@index([status])
+  @@index([selectedRoomId])
   @@index([fiscalCode])
   @@index([submittedAt])
   @@index([submittedToPolice])
