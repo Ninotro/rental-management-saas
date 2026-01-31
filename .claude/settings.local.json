@@ -11,7 +11,9 @@
       "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\api\\\\rooms\" /s)",
       "Bash(git restore:*)",
       "Bash(curl:*)",
-      "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\dashboard\\\\bookings\\\\page.tsx.backup\")"
+      "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\dashboard\\\\bookings\\\\page.tsx.backup\")",
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }
