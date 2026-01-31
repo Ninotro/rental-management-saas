@@ -1,0 +1,493 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum per i ruoli utente
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+// Enum per lo stato delle prenotazioni
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+// Enum per i canali di acquisizione
+enum BookingChannel {
+  BOOKING_COM
+  AIRBNB
+  DIRECT
+  OTHER
+}
+
+// Enum per le fonti di sincronizzazione iCal
+enum ICalSource {
+  AIRBNB
+  BOOKING_COM
+  OTHER
+}
+
+// Enum per i tipi di transazione
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+// Enum per i tipi di stanza
+enum RoomType {
+  SINGLE      // Camera singola
+  DOUBLE      // Camera doppia
+  TWIN        // Camera doppia con letti separati
+  TRIPLE      // Camera tripla
+  QUAD        // Camera quadrupla
+  SUITE       // Suite
+  STUDIO      // Monolocale
+  APARTMENT   // Appartamento intero
+  DORMITORY   // Dormitorio
+}
+
+// Enum per i tipi di documento
+enum DocumentType {
+  CARTA_IDENTITA  // Carta d'identità
+  PASSAPORTO      // Passaporto
+  PATENTE         // Patente di guida
+}
+
+// Modello User - Gestione utenti/dipendenti
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(STAFF)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relazioni
+  bookings           Booking[]
+  transactions       Transaction[]
+  expenses           Expense[]
+  properties         PropertyAccess[]
+  assignedTasks      StaffAssignment[] @relation("AssignedTasks")
+  createdAssignments StaffAssignment[] @relation("CreatedAssignments")
+
+  @@index([email])
+}
+
+// Modello Property - Strutture/Immobili
+model Property {
+  id              String    @id @default(cuid())
+  name            String
+  address         String
+  city            String
+  country         String
+  description     String?
+  maxGuests       Int       // Ospiti totali della proprietà
+  bedrooms        Int       // Camere totali
+  bathrooms       Int       // Bagni totali
+  hasRooms        Boolean   @default(false) // Se true, la proprietà ha stanze separate
+  active          Boolean   @default(true)
+  accessCodes     Json?     // Mappa di codici accesso (es: { "Portone": "1234", "Appartamento": "5678" })
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relazioni
+  rooms            Room[]
+  bookings         Booking[]
+  calendarEvents   CalendarEvent[]
+  prices           PropertyPrice[]
+  userAccess       PropertyAccess[]
+  images           PropertyImage[]
+  expenses         Expense[]
+  staffAssignments StaffAssignment[]
+
+  @@index([active])
+  @@index([hasRooms])
+}
+
+// Modello GlobalSettings - Configurazione globale applicativa
+model GlobalSettings {
+  id                  String   @id @default("singleton")
+  touristTaxRate      Decimal  @default(4.00) @db.Decimal(10, 2)
+  touristTaxMaxNights Int      @default(4)
+  touristTaxExemptAge Int      @default(12)
+  paypalEmail         String?
+  revolutTag          String?
+  bankAccountIBAN     String?
+  bankAccountHolder   String?
+  updatedAt           DateTime @updatedAt
+}
+
+// Modello Room - Stanze singole all'interno di una proprietà
+model Room {
+  id              String    @id @default(cuid())
+  propertyId      String
+  name            String    // Es: "Camera 101", "Stanza Blu"
+  roomNumber      String?   // Numero stanza
+  type            RoomType  @default(DOUBLE)
+  description     String?
+  maxGuests       Int       // Ospiti massimi per questa stanza
+  beds            Int       // Numero di letti
+  size            Float?    // Dimensione in mq
+  hasPrivateBathroom Boolean @default(false)
+  hasBalcony      Boolean   @default(false)
+  hasKitchen      Boolean   @default(false)
+  floor           Int?      // Piano
+  active          Boolean   @default(true)
+  basePrice       Decimal   @db.Decimal(10, 2) // Prezzo base per notte
+
+  // Sincronizzazione calendari esterni (iCal)
+  airbnbIcalUrl     String?   // URL del calendario iCal di Airbnb
+  bookingComIcalUrl String?   // URL del calendario iCal di Booking.com
+  lastSyncedAt      DateTime? // Ultima sincronizzazione effettuata
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relazioni
+  property         Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+  prices           RoomPrice[]
+  images           RoomImage[]
+  calendarEvents   RoomCalendarEvent[]
+  staffAssignments StaffAssignment[]
+  icalSyncs        ICalSync[]
+
+  @@index([propertyId])
+  @@index([active])
+  @@index([type])
+}
+
+// Modello PropertyImage - Immagini delle proprietà
+model PropertyImage {
+  id          String   @id @default(cuid())
+  propertyId  String
+  url         String   // URL dell'immagine
+  filename    String   // Nome file
+  isPrimary   Boolean  @default(false) // Immagine principale
+  order       Int      @default(0) // Ordine di visualizzazione
+  createdAt   DateTime @default(now())
+
+  // Relazioni
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([isPrimary])
+}
+
+// Modello RoomImage - Immagini delle stanze
+model RoomImage {
+  id          String   @id @default(cuid())
+  roomId      String
+  url         String   // URL dell'immagine
+  filename    String   // Nome file
+  isPrimary   Boolean  @default(false) // Immagine principale
+  order       Int      @default(0) // Ordine di visualizzazione
+  createdAt   DateTime @default(now())
+
+  // Relazioni
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([isPrimary])
+}
+
+// Modello PropertyAccess - Permessi di accesso alle proprietà per utente
+model PropertyAccess {
+  id          String   @id @default(cuid())
+  userId      String
+  propertyId  String
+  createdAt   DateTime @default(now())
+
+  // Relazioni
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+// Modello PropertyPrice - Prezzi personalizzati per struttura e periodo
+model PropertyPrice {
+  id            String   @id @default(cuid())
+  propertyId    String
+  startDate     DateTime
+  endDate       DateTime
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relazioni
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([startDate, endDate])
+}
+
+// Modello RoomPrice - Prezzi personalizzati per stanza e periodo
+model RoomPrice {
+  id            String   @id @default(cuid())
+  roomId        String
+  startDate     DateTime
+  endDate       DateTime
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relazioni
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([startDate, endDate])
+}
+
+// Modello Booking - Prenotazioni
+model Booking {
+  id               String         @id @default(cuid())
+  bookingCode      String?        @unique // Codice univoco per check-in guest (es: BOOK-ABC123)
+  propertyId       String
+  roomId           String?        // Opzionale - se null, prenotazione per intera proprietà
+  guestName        String
+  guestEmail       String
+  guestPhone       String?
+  checkIn          DateTime
+  checkOut         DateTime
+  guests           Int
+  totalPrice       Decimal        @db.Decimal(10, 2)
+  status           BookingStatus  @default(PENDING)
+  channel          BookingChannel @default(DIRECT)
+  channelBookingId String?        // ID della prenotazione sul canale esterno
+  notes            String?
+
+  // Tassa di Soggiorno
+  touristTaxTotal  Decimal?       @db.Decimal(10, 2)
+  touristTaxPaid   Boolean        @default(false)
+  touristTaxPaymentProof String?  // URL screenshot pagamento
+
+  // Sincronizzazione iCal
+  importedFromIcal   Boolean  @default(false) // True se importata da calendario esterno
+  externalCalendarId String?  // UID dell'evento nel calendario esterno
+
+  createdById      String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relazioni
+  property         Property       @relation(fields: [propertyId], references: [id])
+  room             Room?          @relation(fields: [roomId], references: [id])
+  createdBy        User           @relation(fields: [createdById], references: [id])
+  transactions     Transaction[]
+  guestCheckIns    GuestCheckIn[] // Dati check-in ospiti (questura)
+
+  @@index([propertyId])
+  @@index([roomId])
+  @@index([checkIn, checkOut])
+  @@index([status])
+  @@index([channel])
+  @@index([bookingCode])
+  @@index([importedFromIcal])
+  @@index([externalCalendarId])
+}
+
+// Modello CalendarEvent - Eventi calendario per proprietà (blocchi manuali, manutenzione, etc.)
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  propertyId  String
+  title       String
+  startDate   DateTime
+  endDate     DateTime
+  isBlocked   Boolean  @default(true)  // Se true, la proprietà non è disponibile
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([startDate, endDate])
+}
+
+// Modello RoomCalendarEvent - Eventi calendario per stanze specifiche
+model RoomCalendarEvent {
+  id          String   @id @default(cuid())
+  roomId      String
+  title       String
+  startDate   DateTime
+  endDate     DateTime
+  isBlocked   Boolean  @default(true)  // Se true, la stanza non è disponibile
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([startDate, endDate])
+}
+
+// Modello Transaction - Transazioni finanziarie (incassi)
+model Transaction {
+  id          String          @id @default(cuid())
+  bookingId   String?
+  amount      Decimal         @db.Decimal(10, 2)
+  type        TransactionType
+  description String
+  date        DateTime        @default(now())
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relazioni
+  booking     Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdBy   User            @relation(fields: [createdById], references: [id])
+
+  @@index([bookingId])
+  @@index([type])
+  @@index([date])
+}
+
+// Modello Expense - Spese operative
+model Expense {
+  id          String   @id @default(cuid())
+  propertyId  String?  // Opzionale - se null, è una spesa generale
+  amount      Decimal  @db.Decimal(10, 2)
+  category    String   // Es: Pulizia, Manutenzione, Utenze, etc.
+  description String
+  date        DateTime @default(now())
+  receiptUrl  String?  // URL della ricevuta/fattura
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  @@index([propertyId])
+  @@index([category])
+  @@index([date])
+}
+
+// Enum per i tipi di task staff
+enum StaffTaskType {
+  CLEANING      // Pulizia
+  MAINTENANCE   // Manutenzione
+  CHECK_IN      // Gestione check-in
+  CHECK_OUT     // Gestione check-out
+  LAUNDRY       // Lavanderia
+  INSPECTION    // Ispezione
+  OTHER         // Altro
+}
+
+// Enum per lo stato dei task
+enum StaffTaskStatus {
+  PENDING       // In attesa
+  IN_PROGRESS   // In corso
+  COMPLETED     // Completato
+  CANCELLED     // Annullato
+}
+
+// Modello StaffAssignment - Assegnazioni task per dipendenti
+model StaffAssignment {
+  id          String           @id @default(cuid())
+  userId      String           // Dipendente assegnato
+  propertyId  String?          // Proprietà (opzionale se c'è roomId)
+  roomId      String?          // Stanza specifica (opzionale)
+  date        DateTime         // Data dell'assegnazione
+  taskType    StaffTaskType    // Tipo di task
+  status      StaffTaskStatus  @default(PENDING)
+  notes       String?          // Note e dettagli del task
+  createdById String           // Chi ha creato l'assegnazione
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relazioni
+  user        User      @relation("AssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  room        Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("CreatedAssignments", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([roomId])
+  @@index([date])
+  @@index([status])
+}
+
+// Modello GuestCheckIn - Dati check-in ospiti per la questura
+model GuestCheckIn {
+  id                  String       @id @default(cuid())
+  bookingId           String
+  firstName           String       // Nome
+  lastName            String       // Cognome
+  dateOfBirth         DateTime     // Data di nascita
+  birthCity           String       // Città di nascita
+  birthProvince       String       // Provincia di nascita
+  residenceStreet     String       // Via e numero civico
+  residencePostalCode String       // CAP
+  residenceCity       String       // Città di residenza
+  residenceProvince   String       // Provincia di residenza
+  fiscalCode          String       // Codice fiscale
+  documentType        DocumentType // Tipo documento
+  documentNumber      String       // Numero documento
+  documentIssueDate   DateTime     // Data rilascio
+  documentExpiryDate  DateTime     // Data scadenza
+  documentFrontUrl    String?      // URL foto fronte documento
+  documentBackUrl     String?      // URL foto retro documento
+  
+  // Esenzione Tassa di Soggiorno
+  isExempt            Boolean      @default(false)
+  exemptionReason     String?      // Motivo esenzione
+  
+  submittedAt         DateTime     @default(now()) // Quando il guest ha compilato il form
+  submittedToPolice   Boolean      @default(false) // Se comunicato alla Questura
+  submittedToPoliceAt DateTime?    // Quando è stato comunicato alla Questura
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  // Relazioni
+  booking             Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([fiscalCode])
+  @@index([submittedAt])
+  @@index([submittedToPolice])
+}
+
+// Modello ICalSync - Tracking sincronizzazione calendari iCal
+model ICalSync {
+  id           String     @id @default(cuid())
+  roomId       String
+  source       ICalSource // Fonte del calendario (AIRBNB, BOOKING_COM, OTHER)
+  syncedAt     DateTime   @default(now()) // Quando è avvenuta la sincronizzazione
+  success      Boolean    @default(true) // Se la sincronizzazione è riuscita
+  eventsImported Int      @default(0) // Numero di eventi importati
+  errorMessage String?    // Eventuale messaggio di errore
+  createdAt    DateTime   @default(now())
+
+  // Relazioni
+  room         Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([source])
+  @@index([syncedAt])
+}
