@@ -307,6 +307,7 @@ export default function BookingsPage() {
             </button>
           ))}
         </div>
+        </div>
 
         {/* Property and Room Filters */}
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
