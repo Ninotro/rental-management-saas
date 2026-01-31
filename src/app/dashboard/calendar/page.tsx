@@ -364,114 +364,167 @@ export default function CalendarPage() {
       />
 
       {/* Selected Date Info */}
-      {selectedDate && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-slate-900">
-              Eventi per {selectedDate.toLocaleDateString('it-IT', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </h2>
-            <button
-              onClick={() => setSelectedDate(undefined)}
-              className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
+      {selectedDate && (() => {
+        const checkDate = new Date(selectedDate)
+        checkDate.setHours(0, 0, 0, 0)
 
-          {events.filter(event => {
-            const eventStart = new Date(event.startDate)
-            const eventEnd = new Date(event.endDate)
-            eventStart.setHours(0, 0, 0, 0)
-            eventEnd.setHours(0, 0, 0, 0)
-            const checkDate = new Date(selectedDate)
-            checkDate.setHours(0, 0, 0, 0)
+        // Get check-ins for this date
+        const checkInsToday = events.filter(event => {
+          const eventStart = new Date(event.startDate)
+          eventStart.setHours(0, 0, 0, 0)
+          return eventStart.getTime() === checkDate.getTime() && event.type === 'booking' && event.status !== 'cancelled'
+        })
 
-            return checkDate >= eventStart && checkDate <= eventEnd
-          }).length > 0 ? (
-            <div className="space-y-3">
-              {events.filter(event => {
-                const eventStart = new Date(event.startDate)
-                const eventEnd = new Date(event.endDate)
-                eventStart.setHours(0, 0, 0, 0)
-                eventEnd.setHours(0, 0, 0, 0)
-                const checkDate = new Date(selectedDate)
-                checkDate.setHours(0, 0, 0, 0)
+        // Get check-outs for this date
+        const checkOutsToday = events.filter(event => {
+          const eventEnd = new Date(event.endDate)
+          eventEnd.setHours(0, 0, 0, 0)
+          return eventEnd.getTime() === checkDate.getTime() && event.type === 'booking' && event.status !== 'cancelled'
+        })
 
-                return checkDate >= eventStart && checkDate <= eventEnd
-              }).map(event => {
-                // Determina il tipo e lo status dell'evento
-                const isBooking = event.type === 'booking'
-                const status = event.status?.toLowerCase()
-                
-                let statusLabel = ''
-                let statusClass = ''
-                
-                if (isBooking) {
-                  if (status === 'confirmed' || status === 'checked_in' || status === 'checked_out') {
-                    statusLabel = status === 'checked_in' ? 'Check-in' : 
-                                  status === 'checked_out' ? 'Check-out' : 'Confermata'
-                    statusClass = 'bg-green-100 text-green-800'
-                  } else if (status === 'pending') {
-                    statusLabel = 'In Attesa'
-                    statusClass = 'bg-yellow-100 text-yellow-800'
-                  } else {
-                    statusLabel = 'Cancellata'
-                    statusClass = 'bg-red-100 text-red-800'
-                  }
-                } else if (event.type === 'maintenance') {
-                  statusLabel = 'Manutenzione'
-                  statusClass = 'bg-orange-100 text-orange-800'
-                } else {
-                  statusLabel = 'Bloccato'
-                  statusClass = 'bg-red-100 text-red-800'
-                }
-                
-                return (
-                  <div
-                    key={event.id}
-                    onClick={() => {
-                      if (isBooking) {
-                        setSelectedBookingId(event.id)
-                        setShowBookingDetail(true)
-                      }
-                    }}
-                    className={`p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors ${isBooking ? 'cursor-pointer hover:shadow-md' : ''}`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{event.title}</h3>
-                        {event.roomName && (
-                          <p className="text-sm text-blue-600 font-medium">{event.roomName}</p>
-                        )}
-                        <p className="text-sm text-slate-600 mt-1">
-                          {event.startDate.toLocaleDateString('it-IT')} - {event.endDate.toLocaleDateString('it-IT')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
-                          {statusLabel}
-                        </span>
-                        {isBooking && (
-                          <Eye size={16} className="text-blue-500" />
-                        )}
-                      </div>
+        // Get other events (blocked, maintenance)
+        const otherEvents = events.filter(event => {
+          const eventStart = new Date(event.startDate)
+          const eventEnd = new Date(event.endDate)
+          eventStart.setHours(0, 0, 0, 0)
+          eventEnd.setHours(0, 0, 0, 0)
+          return checkDate >= eventStart && checkDate <= eventEnd && event.type !== 'booking'
+        })
+
+        const hasEvents = checkInsToday.length > 0 || checkOutsToday.length > 0 || otherEvents.length > 0
+
+        return (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                {selectedDate.toLocaleDateString('it-IT', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </h2>
+              <button
+                onClick={() => setSelectedDate(undefined)}
+                className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {hasEvents ? (
+              <div className="space-y-6">
+                {/* Check-ins Section */}
+                {checkInsToday.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-700 mb-3 flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                      Check-in ({checkInsToday.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {checkInsToday.map(event => (
+                        <div
+                          key={event.id}
+                          onClick={() => {
+                            setSelectedBookingId(event.id)
+                            setShowBookingDetail(true)
+                          }}
+                          className="p-4 bg-green-50 border border-green-200 rounded-xl cursor-pointer hover:shadow-md hover:border-green-400 transition-all"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-bold text-slate-900">{event.guestName}</p>
+                              <p className="text-sm text-green-700 font-medium mt-1">
+                                🏠 {event.propertyName}
+                              </p>
+                              {event.roomName && (
+                                <p className="text-sm text-green-600">
+                                  🛏️ {event.roomName}
+                                </p>
+                              )}
+                              <p className="text-xs text-slate-500 mt-2">
+                                Check-out: {event.endDate.toLocaleDateString('it-IT')}
+                              </p>
+                            </div>
+                            <Eye size={18} className="text-green-500" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-600">
-              Nessun evento per questa data
-            </div>
-          )}
-        </div>
-      )}
+                )}
+
+                {/* Check-outs Section */}
+                {checkOutsToday.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-orange-700 mb-3 flex items-center">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                      Check-out ({checkOutsToday.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {checkOutsToday.map(event => (
+                        <div
+                          key={event.id}
+                          onClick={() => {
+                            setSelectedBookingId(event.id)
+                            setShowBookingDetail(true)
+                          }}
+                          className="p-4 bg-orange-50 border border-orange-200 rounded-xl cursor-pointer hover:shadow-md hover:border-orange-400 transition-all"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-bold text-slate-900">{event.guestName}</p>
+                              <p className="text-sm text-orange-700 font-medium mt-1">
+                                🏠 {event.propertyName}
+                              </p>
+                              {event.roomName && (
+                                <p className="text-sm text-orange-600">
+                                  🛏️ {event.roomName}
+                                </p>
+                              )}
+                              <p className="text-xs text-slate-500 mt-2">
+                                Check-in: {event.startDate.toLocaleDateString('it-IT')}
+                              </p>
+                            </div>
+                            <Eye size={18} className="text-orange-500" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Other Events (Blocked/Maintenance) */}
+                {otherEvents.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      Blocchi ({otherEvents.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {otherEvents.map(event => (
+                        <div
+                          key={event.id}
+                          className="p-3 bg-red-50 border border-red-200 rounded-lg"
+                        >
+                          <p className="font-medium text-slate-900">{event.title}</p>
+                          <p className="text-sm text-slate-600">
+                            {event.startDate.toLocaleDateString('it-IT')} - {event.endDate.toLocaleDateString('it-IT')}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-600">
+                Nessun evento per questa data
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Block Date Modal */}
       {showBlockModal && (

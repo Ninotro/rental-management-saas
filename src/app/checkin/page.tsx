@@ -167,9 +167,7 @@ export default function PublicCheckInPage() {
   }
 
   const addGuest = () => {
-    if (guests.length < (selectedRoom?.maxGuests || 10)) {
-      setGuests([...guests, createEmptyGuest()])
-    }
+    setGuests([...guests, createEmptyGuest()])
   }
 
   const removeGuest = (index: number) => {
@@ -184,10 +182,82 @@ export default function PublicCheckInPage() {
     setGuests(newGuests)
   }
 
+  const validateGuest = (guest: GuestFormData, index: number): string | null => {
+    const guestNum = index + 1
+    const fieldLabels: Record<string, string> = language === 'it' ? {
+      firstName: 'Nome',
+      lastName: 'Cognome',
+      dateOfBirth: 'Data di nascita',
+      birthCity: 'Città di nascita',
+      birthProvince: 'Provincia di nascita',
+      residenceStreet: 'Indirizzo',
+      residencePostalCode: 'CAP',
+      residenceCity: 'Città di residenza',
+      residenceProvince: 'Provincia di residenza',
+      fiscalCode: 'Codice fiscale',
+      documentNumber: 'Numero documento',
+      documentIssueDate: 'Data rilascio documento',
+      documentExpiryDate: 'Data scadenza documento',
+    } : {
+      firstName: 'First name',
+      lastName: 'Last name',
+      dateOfBirth: 'Date of birth',
+      birthCity: 'Birth city',
+      birthProvince: 'Birth province',
+      residenceStreet: 'Address',
+      residencePostalCode: 'Postal code',
+      residenceCity: 'Residence city',
+      residenceProvince: 'Residence province',
+      fiscalCode: 'Fiscal code',
+      documentNumber: 'Document number',
+      documentIssueDate: 'Document issue date',
+      documentExpiryDate: 'Document expiry date',
+    }
+
+    const requiredFields: (keyof GuestFormData)[] = [
+      'firstName', 'lastName', 'dateOfBirth', 'birthCity', 'birthProvince',
+      'residenceStreet', 'residencePostalCode', 'residenceCity', 'residenceProvince',
+      'fiscalCode', 'documentNumber', 'documentIssueDate', 'documentExpiryDate'
+    ]
+
+    for (const field of requiredFields) {
+      if (!guest[field] || (typeof guest[field] === 'string' && guest[field].toString().trim() === '')) {
+        const label = fieldLabels[field] || field
+        return language === 'it'
+          ? `Ospite ${guestNum}: il campo "${label}" è obbligatorio`
+          : `Guest ${guestNum}: field "${label}" is required`
+      }
+    }
+
+    return null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
+
+    // Validate contact info
+    if (!email || email.trim() === '') {
+      setError(language === 'it' ? 'Il campo "Email" è obbligatorio' : 'Field "Email" is required')
+      setSubmitting(false)
+      return
+    }
+    if (!phone || phone.trim() === '') {
+      setError(language === 'it' ? 'Il campo "Telefono" è obbligatorio' : 'Field "Phone" is required')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate each guest
+    for (let i = 0; i < guests.length; i++) {
+      const validationError = validateGuest(guests[i], i)
+      if (validationError) {
+        setError(validationError)
+        setSubmitting(false)
+        return
+      }
+    }
 
     try {
       for (let i = 0; i < guests.length; i++) {
@@ -329,7 +399,7 @@ export default function PublicCheckInPage() {
                   >
                     <option value="">{language === 'it' ? 'Seleziona stanza...' : 'Select room...'}</option>
                     {selectedProperty.rooms.map(r => (
-                      <option key={r.id} value={r.id}>{r.name} (Max {r.maxGuests} {t.guests})</option>
+                      <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>
                 </div>
@@ -371,7 +441,7 @@ export default function PublicCheckInPage() {
                     onChange={(e) => setNumGuests(parseInt(e.target.value))}
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
                   >
-                    {Array.from({ length: selectedRoom?.maxGuests || 1 }, (_, i) => i + 1).map(n => (
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
                       <option key={n} value={n}>{n} {n === 1 ? t.guest : t.guests}</option>
                     ))}
                   </select>
@@ -445,6 +515,14 @@ export default function PublicCheckInPage() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-center shadow-lg">
+                <AlertCircle size={20} className="mr-3 flex-shrink-0" />
+                <span className="font-medium">{error}</span>
+              </div>
+            )}
+
             {/* Guest Forms */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {guests.map((guest, index) => (
@@ -457,12 +535,6 @@ export default function PublicCheckInPage() {
                       </button>
                     )}
                   </div>
-
-                  {error && index === 0 && (
-                    <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
-                      <AlertCircle size={18} className="mr-2" />{error}
-                    </div>
-                  )}
 
                   {/* Personal Data */}
                   <div className="mb-6">
@@ -610,12 +682,10 @@ export default function PublicCheckInPage() {
                 </div>
               ))}
 
-              {guests.length < (selectedRoom?.maxGuests || 10) && (
-                <button type="button" onClick={addGuest}
-                  className="w-full bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 text-blue-600 py-4 rounded-xl font-medium flex items-center justify-center space-x-2">
-                  <Plus size={20} /><span>{t.addGuest}</span>
-                </button>
-              )}
+              <button type="button" onClick={addGuest}
+                className="w-full bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 text-blue-600 py-4 rounded-xl font-medium flex items-center justify-center space-x-2">
+                <Plus size={20} /><span>{t.addGuest}</span>
+              </button>
 
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="text-xs text-slate-600">{t.privacyNotice}</p>

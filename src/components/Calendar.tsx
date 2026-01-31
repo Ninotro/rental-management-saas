@@ -78,23 +78,27 @@ export default function Calendar({ events, onDateClick, onEventClick, selectedDa
     return 'bg-white hover:bg-slate-50'
   }
 
-  const isCheckIn = (date: Date, dayEvents: CalendarEvent[]) => {
-    return dayEvents.some(e => {
+  // Get all check-ins for a specific date
+  const getCheckInsForDate = (date: Date, dayEvents: CalendarEvent[]) => {
+    const checkDate = new Date(date)
+    checkDate.setHours(0, 0, 0, 0)
+
+    return dayEvents.filter(e => {
       const start = new Date(e.startDate)
       start.setHours(0, 0, 0, 0)
-      const checkDate = new Date(date)
-      checkDate.setHours(0, 0, 0, 0)
-      return start.getTime() === checkDate.getTime() && e.type === 'booking'
+      return start.getTime() === checkDate.getTime() && e.type === 'booking' && e.status !== 'cancelled'
     })
   }
 
-  const isCheckOut = (date: Date, dayEvents: CalendarEvent[]) => {
-    return dayEvents.some(e => {
+  // Get all check-outs for a specific date
+  const getCheckOutsForDate = (date: Date, dayEvents: CalendarEvent[]) => {
+    const checkDate = new Date(date)
+    checkDate.setHours(0, 0, 0, 0)
+
+    return dayEvents.filter(e => {
       const end = new Date(e.endDate)
       end.setHours(0, 0, 0, 0)
-      const checkDate = new Date(date)
-      checkDate.setHours(0, 0, 0, 0)
-      return end.getTime() === checkDate.getTime() && e.type === 'booking'
+      return end.getTime() === checkDate.getTime() && e.type === 'booking' && e.status !== 'cancelled'
     })
   }
 
@@ -127,60 +131,73 @@ export default function Calendar({ events, onDateClick, onEventClick, selectedDa
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = getEventsForDate(date)
       const dateColor = getDateColor(date, dayEvents)
-      const checkIn = isCheckIn(date, dayEvents)
-      const checkOut = isCheckOut(date, dayEvents)
+      const checkIns = getCheckInsForDate(date, dayEvents)
+      const checkOuts = getCheckOutsForDate(date, dayEvents)
       const today = isToday(date)
       const selected = isSelected(date)
-
-      // Get unique rooms occupied for this day (with property name)
-      const occupiedRooms = dayEvents
-        .filter(e => e.type === 'booking' && e.status !== 'cancelled' && e.roomName)
-        .map(e => `${e.roomName}${e.propertyName ? ` (${e.propertyName})` : ''}`)
-        .filter((value, index, self) => self.indexOf(value) === index)
 
       days.push(
         <div
           key={day}
           onClick={() => onDateClick?.(date)}
-          className={`min-h-[100px] p-2 border border-slate-200 ${dateColor} cursor-pointer transition-colors relative ${
+          className={`min-h-[120px] p-1.5 border border-slate-200 ${dateColor} cursor-pointer transition-colors relative ${
             today ? 'ring-2 ring-blue-500' : ''
           } ${selected ? 'ring-2 ring-purple-500' : ''}`}
         >
           <div className="flex flex-col h-full">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mb-1">
               <span className={`text-sm font-medium ${today ? 'text-blue-600' : 'text-slate-900'}`}>
                 {day}
               </span>
-              {dayEvents.length > 0 && (
-                <span className="text-xs bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">
-                  {dayEvents.length}
-                </span>
-              )}
             </div>
-            <div className="flex-1 flex flex-col gap-0.5 mt-1 overflow-hidden">
-              {checkIn && (
-                <div className="text-[10px] bg-green-500 text-white px-1 rounded truncate text-center">
-                  Check-in
+            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+              {/* Check-ins section */}
+              {checkIns.length > 0 && (
+                <div>
+                  <div className="text-[10px] bg-green-500 text-white px-1 rounded-t font-semibold text-center">
+                    Check-in ({checkIns.length})
+                  </div>
+                  <div className="bg-green-100 rounded-b px-1 py-0.5">
+                    {checkIns.slice(0, 2).map((e, idx) => (
+                      <div
+                        key={idx}
+                        className="text-[9px] text-green-800 truncate"
+                        title={`${e.roomName} (${e.propertyName})`}
+                      >
+                        {e.roomName} ({e.propertyName})
+                      </div>
+                    ))}
+                    {checkIns.length > 2 && (
+                      <div className="text-[9px] text-green-600 font-medium">
+                        +{checkIns.length - 2} altri
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              {checkOut && (
-                <div className="text-[10px] bg-orange-500 text-white px-1 rounded truncate text-center">
-                  Check-out
-                </div>
-              )}
-              {/* Show occupied rooms */}
-              {occupiedRooms.slice(0, 3).map((roomName, idx) => (
-                <div
-                  key={idx}
-                  className="text-[10px] bg-blue-600 text-white px-1 rounded truncate"
-                  title={roomName}
-                >
-                  {roomName}
-                </div>
-              ))}
-              {occupiedRooms.length > 3 && (
-                <div className="text-[10px] text-slate-500">
-                  +{occupiedRooms.length - 3} altre
+
+              {/* Check-outs section */}
+              {checkOuts.length > 0 && (
+                <div>
+                  <div className="text-[10px] bg-orange-500 text-white px-1 rounded-t font-semibold text-center">
+                    Check-out ({checkOuts.length})
+                  </div>
+                  <div className="bg-orange-100 rounded-b px-1 py-0.5">
+                    {checkOuts.slice(0, 2).map((e, idx) => (
+                      <div
+                        key={idx}
+                        className="text-[9px] text-orange-800 truncate"
+                        title={`${e.roomName} (${e.propertyName})`}
+                      >
+                        {e.roomName} ({e.propertyName})
+                      </div>
+                    ))}
+                    {checkOuts.length > 2 && (
+                      <div className="text-[9px] text-orange-600 font-medium">
+                        +{checkOuts.length - 2} altri
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

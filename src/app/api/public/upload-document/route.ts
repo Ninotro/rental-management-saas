@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
-import { v4 as uuidv4 } from 'uuid'
+import { uploadImage } from '@/lib/cloudinary'
 
-// POST - Upload documento identità (pubblico, no auth)
+// POST - Upload documento identità (pubblico, no auth) - usa Cloudinary
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -35,30 +32,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crea cartella uploads/documents se non esiste
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'documents')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
-    }
-
-    // Genera nome file univoco
-    const fileExtension = file.name.split('.').pop()
-    const filename = `${uuidv4()}.${fileExtension}`
-    const filepath = path.join(uploadsDir, filename)
-
-    // Salva file
+    // Converti file in buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
 
-    // Ritorna URL del file
-    const fileUrl = `/uploads/documents/${filename}`
+    // Upload su Cloudinary nella cartella documents
+    const result = await uploadImage(buffer, 'documents')
 
     return NextResponse.json(
       {
         success: true,
-        url: fileUrl,
-        filename,
+        url: result.secure_url,
+        publicId: result.public_id,
       },
       { status: 201 }
     )
