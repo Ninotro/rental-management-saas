@@ -29,32 +29,37 @@ export async function POST(request: NextRequest) {
       documentBackUrl,
       isExempt,
       exemptionReason,
+      touristTaxPaymentProof,
     } = body
 
-    // Validazione campi obbligatori
-    if (
-      !roomId ||
-      !checkInDate ||
-      !checkOutDate ||
-      !firstName ||
-      !lastName ||
-      !dateOfBirth ||
-      !birthCity ||
-      !birthProvince ||
-      !residenceStreet ||
-      !residencePostalCode ||
-      !residenceCity ||
-      !residenceProvince ||
-      !fiscalCode ||
-      !documentType ||
-      !documentNumber ||
-      !documentIssueDate ||
-      !documentExpiryDate
-    ) {
-      return NextResponse.json(
-        { error: 'Tutti i campi obbligatori devono essere compilati' },
-        { status: 400 }
-      )
+    // Validazione campi obbligatori con messaggio specifico
+    const requiredFields: Record<string, string> = {
+      roomId: 'Stanza',
+      checkInDate: 'Data check-in',
+      checkOutDate: 'Data check-out',
+      firstName: 'Nome',
+      lastName: 'Cognome',
+      dateOfBirth: 'Data di nascita',
+      birthCity: 'Città di nascita',
+      birthProvince: 'Provincia di nascita',
+      residenceStreet: 'Indirizzo',
+      residencePostalCode: 'CAP',
+      residenceCity: 'Città di residenza',
+      residenceProvince: 'Provincia di residenza',
+      fiscalCode: 'Codice fiscale',
+      documentType: 'Tipo documento',
+      documentNumber: 'Numero documento',
+      documentIssueDate: 'Data rilascio documento',
+      documentExpiryDate: 'Data scadenza documento',
+    }
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!body[field] || body[field].toString().trim() === '') {
+        return NextResponse.json(
+          { error: `Il campo "${label}" è obbligatorio` },
+          { status: 400 }
+        )
+      }
     }
 
     // Verifica che la stanza esista
@@ -111,6 +116,7 @@ export async function POST(request: NextRequest) {
         documentBackUrl: documentBackUrl || null,
         isExempt: !!isExempt,
         exemptionReason: exemptionReason || null,
+        touristTaxPaymentProof: touristTaxPaymentProof || null,
       },
     })
 

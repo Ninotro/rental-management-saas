@@ -1,13 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Upload, Plus, Trash2, ChevronRight, Home, Bed } from 'lucide-react'
+import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Upload, Plus, Trash2, ChevronRight, Home, Bed, DollarSign, CreditCard, Building2 } from 'lucide-react'
 import { translations, Language } from '@/lib/translations'
 
 interface Property {
   id: string
   name: string
   city: string
+  touristTaxRate: number | null
+  touristTaxMaxNights: number | null
+  touristTaxExemptAge: number | null
+  paypalEmail: string | null
+  revolutTag: string | null
+  bankAccountIBAN: string | null
+  bankAccountHolder: string | null
   rooms: Room[]
 }
 
@@ -62,6 +69,11 @@ export default function PublicCheckInPage() {
   const [guests, setGuests] = useState<GuestFormData[]>([createEmptyGuest()])
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+
+  // Payment proof state
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null)
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
+  const [uploadingProof, setUploadingProof] = useState(false)
 
   // UI state
   const [loading, setLoading] = useState(true)
@@ -124,6 +136,31 @@ export default function PublicCheckInPage() {
       const guestsArray = Array(numGuests).fill(null).map(() => createEmptyGuest())
       setGuests(guestsArray)
       setStep('form')
+    }
+  }
+
+  const handlePaymentProofUpload = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      setUploadingProof(true)
+      const response = await fetch('/api/public/upload-document', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentProofUrl(data.url)
+        setPaymentProofFile(file)
+      } else {
+        setError(t.uploadError)
+      }
+    } catch (err) {
+      setError(t.uploadError)
+    } finally {
+      setUploadingProof(false)
     }
   }
 
@@ -266,23 +303,29 @@ export default function PublicCheckInPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            selectedRoomId,
-            selectedCheckIn: checkInDate,
-            selectedCheckOut: checkOutDate,
-            email: i === 0 ? email : `${guest.firstName.toLowerCase()}.${guest.lastName.toLowerCase()}@guest.local`,
-            phone: i === 0 ? phone : '',
+            roomId: selectedRoomId,
+            checkInDate: checkInDate,
+            checkOutDate: checkOutDate,
             firstName: guest.firstName,
             lastName: guest.lastName,
-            birthDate: guest.dateOfBirth,
-            birthPlace: `${guest.birthCity} (${guest.birthProvince})`,
-            nationality: 'Italiana',
+            dateOfBirth: guest.dateOfBirth,
+            birthCity: guest.birthCity,
+            birthProvince: guest.birthProvince,
+            residenceStreet: guest.residenceStreet,
+            residencePostalCode: guest.residencePostalCode,
+            residenceCity: guest.residenceCity,
+            residenceProvince: guest.residenceProvince,
             fiscalCode: guest.fiscalCode,
-            residenceAddress: `${guest.residenceStreet}, ${guest.residencePostalCode} ${guest.residenceCity} (${guest.residenceProvince})`,
             documentType: guest.documentType,
             documentNumber: guest.documentNumber,
-            documentExpiry: guest.documentExpiryDate,
+            documentIssueDate: guest.documentIssueDate,
+            documentExpiryDate: guest.documentExpiryDate,
             documentFrontUrl: guest.documentFrontUrl,
             documentBackUrl: guest.documentBackUrl,
+            isExempt: guest.isExempt,
+            exemptionReason: guest.exemptionReason,
+            // Solo il primo ospite ha la prova di pagamento
+            touristTaxPaymentProof: i === 0 ? paymentProofUrl : null,
           }),
         })
 
@@ -686,6 +729,139 @@ export default function PublicCheckInPage() {
                 className="w-full bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 text-blue-600 py-4 rounded-xl font-medium flex items-center justify-center space-x-2">
                 <Plus size={20} /><span>{t.addGuest}</span>
               </button>
+
+              {/* Tourist Tax Section */}
+              {selectedProperty?.touristTaxRate && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-lg p-6 border border-amber-200">
+                  <div className="flex items-start space-x-3 mb-4">
+                    <DollarSign className="text-amber-600 mt-1" size={24} />
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">{t.touristTaxTitle}</h2>
+                      <p className="text-sm text-slate-600">{t.touristTaxDesc}</p>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const checkIn = new Date(checkInDate)
+                    const checkOut = new Date(checkOutDate)
+                    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+                    const taxNights = Math.min(nights, selectedProperty.touristTaxMaxNights || 4)
+                    const exemptCount = guests.filter(g => g.isExempt).length
+                    const nonExemptCount = guests.length - exemptCount
+                    const totalTax = nonExemptCount * (selectedProperty.touristTaxRate || 0) * taxNights
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Calcolo */}
+                        <div className="bg-white rounded-xl p-4 border border-amber-200">
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="text-slate-600">{language === 'it' ? 'Tariffa per persona/notte:' : 'Rate per person/night:'}</div>
+                            <div className="font-bold text-slate-900">€{selectedProperty.touristTaxRate?.toFixed(2)}</div>
+                            <div className="text-slate-600">{language === 'it' ? 'Notti tassabili:' : 'Taxable nights:'}</div>
+                            <div className="font-bold text-slate-900">{taxNights} {language === 'it' ? `(max ${selectedProperty.touristTaxMaxNights || 4})` : `(max ${selectedProperty.touristTaxMaxNights || 4})`}</div>
+                            <div className="text-slate-600">{language === 'it' ? 'Ospiti soggetti:' : 'Taxable guests:'}</div>
+                            <div className="font-bold text-slate-900">{nonExemptCount} / {guests.length}</div>
+                            <div className="col-span-2 border-t pt-2 mt-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-lg font-bold text-slate-900">{language === 'it' ? 'Totale da pagare:' : 'Total to pay:'}</span>
+                                <span className="text-2xl font-bold text-amber-600">€{totalTax.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {totalTax > 0 && (
+                          <>
+                            {/* Metodi di pagamento */}
+                            <div className="bg-white rounded-xl p-4 border border-amber-200">
+                              <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
+                                <CreditCard className="mr-2 text-amber-600" size={18} />
+                                {language === 'it' ? 'Metodi di pagamento' : 'Payment methods'}
+                              </h3>
+                              <div className="space-y-2">
+                                {selectedProperty.paypalEmail && (
+                                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                    <span className="font-medium text-blue-800">PayPal</span>
+                                    <span className="text-blue-600">{selectedProperty.paypalEmail}</span>
+                                  </div>
+                                )}
+                                {selectedProperty.revolutTag && (
+                                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                                    <span className="font-medium text-purple-800">Revolut</span>
+                                    <span className="text-purple-600">{selectedProperty.revolutTag}</span>
+                                  </div>
+                                )}
+                                {selectedProperty.bankAccountIBAN && (
+                                  <div className="p-3 bg-green-50 rounded-lg">
+                                    <div className="flex items-center mb-1">
+                                      <Building2 size={16} className="mr-2 text-green-600" />
+                                      <span className="font-medium text-green-800">{language === 'it' ? 'Bonifico Bancario' : 'Bank Transfer'}</span>
+                                    </div>
+                                    <div className="text-sm text-green-700">
+                                      <p><span className="text-green-600">IBAN:</span> {selectedProperty.bankAccountIBAN}</p>
+                                      {selectedProperty.bankAccountHolder && (
+                                        <p><span className="text-green-600">{language === 'it' ? 'Intestatario:' : 'Holder:'}</span> {selectedProperty.bankAccountHolder}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Upload prova pagamento */}
+                            <div className="bg-white rounded-xl p-4 border border-amber-200">
+                              <h3 className="font-semibold text-slate-900 mb-2">
+                                {language === 'it' ? 'Carica screenshot del pagamento' : 'Upload payment screenshot'}
+                              </h3>
+                              <p className="text-sm text-slate-600 mb-3">
+                                {language === 'it'
+                                  ? 'Dopo aver effettuato il pagamento, carica uno screenshot come conferma'
+                                  : 'After making the payment, upload a screenshot as confirmation'}
+                              </p>
+                              <input
+                                type="file"
+                                id="payment-proof"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handlePaymentProofUpload(file)
+                                }}
+                              />
+                              <label
+                                htmlFor="payment-proof"
+                                className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-amber-500 transition-colors ${
+                                  paymentProofFile ? 'border-green-500 bg-green-50' : 'border-amber-300'
+                                }`}
+                              >
+                                {uploadingProof ? (
+                                  <div className="flex flex-col items-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mb-2"></div>
+                                    <p className="text-sm text-slate-600">{t.uploadingFile}</p>
+                                  </div>
+                                ) : paymentProofFile ? (
+                                  <div className="flex flex-col items-center">
+                                    <CheckCircle className="text-green-600 mb-2" size={32} />
+                                    <p className="text-sm text-green-700 font-medium">{paymentProofFile.name}</p>
+                                    <p className="text-xs text-green-600 mt-1">
+                                      {language === 'it' ? 'Screenshot caricato!' : 'Screenshot uploaded!'}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center">
+                                    <Upload className="text-amber-400 mb-2" size={32} />
+                                    <p className="text-sm text-slate-600">{t.clickToUpload}</p>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
+              )}
 
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="text-xs text-slate-600">{t.privacyNotice}</p>

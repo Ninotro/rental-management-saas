@@ -10,6 +10,15 @@ export async function GET() {
         id: true,
         name: true,
         city: true,
+        // Dati tassa di soggiorno
+        touristTaxRate: true,
+        touristTaxMaxNights: true,
+        touristTaxExemptAge: true,
+        // Metodi pagamento
+        paypalEmail: true,
+        revolutTag: true,
+        bankAccountIBAN: true,
+        bankAccountHolder: true,
         rooms: {
           where: { active: true },
           select: {

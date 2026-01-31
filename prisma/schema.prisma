@@ -474,6 +474,9 @@ model GuestCheckIn {
   isExempt            Boolean      @default(false)
   exemptionReason     String?      // Motivo esenzione
 
+  // Tassa di soggiorno - prova pagamento
+  touristTaxPaymentProof String?   // URL screenshot pagamento tassa di soggiorno
+
   submittedAt         DateTime     @default(now()) // Quando il guest ha compilato il form
   submittedToPolice   Boolean      @default(false) // Se comunicato alla Questura
   submittedToPoliceAt DateTime?    // Quando è stato comunicato alla Questura
