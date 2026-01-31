@@ -206,19 +206,37 @@ async function syncIcalFeed(
             roomId,
             externalCalendarId: uid,
           },
+          include: {
+            _count: {
+              select: { guestCheckIns: true },
+            },
+          },
         });
 
         if (existingBooking) {
-          // Aggiorna la prenotazione esistente
-          await prisma.booking.update({
-            where: { id: existingBooking.id },
-            data: {
-              checkIn,
-              checkOut,
-              guestName: summary,
-              updatedAt: new Date(),
-            },
-          });
+          // Se ha check-in associati, NON aggiornare il nome per preservare i dati ospite
+          if (existingBooking._count.guestCheckIns > 0) {
+            // Aggiorna solo le date
+            await prisma.booking.update({
+              where: { id: existingBooking.id },
+              data: {
+                checkIn,
+                checkOut,
+                updatedAt: new Date(),
+              },
+            });
+          } else {
+            // Nessun check-in associato, aggiorna tutto
+            await prisma.booking.update({
+              where: { id: existingBooking.id },
+              data: {
+                checkIn,
+                checkOut,
+                guestName: summary,
+                updatedAt: new Date(),
+              },
+            });
+          }
           updated++;
         } else {
           // Genera un bookingCode univoco

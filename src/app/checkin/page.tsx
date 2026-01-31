@@ -311,6 +311,8 @@ export default function PublicCheckInPage() {
             roomId: selectedRoomId,
             checkInDate: checkInDate,
             checkOutDate: checkOutDate,
+            email: email,
+            phone: phone,
             firstName: guest.firstName,
             lastName: guest.lastName,
             dateOfBirth: guest.dateOfBirth,
@@ -727,6 +729,57 @@ export default function PublicCheckInPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Tourist Tax Exemption - Per ogni ospite */}
+                  {globalSettings?.touristTaxRate && (
+                    <div className="border-t pt-6">
+                      <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
+                        <DollarSign className="mr-2 text-amber-600" size={18} />
+                        {language === 'it' ? 'Esenzione Tassa di Soggiorno' : 'Tourist Tax Exemption'}
+                      </h3>
+                      <div className="bg-amber-50 rounded-lg p-4">
+                        <label className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={guest.isExempt}
+                            onChange={(e) => updateGuest(index, 'isExempt', e.target.checked)}
+                            className="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <div>
+                            <span className="font-medium text-slate-900">
+                              {language === 'it' ? 'Sono esente dalla tassa di soggiorno' : 'I am exempt from tourist tax'}
+                            </span>
+                            <p className="text-sm text-slate-600 mt-1">
+                              {language === 'it'
+                                ? 'Seleziona se rientri in una delle categorie esenti (es. minori, residenti, accompagnatori di pazienti, ecc.)'
+                                : 'Select if you fall into one of the exempt categories (e.g. minors, residents, patient companions, etc.)'}
+                            </p>
+                          </div>
+                        </label>
+                        {guest.isExempt && (
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              {language === 'it' ? 'Motivo esenzione *' : 'Exemption reason *'}
+                            </label>
+                            <select
+                              value={guest.exemptionReason}
+                              onChange={(e) => updateGuest(index, 'exemptionReason', e.target.value)}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-amber-500"
+                            >
+                              <option value="">{language === 'it' ? 'Seleziona motivo...' : 'Select reason...'}</option>
+                              <option value="MINORE_14">{language === 'it' ? 'Minore di 14 anni' : 'Under 14 years old'}</option>
+                              <option value="RESIDENTE">{language === 'it' ? 'Residente nel Comune' : 'Local resident'}</option>
+                              <option value="ACCOMPAGNATORE_PAZIENTE">{language === 'it' ? 'Accompagnatore paziente in cura' : 'Patient companion'}</option>
+                              <option value="FORZE_ORDINE">{language === 'it' ? 'Forze dell\'ordine in servizio' : 'Law enforcement on duty'}</option>
+                              <option value="DISABILE">{language === 'it' ? 'Persona con disabilità' : 'Person with disability'}</option>
+                              <option value="AUTISTA_PULLMAN">{language === 'it' ? 'Autista pullman turistico' : 'Tourist bus driver'}</option>
+                              <option value="ALTRO">{language === 'it' ? 'Altro (specificare nelle note)' : 'Other (specify in notes)'}</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -743,6 +796,16 @@ export default function PublicCheckInPage() {
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">{t.touristTaxTitle}</h2>
                       <p className="text-sm text-slate-600">{t.touristTaxDesc}</p>
+                      <a
+                        href="https://www.comune.palermo.it/palermo-informa-dettaglio.php?tp=1&id=34181"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center mt-2 text-sm text-amber-700 hover:text-amber-800 font-medium underline"
+                      >
+                        {language === 'it'
+                          ? '📋 Regolamento tassa di soggiorno Palermo'
+                          : '📋 Palermo tourist tax regulations'}
+                      </a>
                     </div>
                   </div>
 
@@ -759,14 +822,44 @@ export default function PublicCheckInPage() {
                       <div className="space-y-4">
                         {/* Calcolo */}
                         <div className="bg-white rounded-xl p-4 border border-amber-200">
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="text-slate-600">{language === 'it' ? 'Tariffa per persona/notte:' : 'Rate per person/night:'}</div>
-                            <div className="font-bold text-slate-900">€{globalSettings.touristTaxRate?.toFixed(2)}</div>
-                            <div className="text-slate-600">{language === 'it' ? 'Notti tassabili:' : 'Taxable nights:'}</div>
-                            <div className="font-bold text-slate-900">{taxNights} {language === 'it' ? `(max ${globalSettings.touristTaxMaxNights || 4})` : `(max ${globalSettings.touristTaxMaxNights || 4})`}</div>
-                            <div className="text-slate-600">{language === 'it' ? 'Ospiti soggetti:' : 'Taxable guests:'}</div>
-                            <div className="font-bold text-slate-900">{nonExemptCount} / {guests.length}</div>
-                            <div className="col-span-2 border-t pt-2 mt-2">
+                          <h4 className="font-semibold text-slate-800 mb-3">
+                            {language === 'it' ? 'Calcolo tassa di soggiorno' : 'Tourist tax calculation'}
+                          </h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Tariffa per persona/notte:' : 'Rate per person/night:'}</span>
+                              <span className="font-bold text-slate-900">€{globalSettings.touristTaxRate?.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Numero notti totali:' : 'Total nights:'}</span>
+                              <span className="font-bold text-slate-900">{nights}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Notti tassabili:' : 'Taxable nights:'}</span>
+                              <span className="font-bold text-slate-900">{taxNights} <span className="text-xs text-slate-500">(max {globalSettings.touristTaxMaxNights || 4})</span></span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Ospiti totali:' : 'Total guests:'}</span>
+                              <span className="font-bold text-slate-900">{guests.length}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Ospiti esenti:' : 'Exempt guests:'}</span>
+                              <span className="font-bold text-green-600">{exemptCount}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                              <span className="text-slate-600">{language === 'it' ? 'Ospiti soggetti alla tassa:' : 'Taxable guests:'}</span>
+                              <span className="font-bold text-amber-600">{nonExemptCount}</span>
+                            </div>
+
+                            {/* Formula */}
+                            <div className="bg-slate-50 rounded-lg p-3 mt-3">
+                              <p className="text-xs text-slate-500 mb-1">{language === 'it' ? 'Formula:' : 'Formula:'}</p>
+                              <p className="font-mono text-sm text-slate-700">
+                                €{globalSettings.touristTaxRate?.toFixed(2)} × {taxNights} {language === 'it' ? 'notti' : 'nights'} × {nonExemptCount} {language === 'it' ? 'ospiti' : 'guests'} = <span className="font-bold text-amber-600">€{totalTax.toFixed(2)}</span>
+                              </p>
+                            </div>
+
+                            <div className="border-t pt-3 mt-3">
                               <div className="flex justify-between items-center">
                                 <span className="text-lg font-bold text-slate-900">{language === 'it' ? 'Totale da pagare:' : 'Total to pay:'}</span>
                                 <span className="text-2xl font-bold text-amber-600">€{totalTax.toFixed(2)}</span>

@@ -6,19 +6,27 @@ import Link from 'next/link'
 
 interface PendingCheckIn {
   id: string
+  email: string | null
+  phone: string | null
   firstName: string
   lastName: string
-  email: string
-  phone: string
   fiscalCode: string
-  birthDate: string
-  birthPlace: string
-  nationality: string
+  dateOfBirth: string
+  birthCity: string
+  birthProvince: string
+  residenceStreet: string
+  residencePostalCode: string
+  residenceCity: string
+  residenceProvince: string
   documentType: string
   documentNumber: string
-  documentExpiry: string
+  documentIssueDate: string
+  documentExpiryDate: string
   documentFrontUrl: string | null
   documentBackUrl: string | null
+  isExempt: boolean
+  exemptionReason: string | null
+  touristTaxPaymentProof: string | null
   selectedCheckIn: string
   selectedCheckOut: string
   submittedAt: string
@@ -319,149 +327,15 @@ export default function PendingCheckInsPage() {
 
       {/* Modal Dettagli */}
       {showDetailModal && selectedCheckIn && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Dettagli Check-in
-                </h2>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Dati Personali</h3>
-                  <dl className="space-y-2 text-sm">
-                    <div>
-                      <dt className="text-gray-500">Nome Completo</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.firstName} {selectedCheckIn.lastName}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Email</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.email}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Telefono</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.phone}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Codice Fiscale</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.fiscalCode}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Data di Nascita</dt>
-                      <dd className="text-gray-900">{formatDate(selectedCheckIn.birthDate)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Luogo di Nascita</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.birthPlace}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Nazionalità</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.nationality}</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Documento</h3>
-                  <dl className="space-y-2 text-sm">
-                    <div>
-                      <dt className="text-gray-500">Tipo Documento</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.documentType}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Numero</dt>
-                      <dd className="text-gray-900">{selectedCheckIn.documentNumber}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-gray-500">Scadenza</dt>
-                      <dd className="text-gray-900">{formatDate(selectedCheckIn.documentExpiry)}</dd>
-                    </div>
-                  </dl>
-
-                  {(selectedCheckIn.documentFrontUrl || selectedCheckIn.documentBackUrl) && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Immagini Documento</h4>
-                      <div className="flex gap-2">
-                        {selectedCheckIn.documentFrontUrl && (
-                          <a
-                            href={selectedCheckIn.documentFrontUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            Fronte
-                          </a>
-                        )}
-                        {selectedCheckIn.documentBackUrl && (
-                          <a
-                            href={selectedCheckIn.documentBackUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            Retro
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t">
-                <h3 className="font-semibold text-gray-900 mb-3">Soggiorno Selezionato</h3>
-                <dl className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <dt className="text-gray-500">Struttura</dt>
-                    <dd className="text-gray-900">
-                      {selectedCheckIn.selectedRoom?.property.name || '-'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">Stanza</dt>
-                    <dd className="text-gray-900">
-                      {selectedCheckIn.selectedRoom?.name || '-'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">Check-in</dt>
-                    <dd className="text-gray-900">{formatDate(selectedCheckIn.selectedCheckIn)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">Check-out</dt>
-                    <dd className="text-gray-900">{formatDate(selectedCheckIn.selectedCheckOut)}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="mt-6 pt-6 border-t flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Chiudi
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false)
-                    openApproveModal(selectedCheckIn)
-                  }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Approva
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DetailModal
+          checkIn={selectedCheckIn}
+          onClose={() => setShowDetailModal(false)}
+          onApprove={() => {
+            setShowDetailModal(false)
+            openApproveModal(selectedCheckIn)
+          }}
+          formatDate={formatDate}
+        />
       )}
 
       {/* Modal Approvazione */}
@@ -577,6 +451,369 @@ export default function PendingCheckInsPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// Componente Modal Dettagli Check-in Completo
+function DetailModal({
+  checkIn,
+  onClose,
+  onApprove,
+  formatDate,
+}: {
+  checkIn: PendingCheckIn
+  onClose: () => void
+  onApprove: () => void
+  formatDate: (date: string) => string
+}) {
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text.toUpperCase())
+      setCopiedField(fieldName)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch (err) {
+      console.error('Errore nella copia:', err)
+    }
+  }
+
+  const CopyButton = ({ text, fieldName }: { text: string; fieldName: string }) => (
+    <button
+      type="button"
+      onClick={() => copyToClipboard(text, fieldName)}
+      className={`ml-2 px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+        copiedField === fieldName
+          ? 'bg-green-100 text-green-700'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      {copiedField === fieldName ? '✓ Copiato' : 'Copia'}
+    </button>
+  )
+
+  const getDocumentTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      CARTA_IDENTITA: "Carta d'Identità",
+      PASSAPORTO: 'Passaporto',
+      PATENTE: 'Patente',
+    }
+    return labels[type] || type
+  }
+
+  const getExemptionLabel = (reason: string | null) => {
+    if (!reason) return '-'
+    const labels: Record<string, string> = {
+      MINORE_14: 'Minore di 14 anni',
+      RESIDENTE: 'Residente nel Comune',
+      ACCOMPAGNATORE_PAZIENTE: 'Accompagnatore paziente in cura',
+      FORZE_ORDINE: "Forze dell'ordine in servizio",
+      DISABILE: 'Persona con disabilità',
+      AUTISTA_PULLMAN: 'Autista pullman turistico',
+      ALTRO: 'Altro',
+    }
+    return labels[reason] || reason
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Dettagli Check-in</h2>
+              <p className="text-gray-600 mt-1">
+                {checkIn.firstName} {checkIn.lastName} - Inviato il {formatDate(checkIn.submittedAt)}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <span className="text-2xl text-gray-400 hover:text-gray-600">✕</span>
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* Soggiorno Selezionato */}
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+                <span className="mr-2">🏨</span> Soggiorno Selezionato
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-blue-600 mb-1">Struttura</p>
+                  <p className="font-medium text-gray-900">
+                    {checkIn.selectedRoom?.property.name || '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 mb-1">Stanza</p>
+                  <p className="font-medium text-gray-900">
+                    {checkIn.selectedRoom?.name || '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 mb-1">Check-in</p>
+                  <p className="font-medium text-gray-900">{formatDate(checkIn.selectedCheckIn)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600 mb-1">Check-out</p>
+                  <p className="font-medium text-gray-900">{formatDate(checkIn.selectedCheckOut)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contatti */}
+            <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+              <h3 className="font-semibold text-indigo-900 mb-4 flex items-center">
+                <span className="mr-2">📧</span> Contatti
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-indigo-600 mb-1">Email</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.email || '-'}
+                    {checkIn.email && <CopyButton text={checkIn.email} fieldName="email" />}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-indigo-600 mb-1">Telefono</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.phone || '-'}
+                    {checkIn.phone && <CopyButton text={checkIn.phone} fieldName="phone" />}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dati Anagrafici */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">👤</span> Dati Anagrafici
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500 mb-1">Nome</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.firstName}
+                    <CopyButton text={checkIn.firstName} fieldName="firstName" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Cognome</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.lastName}
+                    <CopyButton text={checkIn.lastName} fieldName="lastName" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Data di Nascita</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {formatDate(checkIn.dateOfBirth)}
+                    <CopyButton text={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Luogo di Nascita</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.birthCity} ({checkIn.birthProvince})
+                    <CopyButton text={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Codice Fiscale</p>
+                  <p className="font-medium text-gray-900 flex items-center font-mono">
+                    {checkIn.fiscalCode}
+                    <CopyButton text={checkIn.fiscalCode} fieldName="fiscalCode" />
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Residenza */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">🏠</span> Indirizzo di Residenza
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="col-span-2">
+                  <p className="text-gray-500 mb-1">Via</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.residenceStreet}
+                    <CopyButton text={checkIn.residenceStreet} fieldName="street" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">CAP</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.residencePostalCode}
+                    <CopyButton text={checkIn.residencePostalCode} fieldName="postalCode" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Città</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.residenceCity}
+                    <CopyButton text={checkIn.residenceCity} fieldName="city" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Provincia</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {checkIn.residenceProvince}
+                    <CopyButton text={checkIn.residenceProvince} fieldName="province" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Indirizzo Completo</p>
+                  <p className="font-medium text-gray-900 flex items-center text-xs">
+                    <CopyButton
+                      text={`${checkIn.residenceStreet}, ${checkIn.residencePostalCode} ${checkIn.residenceCity} (${checkIn.residenceProvince})`}
+                      fieldName="fullAddress"
+                    />
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Documento */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">🪪</span> Documento di Identità
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500 mb-1">Tipo</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {getDocumentTypeLabel(checkIn.documentType)}
+                    <CopyButton text={getDocumentTypeLabel(checkIn.documentType)} fieldName="docType" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Numero</p>
+                  <p className="font-medium text-gray-900 flex items-center font-mono">
+                    {checkIn.documentNumber}
+                    <CopyButton text={checkIn.documentNumber} fieldName="docNumber" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Data Rilascio</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {formatDate(checkIn.documentIssueDate)}
+                    <CopyButton text={formatDate(checkIn.documentIssueDate)} fieldName="docIssue" />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Scadenza</p>
+                  <p className="font-medium text-gray-900 flex items-center">
+                    {formatDate(checkIn.documentExpiryDate)}
+                    <CopyButton text={formatDate(checkIn.documentExpiryDate)} fieldName="docExpiry" />
+                  </p>
+                </div>
+              </div>
+
+              {/* Immagini Documento */}
+              {(checkIn.documentFrontUrl || checkIn.documentBackUrl) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Foto Documento</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {checkIn.documentFrontUrl && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">Fronte</p>
+                        <a href={checkIn.documentFrontUrl} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={checkIn.documentFrontUrl}
+                            alt="Fronte documento"
+                            className="w-full rounded-lg border border-gray-300 hover:border-blue-500 transition-colors cursor-pointer"
+                          />
+                        </a>
+                      </div>
+                    )}
+                    {checkIn.documentBackUrl && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">Retro</p>
+                        <a href={checkIn.documentBackUrl} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={checkIn.documentBackUrl}
+                            alt="Retro documento"
+                            className="w-full rounded-lg border border-gray-300 hover:border-blue-500 transition-colors cursor-pointer"
+                          />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tassa di Soggiorno */}
+            <div className={`rounded-xl p-4 ${checkIn.isExempt ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+              <h3 className={`font-semibold mb-3 flex items-center ${checkIn.isExempt ? 'text-green-900' : 'text-amber-900'}`}>
+                <span className="mr-2">💰</span> Tassa di Soggiorno
+              </h3>
+
+              {checkIn.isExempt ? (
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                      ✓ ESENTE
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-700">
+                      <span className="font-medium">Motivo:</span> {getExemptionLabel(checkIn.exemptionReason)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
+                      Soggetto alla tassa
+                    </span>
+                  </div>
+
+                  {checkIn.touristTaxPaymentProof ? (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-green-700 mb-2">✓ Screenshot pagamento caricato</p>
+                      <a href={checkIn.touristTaxPaymentProof} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={checkIn.touristTaxPaymentProof}
+                          alt="Prova pagamento tassa"
+                          className="max-w-xs rounded-lg border-2 border-green-300 hover:border-green-500 transition-colors cursor-pointer"
+                        />
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-amber-700">
+                      ⚠ Nessuna prova di pagamento caricata
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="mt-6 pt-6 border-t flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Chiudi
+            </button>
+            <button
+              onClick={onApprove}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Approva Check-in
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

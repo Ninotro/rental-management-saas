@@ -10,6 +10,9 @@ export async function POST(request: NextRequest) {
       roomId,
       checkInDate,
       checkOutDate,
+      // Dati contatto
+      email,
+      phone,
       // Dati anagrafici
       firstName,
       lastName,
@@ -97,6 +100,9 @@ export async function POST(request: NextRequest) {
         selectedRoomId: roomId,
         selectedCheckIn,
         selectedCheckOut,
+        // Dati contatto
+        email: email || null,
+        phone: phone || null,
         // Dati anagrafici
         firstName,
         lastName,

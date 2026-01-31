@@ -90,8 +90,20 @@ async function syncIcalFeed(
   try {
     // Scarica il feed iCal
     const response = await fetch(icalUrl);
+
     if (!response.ok) {
-      throw new Error(`Errore nel download del calendario: ${response.statusText}`);
+      // Prova a leggere il corpo dell'errore per messaggi più specifici
+      let errorDetail = response.statusText;
+      try {
+        const errorBody = await response.text();
+        if (errorBody.includes('Invalid Token')) {
+          throw new Error(`URL iCal scaduto o non valido. Rigenera l'URL su ${source === 'BOOKING_COM' ? 'Booking.com Extranet' : 'Airbnb'} e aggiornalo nelle impostazioni della stanza.`);
+        }
+        errorDetail = errorBody.substring(0, 200); // Limita la lunghezza
+      } catch (e) {
+        // Ignora errori nella lettura del body
+      }
+      throw new Error(`Errore nel download del calendario (${response.status}): ${errorDetail}`);
     }
 
     const icalData = await response.text();
@@ -141,19 +153,37 @@ async function syncIcalFeed(
             roomId,
             externalCalendarId: uid,
           },
+          include: {
+            _count: {
+              select: { guestCheckIns: true },
+            },
+          },
         });
 
         if (existingBooking) {
-          // Aggiorna la prenotazione esistente
-          await prisma.booking.update({
-            where: { id: existingBooking.id },
-            data: {
-              checkIn,
-              checkOut,
-              guestName: summary,
-              updatedAt: new Date(),
-            },
-          });
+          // Se ha check-in associati, NON aggiornare per preservare i dati ospite
+          if (existingBooking._count.guestCheckIns > 0) {
+            // Aggiorna solo le date se cambiate, ma NON il nome
+            await prisma.booking.update({
+              where: { id: existingBooking.id },
+              data: {
+                checkIn,
+                checkOut,
+                updatedAt: new Date(),
+              },
+            });
+          } else {
+            // Nessun check-in associato, aggiorna tutto
+            await prisma.booking.update({
+              where: { id: existingBooking.id },
+              data: {
+                checkIn,
+                checkOut,
+                guestName: summary,
+                updatedAt: new Date(),
+              },
+            });
+          }
         } else {
           // Genera un bookingCode univoco
           let bookingCode = generateBookingCode();

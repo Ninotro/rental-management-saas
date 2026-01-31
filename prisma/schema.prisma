@@ -452,6 +452,10 @@ model GuestCheckIn {
   selectedCheckIn     DateTime?     // Data check-in selezionata
   selectedCheckOut    DateTime?     // Data check-out selezionata
 
+  // Dati contatto
+  email               String?      // Email ospite
+  phone               String?      // Telefono ospite
+
   // Dati anagrafici
   firstName           String       // Nome
   lastName            String       // Cognome

@@ -7,6 +7,9 @@ import autoTable from 'jspdf-autotable'
 
 interface GuestCheckIn {
   id: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  email: string | null
+  phone: string | null
   firstName: string
   lastName: string
   dateOfBirth: string
@@ -23,6 +26,9 @@ interface GuestCheckIn {
   documentExpiryDate: string
   documentFrontUrl: string | null
   documentBackUrl: string | null
+  isExempt: boolean
+  exemptionReason: string | null
+  touristTaxPaymentProof: string | null
   submittedAt: string
   submittedToPolice: boolean
   submittedToPoliceAt: string | null
@@ -62,6 +68,9 @@ export default function GuestCheckInsPage() {
   const [endDate, setEndDate] = useState('')
   const [selectedCheckIn, setSelectedCheckIn] = useState<GuestCheckIn | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingCheckIn, setEditingCheckIn] = useState<GuestCheckIn | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchCheckIns()
@@ -251,6 +260,81 @@ export default function GuestCheckInsPage() {
     }
   }
 
+  // Elimina check-in
+  const handleDelete = async (checkIn: GuestCheckIn) => {
+    if (!confirm(`Sei sicuro di voler eliminare il check-in di ${checkIn.firstName} ${checkIn.lastName}? Questa azione non può essere annullata.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/guest-checkins/${checkIn.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setCheckIns(checkIns.filter(c => c.id !== checkIn.id))
+        window.dispatchEvent(new CustomEvent('checkInStatusUpdated'))
+      } else {
+        alert('Errore durante l\'eliminazione')
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione:', error)
+      alert('Errore durante l\'eliminazione')
+    }
+  }
+
+  // Apri modal modifica
+  const openEditModal = (checkIn: GuestCheckIn) => {
+    setEditingCheckIn({ ...checkIn })
+    setShowEditModal(true)
+  }
+
+  // Salva modifiche
+  const handleSaveEdit = async () => {
+    if (!editingCheckIn) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/guest-checkins/${editingCheckIn.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCheckIn),
+      })
+
+      if (response.ok) {
+        setCheckIns(checkIns.map(c => c.id === editingCheckIn.id ? editingCheckIn : c))
+        setShowEditModal(false)
+        setEditingCheckIn(null)
+      } else {
+        alert('Errore durante il salvataggio')
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error)
+      alert('Errore durante il salvataggio')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Helper per lo status
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'In Attesa'
+      case 'APPROVED': return 'Approvato'
+      case 'REJECTED': return 'Rifiutato'
+      default: return status
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800'
+      case 'APPROVED': return 'bg-green-100 text-green-800'
+      case 'REJECTED': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -369,7 +453,7 @@ export default function GuestCheckInsPage() {
                   Documento
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Compilato il
+                  Stato Richiesta
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
                   Stato Questura
@@ -423,7 +507,10 @@ export default function GuestCheckInsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-slate-600">{formatDate(checkIn.submittedAt)}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(checkIn.status)}`}>
+                      {getStatusLabel(checkIn.status)}
+                    </span>
+                    <p className="text-xs text-slate-500 mt-1">{formatDate(checkIn.submittedAt)}</p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col space-y-1">
@@ -451,16 +538,32 @@ export default function GuestCheckInsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => {
-                        setSelectedCheckIn(checkIn)
-                        setShowDetailModal(true)
-                      }}
-                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 font-medium text-sm"
-                    >
-                      <Eye size={16} />
-                      <span>Dettagli</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCheckIn(checkIn)
+                          setShowDetailModal(true)
+                        }}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        title="Visualizza dettagli"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => openEditModal(checkIn)}
+                        className="text-amber-600 hover:text-amber-700 font-medium text-sm"
+                        title="Modifica"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDelete(checkIn)}
+                        className="text-red-600 hover:text-red-700 font-medium text-sm"
+                        title="Elimina"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -488,6 +591,253 @@ export default function GuestCheckInsPage() {
           getCheckInDate={getCheckInDate}
           getCheckOutDate={getCheckOutDate}
         />
+      )}
+
+      {/* Modal Modifica */}
+      {showEditModal && editingCheckIn && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Modifica Check-in</h2>
+              <button
+                onClick={() => { setShowEditModal(false); setEditingCheckIn(null); }}
+                className="p-2 hover:bg-slate-100 rounded-lg"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Stato Richiesta</label>
+                <select
+                  value={editingCheckIn.status}
+                  onChange={(e) => setEditingCheckIn({ ...editingCheckIn, status: e.target.value as any })}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                >
+                  <option value="PENDING">In Attesa</option>
+                  <option value="APPROVED">Approvato</option>
+                  <option value="REJECTED">Rifiutato</option>
+                </select>
+              </div>
+
+              {/* Contatti */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={editingCheckIn.email || ''}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, email: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Telefono</label>
+                  <input
+                    type="tel"
+                    value={editingCheckIn.phone || ''}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, phone: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+              </div>
+
+              {/* Dati Anagrafici */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Nome</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.firstName}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, firstName: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Cognome</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.lastName}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, lastName: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Codice Fiscale</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.fiscalCode}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, fiscalCode: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Data di Nascita</label>
+                  <input
+                    type="date"
+                    value={editingCheckIn.dateOfBirth?.split('T')[0] || ''}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, dateOfBirth: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Città di Nascita</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.birthCity}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, birthCity: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Provincia di Nascita</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.birthProvince}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, birthProvince: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+
+              {/* Residenza */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Indirizzo</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.residenceStreet}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceStreet: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">CAP</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.residencePostalCode}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residencePostalCode: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Città</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.residenceCity}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceCity: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Provincia</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.residenceProvince}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceProvince: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+
+              {/* Documento */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Tipo Documento</label>
+                  <select
+                    value={editingCheckIn.documentType}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentType: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  >
+                    <option value="CARTA_IDENTITA">Carta d'Identità</option>
+                    <option value="PASSAPORTO">Passaporto</option>
+                    <option value="PATENTE">Patente</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Numero Documento</label>
+                  <input
+                    type="text"
+                    value={editingCheckIn.documentNumber}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentNumber: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Data Rilascio</label>
+                  <input
+                    type="date"
+                    value={editingCheckIn.documentIssueDate?.split('T')[0] || ''}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentIssueDate: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Data Scadenza</label>
+                  <input
+                    type="date"
+                    value={editingCheckIn.documentExpiryDate?.split('T')[0] || ''}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentExpiryDate: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                  />
+                </div>
+              </div>
+
+              {/* Esenzione Tassa */}
+              <div className="bg-amber-50 rounded-lg p-4">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={editingCheckIn.isExempt}
+                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, isExempt: e.target.checked })}
+                    className="w-5 h-5 text-amber-600 rounded"
+                  />
+                  <span className="font-medium text-slate-900">Esente dalla tassa di soggiorno</span>
+                </label>
+                {editingCheckIn.isExempt && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Motivo Esenzione</label>
+                    <select
+                      value={editingCheckIn.exemptionReason || ''}
+                      onChange={(e) => setEditingCheckIn({ ...editingCheckIn, exemptionReason: e.target.value })}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    >
+                      <option value="">Seleziona motivo...</option>
+                      <option value="MINORE_14">Minore di 14 anni</option>
+                      <option value="RESIDENTE">Residente nel Comune</option>
+                      <option value="ACCOMPAGNATORE_PAZIENTE">Accompagnatore paziente</option>
+                      <option value="FORZE_ORDINE">Forze dell'ordine</option>
+                      <option value="DISABILE">Persona con disabilità</option>
+                      <option value="AUTISTA_PULLMAN">Autista pullman</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-6 border-t flex justify-end gap-3">
+              <button
+                onClick={() => { setShowEditModal(false); setEditingCheckIn(null); }}
+                className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? 'Salvataggio...' : 'Salva Modifiche'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -725,23 +1075,35 @@ function DetailCheckInModal({
                 </div>
               )}
 
-              {/* Screenshot Pagamento Tassa di Soggiorno */}
-              {checkIn.booking?.touristTaxPaymentProof && (
+              {/* Tassa di Soggiorno */}
+              {(checkIn.isExempt || checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) && (
                 <div className="mt-6 border-t pt-6">
                   <div className="flex items-center space-x-2 mb-3">
-                    <CreditCard className="text-green-600" size={20} />
-                    <p className="font-bold text-slate-900">Screenshot Pagamento Tassa di Soggiorno</p>
+                    <CreditCard className="text-amber-600" size={20} />
+                    <p className="font-bold text-slate-900">Tassa di Soggiorno</p>
                   </div>
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <img
-                      src={checkIn.booking?.touristTaxPaymentProof || ''}
-                      alt="Conferma pagamento tassa di soggiorno"
-                      className="w-full max-w-md mx-auto rounded-lg border-2 border-green-300 shadow-lg"
-                    />
-                    <p className="text-xs text-green-700 text-center mt-2">
-                      ✓ Prova di pagamento caricata dall'ospite
-                    </p>
-                  </div>
+
+                  {checkIn.isExempt ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                        ✓ ESENTE
+                      </span>
+                      {checkIn.exemptionReason && (
+                        <p className="text-sm text-green-700 mt-2">
+                          <span className="font-medium">Motivo:</span> {checkIn.exemptionReason}
+                        </p>
+                      )}
+                    </div>
+                  ) : (checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <p className="text-sm font-medium text-green-700 mb-2">✓ Prova di pagamento caricata</p>
+                      <img
+                        src={checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof || ''}
+                        alt="Conferma pagamento tassa di soggiorno"
+                        className="w-full max-w-md mx-auto rounded-lg border-2 border-green-300 shadow-lg"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
