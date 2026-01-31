@@ -103,7 +103,7 @@ model Property {
   hasRooms        Boolean   @default(false) // Se true, la proprietà ha stanze separate
   active          Boolean   @default(true)
   accessCodes     Json?     // Mappa di codici accesso (es: { "Portone": "1234", "Appartamento": "5678" })
-  
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

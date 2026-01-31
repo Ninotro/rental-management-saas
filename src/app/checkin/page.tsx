@@ -8,6 +8,10 @@ interface Property {
   id: string
   name: string
   city: string
+  rooms: Room[]
+}
+
+interface GlobalSettings {
   touristTaxRate: number | null
   touristTaxMaxNights: number | null
   touristTaxExemptAge: number | null
@@ -15,7 +19,6 @@ interface Property {
   revolutTag: string | null
   bankAccountIBAN: string | null
   bankAccountHolder: string | null
-  rooms: Room[]
 }
 
 interface Room {
@@ -59,6 +62,7 @@ export default function PublicCheckInPage() {
 
   // Selection state
   const [properties, setProperties] = useState<Property[]>([])
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings | null>(null)
   const [selectedPropertyId, setSelectedPropertyId] = useState('')
   const [selectedRoomId, setSelectedRoomId] = useState('')
   const [checkInDate, setCheckInDate] = useState('')
@@ -117,7 +121,8 @@ export default function PublicCheckInPage() {
       const response = await fetch('/api/public/properties')
       if (response.ok) {
         const data = await response.json()
-        setProperties(data)
+        setProperties(data.properties || [])
+        setGlobalSettings(data.settings || null)
       }
     } catch (err) {
       console.error('Error fetching properties:', err)
@@ -731,7 +736,7 @@ export default function PublicCheckInPage() {
               </button>
 
               {/* Tourist Tax Section */}
-              {selectedProperty?.touristTaxRate && (
+              {globalSettings?.touristTaxRate && (
                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-lg p-6 border border-amber-200">
                   <div className="flex items-start space-x-3 mb-4">
                     <DollarSign className="text-amber-600 mt-1" size={24} />
@@ -745,10 +750,10 @@ export default function PublicCheckInPage() {
                     const checkIn = new Date(checkInDate)
                     const checkOut = new Date(checkOutDate)
                     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-                    const taxNights = Math.min(nights, selectedProperty.touristTaxMaxNights || 4)
+                    const taxNights = Math.min(nights, globalSettings.touristTaxMaxNights || 4)
                     const exemptCount = guests.filter(g => g.isExempt).length
                     const nonExemptCount = guests.length - exemptCount
-                    const totalTax = nonExemptCount * (selectedProperty.touristTaxRate || 0) * taxNights
+                    const totalTax = nonExemptCount * (globalSettings.touristTaxRate || 0) * taxNights
 
                     return (
                       <div className="space-y-4">
@@ -756,9 +761,9 @@ export default function PublicCheckInPage() {
                         <div className="bg-white rounded-xl p-4 border border-amber-200">
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="text-slate-600">{language === 'it' ? 'Tariffa per persona/notte:' : 'Rate per person/night:'}</div>
-                            <div className="font-bold text-slate-900">€{selectedProperty.touristTaxRate?.toFixed(2)}</div>
+                            <div className="font-bold text-slate-900">€{globalSettings.touristTaxRate?.toFixed(2)}</div>
                             <div className="text-slate-600">{language === 'it' ? 'Notti tassabili:' : 'Taxable nights:'}</div>
-                            <div className="font-bold text-slate-900">{taxNights} {language === 'it' ? `(max ${selectedProperty.touristTaxMaxNights || 4})` : `(max ${selectedProperty.touristTaxMaxNights || 4})`}</div>
+                            <div className="font-bold text-slate-900">{taxNights} {language === 'it' ? `(max ${globalSettings.touristTaxMaxNights || 4})` : `(max ${globalSettings.touristTaxMaxNights || 4})`}</div>
                             <div className="text-slate-600">{language === 'it' ? 'Ospiti soggetti:' : 'Taxable guests:'}</div>
                             <div className="font-bold text-slate-900">{nonExemptCount} / {guests.length}</div>
                             <div className="col-span-2 border-t pt-2 mt-2">
@@ -779,28 +784,28 @@ export default function PublicCheckInPage() {
                                 {language === 'it' ? 'Metodi di pagamento' : 'Payment methods'}
                               </h3>
                               <div className="space-y-2">
-                                {selectedProperty.paypalEmail && (
+                                {globalSettings.paypalEmail && (
                                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                                     <span className="font-medium text-blue-800">PayPal</span>
-                                    <span className="text-blue-600">{selectedProperty.paypalEmail}</span>
+                                    <span className="text-blue-600">{globalSettings.paypalEmail}</span>
                                   </div>
                                 )}
-                                {selectedProperty.revolutTag && (
+                                {globalSettings.revolutTag && (
                                   <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                                     <span className="font-medium text-purple-800">Revolut</span>
-                                    <span className="text-purple-600">{selectedProperty.revolutTag}</span>
+                                    <span className="text-purple-600">{globalSettings.revolutTag}</span>
                                   </div>
                                 )}
-                                {selectedProperty.bankAccountIBAN && (
+                                {globalSettings.bankAccountIBAN && (
                                   <div className="p-3 bg-green-50 rounded-lg">
                                     <div className="flex items-center mb-1">
                                       <Building2 size={16} className="mr-2 text-green-600" />
                                       <span className="font-medium text-green-800">{language === 'it' ? 'Bonifico Bancario' : 'Bank Transfer'}</span>
                                     </div>
                                     <div className="text-sm text-green-700">
-                                      <p><span className="text-green-600">IBAN:</span> {selectedProperty.bankAccountIBAN}</p>
-                                      {selectedProperty.bankAccountHolder && (
-                                        <p><span className="text-green-600">{language === 'it' ? 'Intestatario:' : 'Holder:'}</span> {selectedProperty.bankAccountHolder}</p>
+                                      <p><span className="text-green-600">IBAN:</span> {globalSettings.bankAccountIBAN}</p>
+                                      {globalSettings.bankAccountHolder && (
+                                        <p><span className="text-green-600">{language === 'it' ? 'Intestatario:' : 'Holder:'}</span> {globalSettings.bankAccountHolder}</p>
                                       )}
                                     </div>
                                   </div>
