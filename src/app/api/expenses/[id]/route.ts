@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth'
 // GET - Ottieni singola spesa
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const expense = await prisma.expense.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         property: {
           select: {
@@ -43,7 +45,7 @@ export async function GET(
 // PATCH - Aggiorna spesa
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -52,11 +54,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { propertyId, amount, category, date, description, receiptUrl } = body
 
     const expense = await prisma.expense.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(propertyId !== undefined && { propertyId: propertyId || null }),
         ...(amount !== undefined && { amount: parseFloat(amount) }),
@@ -87,7 +90,7 @@ export async function PATCH(
 // DELETE - Elimina spesa
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -96,8 +99,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
     }
 
+    const { id } = await params
+
     await prisma.expense.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Spesa eliminata con successo' })
