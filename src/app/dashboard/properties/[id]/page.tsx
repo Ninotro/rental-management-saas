@@ -1542,9 +1542,10 @@ function UploadImageModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
+            title="Chiudi"
           >
-            <X size={20} />
+            <X size={24} />
           </button>
         </div>
 

@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
-import { v4 as uuidv4 } from 'uuid'
+import { uploadImage, deleteImage } from '@/lib/cloudinary'
 
 // GET - Ottieni immagini della proprietà
 export async function GET(
@@ -35,7 +32,7 @@ export async function GET(
   }
 }
 
-// POST - Upload immagine
+// POST - Upload immagine su Cloudinary
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -60,21 +57,12 @@ export async function POST(
       return NextResponse.json({ error: 'Il file deve essere un\'immagine' }, { status: 400 })
     }
 
-    // Crea cartella upload se non esiste
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'properties')
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Genera nome file unico
-    const fileExtension = file.name.split('.').pop()
-    const filename = `${uuidv4()}.${fileExtension}`
-    const filepath = path.join(uploadDir, filename)
-
-    // Salva file
+    // Converti file in Buffer per Cloudinary
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
+
+    // Upload su Cloudinary
+    const cloudinaryResult = await uploadImage(buffer, 'properties')
 
     // Salva riferimento nel database
     const isPrimary = formData.get('isPrimary') === 'true'
@@ -91,24 +79,24 @@ export async function POST(
     const image = await prisma.propertyImage.create({
       data: {
         propertyId: id,
-        url: `/uploads/properties/${filename}`,
-        filename,
+        url: cloudinaryResult.secure_url,
+        filename: cloudinaryResult.public_id, // Salva public_id per eliminazione
         isPrimary,
         order,
       },
     })
 
     return NextResponse.json(image, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Errore nell\'upload immagine:', error)
     return NextResponse.json(
-      { error: 'Errore nell\'upload immagine' },
+      { error: error.message || 'Errore nell\'upload immagine' },
       { status: 500 }
     )
   }
 }
 
-// DELETE - Elimina immagine
+// DELETE - Elimina immagine da Cloudinary
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -132,13 +120,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Immagine non trovata' }, { status: 404 })
     }
 
-    // Elimina file dal filesystem
-    const filepath = path.join(process.cwd(), 'public', image.url)
+    // Elimina da Cloudinary (filename contiene il public_id)
     try {
-      const fs = await import('fs/promises')
-      await fs.unlink(filepath)
+      await deleteImage(image.filename)
     } catch (err) {
-      console.error('Errore eliminazione file:', err)
+      console.error('Errore eliminazione da Cloudinary:', err)
+      // Continua comunque con l'eliminazione dal database
     }
 
     // Elimina da database
