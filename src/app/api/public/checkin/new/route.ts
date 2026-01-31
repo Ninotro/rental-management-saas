@@ -82,33 +82,12 @@ export async function POST(request: NextRequest) {
     const selectedCheckIn = new Date(checkInDate)
     const selectedCheckOut = new Date(checkOutDate)
 
-    // Cerca prenotazione che matcha stanza e date
-    // Tolleranza: check-in entro 1 giorno dalla data selezionata
-    const oneDayBefore = new Date(selectedCheckIn)
-    oneDayBefore.setDate(oneDayBefore.getDate() - 1)
-    const oneDayAfter = new Date(selectedCheckIn)
-    oneDayAfter.setDate(oneDayAfter.getDate() + 1)
-
-    const matchingBooking = await prisma.booking.findFirst({
-      where: {
-        roomId: roomId,
-        status: { in: ['CONFIRMED', 'PENDING'] },
-        checkIn: {
-          gte: oneDayBefore,
-          lte: oneDayAfter,
-        },
-      },
-      orderBy: {
-        checkIn: 'asc',
-      },
-    })
-
-    // Crea il check-in
+    // Crea il check-in - SEMPRE PENDING, l'admin approva manualmente
     const guestCheckIn = await prisma.guestCheckIn.create({
       data: {
-        // Collegamento (se trovato match)
-        bookingId: matchingBooking?.id || null,
-        status: matchingBooking ? 'APPROVED' : 'PENDING',
+        // Mai collegamento automatico - l'admin decide
+        bookingId: null,
+        status: 'PENDING',
         // Dati selezionati
         selectedRoomId: roomId,
         selectedCheckIn,
@@ -139,11 +118,8 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         checkInId: guestCheckIn.id,
-        status: guestCheckIn.status,
-        matched: !!matchingBooking,
-        message: matchingBooking
-          ? 'Check-in completato e collegato alla prenotazione'
-          : 'Dati ricevuti. In attesa di approvazione da parte della struttura.',
+        status: 'PENDING',
+        message: 'Dati ricevuti correttamente. La struttura verificherà i tuoi dati e confermerà il check-in.',
       },
       { status: 201 }
     )

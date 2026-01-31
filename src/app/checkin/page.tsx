@@ -26,7 +26,7 @@ export default function PublicCheckInPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ matched: boolean; message: string } | null>(null)
+  const [result, setResult] = useState<{ message: string } | null>(null)
 
   // Form data
   const [formData, setFormData] = useState({
@@ -93,7 +93,7 @@ export default function PublicCheckInPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setResult({ matched: data.matched, message: data.message })
+        setResult({ message: data.message })
         setStep('success')
       } else {
         setError(data.error || 'Errore durante l\'invio')
@@ -508,16 +508,14 @@ export default function PublicCheckInPage() {
           {/* Success */}
           {step === 'success' && result && (
             <div className="text-center py-8">
-              <CheckCircle className={`w-16 h-16 mx-auto mb-4 ${result.matched ? 'text-green-500' : 'text-yellow-500'}`} />
+              <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {result.matched ? 'Check-in completato!' : 'Dati ricevuti!'}
+                Dati inviati con successo!
               </h2>
               <p className="text-gray-600">{result.message}</p>
-              {!result.matched && (
-                <p className="text-sm text-gray-500 mt-4">
-                  Riceverai conferma dalla struttura a breve.
-                </p>
-              )}
+              <p className="text-sm text-gray-500 mt-4">
+                Riceverai conferma dalla struttura a breve.
+              </p>
             </div>
           )}
         </div>
