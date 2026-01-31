@@ -35,7 +35,7 @@ interface CalendarEvent {
   startDate: Date
   endDate: Date
   type: 'booking' | 'blocked' | 'maintenance'
-  status?: 'confirmed' | 'pending' | 'cancelled'
+  status?: 'confirmed' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out'
 }
 
 interface BlockedEvent {

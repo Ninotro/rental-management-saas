@@ -14,16 +14,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const propertyId = searchParams.get('propertyId')
-    const type = searchParams.get('type')
 
     const where: any = {}
 
     if (propertyId) {
       where.propertyId = propertyId
-    }
-
-    if (type) {
-      where.type = type
     }
 
     const events = await prisma.calendarEvent.findMany({
@@ -60,10 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { propertyId, startDate, endDate, type, title, description } = body
+    const { propertyId, startDate, endDate, title, notes, isBlocked } = body
 
     // Validazione
-    if (!propertyId || !startDate || !endDate || !type) {
+    if (!propertyId || !startDate || !endDate) {
       return NextResponse.json(
         { error: 'Campi obbligatori mancanti' },
         { status: 400 }
@@ -83,9 +78,9 @@ export async function POST(request: NextRequest) {
         propertyId,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        type,
-        title: title || `${type === 'BLOCKED' ? 'Periodo bloccato' : 'Manutenzione'}`,
-        description,
+        title: title || 'Periodo bloccato',
+        notes,
+        isBlocked: isBlocked !== false, // default true
       },
       include: {
         property: {

@@ -44,15 +44,15 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { startDate, endDate, type, title, description } = body
+    const { startDate, endDate, title, notes, isBlocked } = body
 
     const updateData: any = {}
 
     if (startDate !== undefined) updateData.startDate = new Date(startDate)
     if (endDate !== undefined) updateData.endDate = new Date(endDate)
-    if (type !== undefined) updateData.type = type
     if (title !== undefined) updateData.title = title
-    if (description !== undefined) updateData.description = description
+    if (notes !== undefined) updateData.notes = notes
+    if (isBlocked !== undefined) updateData.isBlocked = isBlocked
 
     // Verifica che la data di fine sia dopo la data di inizio
     if (updateData.startDate && updateData.endDate) {

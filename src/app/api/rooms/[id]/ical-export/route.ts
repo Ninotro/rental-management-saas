@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import ical from 'ical-generator';
+import ical, { ICalEventBusyStatus, ICalEventTransparency } from 'ical-generator';
 
 /**
  * GET /api/rooms/[id]/ical-export
@@ -50,17 +50,17 @@ export async function GET(
 
     // Aggiungi ogni prenotazione come evento
     bookings.forEach((booking) => {
-      calendar.createEvent({
+      const event = calendar.createEvent({
         start: booking.checkIn,
         end: booking.checkOut,
         summary: `Occupato - ${booking.guestName || 'Prenotazione'}`,
         description: `Prenotazione ${booking.bookingCode || booking.id}`,
-        uid: booking.externalCalendarId || booking.id,
-        // Segna come "busy" così Airbnb/Booking vedono la stanza occupata
-        busystatus: 'BUSY',
-        // Non mostrare dettagli sensibili
-        transparency: 'OPAQUE',
       });
+
+      // Imposta uid, busystatus e transparency usando i metodi
+      event.uid(booking.externalCalendarId || booking.id);
+      event.busystatus(ICalEventBusyStatus.BUSY);
+      event.transparency(ICalEventTransparency.OPAQUE);
     });
 
     // Genera il feed iCal come stringa
