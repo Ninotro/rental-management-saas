@@ -20,6 +20,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -33,6 +34,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [pendingCheckIns, setPendingCheckIns] = useState(0)
+  const [pendingApproval, setPendingApproval] = useState(0)
 
   // Load sidebar state from localStorage on mount
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function DashboardLayout({
         if (response.ok) {
           const data = await response.json()
           setPendingCheckIns(data.count)
+          setPendingApproval(data.pendingApproval || 0)
         }
       } catch (error) {
         console.error('Errore nel recupero conteggio:', error)
@@ -86,6 +89,7 @@ export default function DashboardLayout({
     { name: 'Calendario Dipendenti', href: '/dashboard/staff-calendar', icon: CalendarDays },
     { name: 'Prenotazioni', href: '/dashboard/bookings', icon: Calendar },
     { name: 'Check-in Ospiti', href: '/dashboard/guest-checkins', icon: ClipboardCheck },
+    { name: 'Check-in in Attesa', href: '/dashboard/checkins-pending', icon: Clock, badge: 'pending' },
     { name: 'Strutture', href: '/dashboard/properties', icon: Home },
     { name: 'Dipendenti', href: '/dashboard/staff', icon: UserCheck },
   ]
@@ -169,6 +173,9 @@ export default function DashboardLayout({
                 const isActive = pathname === item.href
                 const Icon = item.icon
                 const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
+                const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
+                const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
+                const hasBadge = showBadge || showPendingBadge
                 return (
                   <Link
                     key={item.name}
@@ -177,19 +184,19 @@ export default function DashboardLayout({
                     className={`${isActive
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
                       : 'text-slate-700 hover:bg-white hover:shadow-md'
-                      } group flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-3 text-sm font-medium rounded-xl transition-all duration-200`}
+                      } group flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-3 text-sm font-medium rounded-xl transition-all duration-200 relative`}
                   >
                     <div className="flex items-center min-w-0">
                       <Icon className={`${sidebarCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-slate-500'} flex-shrink-0`} size={20} />
                       {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
                     </div>
-                    {showBadge && !sidebarCollapsed && (
-                      <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse ml-2">
-                        {pendingCheckIns}
+                    {hasBadge && !sidebarCollapsed && (
+                      <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse ml-2`}>
+                        {badgeCount}
                       </span>
                     )}
-                    {showBadge && sidebarCollapsed && (
-                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                    {hasBadge && sidebarCollapsed && (
+                      <span className={`absolute top-2 right-2 w-2 h-2 ${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} rounded-full animate-pulse`}></span>
                     )}
                   </Link>
                 )
@@ -208,6 +215,9 @@ export default function DashboardLayout({
                     const isActive = pathname === item.href
                     const Icon = item.icon
                     const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
+                    const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
+                    const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
+                    const hasBadge = showBadge || showPendingBadge
                     return (
                       <Link
                         key={item.name}
@@ -222,9 +232,9 @@ export default function DashboardLayout({
                           <Icon className={`mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`} size={20} />
                           {item.name}
                         </div>
-                        {showBadge && (
-                          <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
-                            {pendingCheckIns}
+                        {hasBadge && (
+                          <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse`}>
+                            {badgeCount}
                           </span>
                         )}
                       </Link>

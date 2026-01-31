@@ -2,7 +2,8 @@
 
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Calendar, DollarSign, Home, TrendingUp, Users, ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Calendar, DollarSign, Home, TrendingUp, Users, ArrowUpRight, ClipboardCheck, AlertCircle } from 'lucide-react'
 
 interface DashboardStats {
   totalBookings: number
@@ -11,14 +12,28 @@ interface DashboardStats {
   upcomingCheckIns: number
 }
 
+interface PendingCheckIn {
+  id: string
+  firstName: string
+  lastName: string
+  submittedAt: string
+  selectedRoom: {
+    name: string
+    property: { name: string }
+  } | null
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
     totalBookings: 0,
     totalRevenue: 0,
     totalProperties: 0,
     upcomingCheckIns: 0,
   })
+  const [pendingCheckIns, setPendingCheckIns] = useState<PendingCheckIn[]>([])
+  const [loadingPending, setLoadingPending] = useState(true)
 
   useEffect(() => {
     setStats({
@@ -27,6 +42,17 @@ export default function DashboardPage() {
       totalProperties: 5,
       upcomingCheckIns: 3,
     })
+
+    // Fetch pending check-ins
+    fetch('/api/guest-checkins/pending')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setPendingCheckIns(data)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoadingPending(false))
   }, [])
 
   const statCards = [
@@ -157,13 +183,74 @@ export default function DashboardPage() {
               <DollarSign size={24} className="mb-2" />
               <p className="font-medium">Registra Incasso</p>
             </button>
-            <button className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl text-white hover:shadow-lg transition-all">
-              <Users size={24} className="mb-2" />
-              <p className="font-medium">Gestisci Team</p>
+            <button
+              onClick={() => router.push('/dashboard/checkins-pending')}
+              className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl text-white hover:shadow-lg transition-all"
+            >
+              <ClipboardCheck size={24} className="mb-2" />
+              <p className="font-medium">Check-in Pending</p>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Pending Check-ins Alert */}
+      {pendingCheckIns.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl shadow-lg p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 p-3 rounded-xl">
+                <AlertCircle className="text-amber-600" size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Check-in in Attesa di Approvazione</h2>
+                <p className="text-slate-600 text-sm">{pendingCheckIns.length} check-in da verificare</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/checkins-pending')}
+              className="text-sm text-amber-700 hover:text-amber-800 font-medium bg-amber-100 px-4 py-2 rounded-lg hover:bg-amber-200 transition-colors"
+            >
+              Gestisci tutti →
+            </button>
+          </div>
+          <div className="space-y-3">
+            {pendingCheckIns.slice(0, 3).map((checkIn) => (
+              <div
+                key={checkIn.id}
+                className="flex items-center justify-between p-4 bg-white rounded-xl border border-amber-100 hover:border-amber-200 transition-colors cursor-pointer"
+                onClick={() => router.push('/dashboard/checkins-pending')}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
+                    {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">{checkIn.firstName} {checkIn.lastName}</p>
+                    <p className="text-sm text-slate-500">
+                      {checkIn.selectedRoom?.property.name || 'Struttura non specificata'}
+                      {checkIn.selectedRoom?.name && ` - ${checkIn.selectedRoom.name}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    In attesa
+                  </span>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {new Date(checkIn.submittedAt).toLocaleDateString('it-IT')}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {pendingCheckIns.length > 3 && (
+              <p className="text-center text-sm text-slate-500 pt-2">
+                + altri {pendingCheckIns.length - 3} check-in
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
