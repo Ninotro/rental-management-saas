@@ -10,7 +10,8 @@
       "Bash(npm run build:*)",
       "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\api\\\\rooms\" /s)",
       "Bash(git restore:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\dashboard\\\\bookings\\\\page.tsx.backup\")"
     ]
   }
 }

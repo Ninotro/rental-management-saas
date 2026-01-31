@@ -20,6 +20,7 @@ export async function GET(
       where: { id },
       include: {
         property: true,
+        room: true,
         createdBy: {
           select: {
             name: true,
@@ -27,6 +28,9 @@ export async function GET(
           },
         },
         transactions: true,
+        guestCheckIns: {
+          orderBy: { submittedAt: 'desc' },
+        },
       },
     })
 

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Upload, Plus, Trash2, ChevronRight, Home, Bed } from 'lucide-react'
+import { translations, Language } from '@/lib/translations'
 
 interface Property {
   id: string
@@ -13,51 +14,87 @@ interface Property {
 interface Room {
   id: string
   name: string
-  roomNumber: string | null
   type: string
   maxGuests: number
 }
 
-type Step = 'selection' | 'personal' | 'document' | 'confirm' | 'success'
+interface GuestFormData {
+  firstName: string
+  lastName: string
+  dateOfBirth: string
+  birthCity: string
+  birthProvince: string
+  residenceStreet: string
+  residencePostalCode: string
+  residenceCity: string
+  residenceProvince: string
+  fiscalCode: string
+  documentType: string
+  documentNumber: string
+  documentIssueDate: string
+  documentExpiryDate: string
+  documentFrontFile: File | null
+  documentBackFile: File | null
+  documentFrontUrl: string | null
+  documentBackUrl: string | null
+  uploadingFront: boolean
+  uploadingBack: boolean
+  isExempt: boolean
+  exemptionReason: string
+}
 
 export default function PublicCheckInPage() {
-  const [step, setStep] = useState<Step>('selection')
+  const [language, setLanguage] = useState<Language>('it')
+  const t = translations[language]
+
+  // Step management
+  const [step, setStep] = useState<'selection' | 'form'>('selection')
+
+  // Selection state
   const [properties, setProperties] = useState<Property[]>([])
+  const [selectedPropertyId, setSelectedPropertyId] = useState('')
+  const [selectedRoomId, setSelectedRoomId] = useState('')
+  const [checkInDate, setCheckInDate] = useState('')
+  const [checkOutDate, setCheckOutDate] = useState('')
+  const [numGuests, setNumGuests] = useState(1)
+
+  // Form state
+  const [guests, setGuests] = useState<GuestFormData[]>([createEmptyGuest()])
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+
+  // UI state
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ message: string } | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  // Form data
-  const [formData, setFormData] = useState({
-    // Selection
-    propertyId: '',
-    roomId: '',
-    checkInDate: '',
-    checkOutDate: '',
-    // Personal
-    firstName: '',
-    lastName: '',
-    dateOfBirth: '',
-    birthCity: '',
-    birthProvince: '',
-    fiscalCode: '',
-    // Residence
-    residenceStreet: '',
-    residencePostalCode: '',
-    residenceCity: '',
-    residenceProvince: '',
-    // Document
-    documentType: 'CARTA_IDENTITA',
-    documentNumber: '',
-    documentIssueDate: '',
-    documentExpiryDate: '',
-    documentFrontUrl: '',
-    documentBackUrl: '',
-    // Tax exemption
-    isExempt: false,
-    exemptionReason: '',
-  })
+  function createEmptyGuest(): GuestFormData {
+    return {
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      birthCity: '',
+      birthProvince: '',
+      residenceStreet: '',
+      residencePostalCode: '',
+      residenceCity: '',
+      residenceProvince: '',
+      fiscalCode: '',
+      documentType: 'CARTA_IDENTITA',
+      documentNumber: '',
+      documentIssueDate: '',
+      documentExpiryDate: '',
+      documentFrontFile: null,
+      documentBackFile: null,
+      documentFrontUrl: null,
+      documentBackUrl: null,
+      uploadingFront: false,
+      uploadingBack: false,
+      isExempt: false,
+      exemptionReason: '',
+    }
+  }
 
   useEffect(() => {
     fetchProperties()
@@ -77,97 +114,202 @@ export default function PublicCheckInPage() {
     }
   }
 
-  const selectedProperty = properties.find(p => p.id === formData.propertyId)
+  const selectedProperty = properties.find(p => p.id === selectedPropertyId)
+  const selectedRoom = selectedProperty?.rooms.find(r => r.id === selectedRoomId)
 
-  const handleSubmit = async () => {
+  const canProceedToForm = selectedPropertyId && selectedRoomId && checkInDate && checkOutDate && numGuests > 0
+
+  const handleProceedToForm = () => {
+    if (canProceedToForm) {
+      const guestsArray = Array(numGuests).fill(null).map(() => createEmptyGuest())
+      setGuests(guestsArray)
+      setStep('form')
+    }
+  }
+
+  const handleFileUpload = async (file: File, guestIndex: number, type: 'front' | 'back') => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const newGuests = [...guests]
+      if (type === 'front') newGuests[guestIndex].uploadingFront = true
+      else newGuests[guestIndex].uploadingBack = true
+      setGuests(newGuests)
+
+      const response = await fetch('/api/public/upload-document', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const updatedGuests = [...guests]
+        if (type === 'front') {
+          updatedGuests[guestIndex].documentFrontUrl = data.url
+          updatedGuests[guestIndex].documentFrontFile = file
+        } else {
+          updatedGuests[guestIndex].documentBackUrl = data.url
+          updatedGuests[guestIndex].documentBackFile = file
+        }
+        setGuests(updatedGuests)
+      } else {
+        setError(t.uploadError)
+      }
+    } catch (err) {
+      setError(t.uploadError)
+    } finally {
+      const newGuests = [...guests]
+      if (type === 'front') newGuests[guestIndex].uploadingFront = false
+      else newGuests[guestIndex].uploadingBack = false
+      setGuests(newGuests)
+    }
+  }
+
+  const addGuest = () => {
+    if (guests.length < (selectedRoom?.maxGuests || 10)) {
+      setGuests([...guests, createEmptyGuest()])
+    }
+  }
+
+  const removeGuest = (index: number) => {
+    if (guests.length > 1) {
+      setGuests(guests.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateGuest = (index: number, field: keyof GuestFormData, value: any) => {
+    const newGuests = [...guests]
+    newGuests[index] = { ...newGuests[index], [field]: value }
+    setGuests(newGuests)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setSubmitting(true)
     setError('')
 
     try {
-      const response = await fetch('/api/public/checkin/new', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
+      for (let i = 0; i < guests.length; i++) {
+        const guest = guests[i]
+        const response = await fetch('/api/public/checkin/new', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            selectedRoomId,
+            selectedCheckIn: checkInDate,
+            selectedCheckOut: checkOutDate,
+            email: i === 0 ? email : `${guest.firstName.toLowerCase()}.${guest.lastName.toLowerCase()}@guest.local`,
+            phone: i === 0 ? phone : '',
+            firstName: guest.firstName,
+            lastName: guest.lastName,
+            birthDate: guest.dateOfBirth,
+            birthPlace: `${guest.birthCity} (${guest.birthProvince})`,
+            nationality: 'Italiana',
+            fiscalCode: guest.fiscalCode,
+            residenceAddress: `${guest.residenceStreet}, ${guest.residencePostalCode} ${guest.residenceCity} (${guest.residenceProvince})`,
+            documentType: guest.documentType,
+            documentNumber: guest.documentNumber,
+            documentExpiry: guest.documentExpiryDate,
+            documentFrontUrl: guest.documentFrontUrl,
+            documentBackUrl: guest.documentBackUrl,
+          }),
+        })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setResult({ message: data.message })
-        setStep('success')
-      } else {
-        setError(data.error || 'Errore durante l\'invio')
+        if (!response.ok) {
+          const data = await response.json()
+          setError(data.error || t.allFieldsRequired)
+          setSubmitting(false)
+          return
+        }
       }
+      setSuccess(true)
     } catch (err) {
-      setError('Errore di connessione. Riprova.')
+      setError(t.allFieldsRequired)
     } finally {
       setSubmitting(false)
     }
   }
 
-  const updateForm = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    return new Date(dateString).toLocaleDateString(language === 'it' ? 'it-IT' : 'en-US', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    })
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <CheckCircle className="mx-auto text-green-600 mb-4" size={48} />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">{t.successTitle}</h1>
+          <p className="text-slate-600 mb-6">{t.successMessage}</p>
+          <p className="text-sm text-slate-500">{t.confirmationEmail}</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Check-in Online</h1>
-          <p className="text-gray-600 mt-2">Compila i tuoi dati per il check-in</p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            {['selection', 'personal', 'document', 'confirm'].map((s, i) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step === s ? 'bg-blue-600 text-white' :
-                  ['selection', 'personal', 'document', 'confirm'].indexOf(step) > i
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {i + 1}
-                </div>
-                {i < 3 && <div className="w-12 h-1 bg-gray-200 mx-2" />}
-              </div>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Language Switcher */}
+        <div className="flex justify-end mb-4">
+          <div className="bg-white rounded-full shadow-lg p-2 flex space-x-2">
+            <button
+              onClick={() => setLanguage('it')}
+              className={`px-4 py-2 rounded-full flex items-center space-x-2 transition-all ${language === 'it' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <span className="text-xl">🇮🇹</span>
+              <span className="font-medium">IT</span>
+            </button>
+            <button
+              onClick={() => setLanguage('en')}
+              className={`px-4 py-2 rounded-full flex items-center space-x-2 transition-all ${language === 'en' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <span className="text-xl">🇬🇧</span>
+              <span className="font-medium">EN</span>
+            </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              {error}
-            </div>
-          )}
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">{t.title}</h1>
+          <p className="text-slate-600">{t.subtitle}</p>
+        </div>
 
-          {/* Step 1: Selection */}
-          {step === 'selection' && (
+        {/* Step 1: Selection */}
+        {step === 'selection' && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
+              <Calendar className="mr-2 text-blue-600" size={24} />
+              {language === 'it' ? 'Seleziona il tuo soggiorno' : 'Select your stay'}
+            </h2>
+
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Seleziona struttura e date</h2>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Struttura *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <Home size={16} className="inline mr-2" />
+                  {t.structure} *
+                </label>
                 <select
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                  value={formData.propertyId}
-                  onChange={(e) => {
-                    updateForm('propertyId', e.target.value)
-                    updateForm('roomId', '')
-                  }}
+                  value={selectedPropertyId}
+                  onChange={(e) => { setSelectedPropertyId(e.target.value); setSelectedRoomId('') }}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Seleziona struttura...</option>
+                  <option value="">{language === 'it' ? 'Seleziona struttura...' : 'Select property...'}</option>
                   {properties.map(p => (
                     <option key={p.id} value={p.id}>{p.name} - {p.city}</option>
                   ))}
@@ -176,349 +318,316 @@ export default function PublicCheckInPage() {
 
               {selectedProperty && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Stanza *</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <Bed size={16} className="inline mr-2" />
+                    {language === 'it' ? 'Stanza' : 'Room'} *
+                  </label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.roomId}
-                    onChange={(e) => updateForm('roomId', e.target.value)}
+                    value={selectedRoomId}
+                    onChange={(e) => setSelectedRoomId(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Seleziona stanza...</option>
+                    <option value="">{language === 'it' ? 'Seleziona stanza...' : 'Select room...'}</option>
                     {selectedProperty.rooms.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.name} {r.roomNumber && `(#${r.roomNumber})`} - Max {r.maxGuests} ospiti
-                      </option>
+                      <option key={r.id} value={r.id}>{r.name} (Max {r.maxGuests} {t.guests})</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Check-in *</label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.checkInDate}
-                    onChange={(e) => updateForm('checkInDate', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Check-out *</label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.checkOutDate}
-                    onChange={(e) => updateForm('checkOutDate', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => setStep('personal')}
-                disabled={!formData.roomId || !formData.checkInDate || !formData.checkOutDate}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                Continua
-              </button>
-            </div>
-          )}
-
-          {/* Step 2: Personal Data */}
-          {step === 'personal' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Dati personali</h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.firstName}
-                    onChange={(e) => updateForm('firstName', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cognome *</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.lastName}
-                    onChange={(e) => updateForm('lastName', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data di nascita *</label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => updateForm('dateOfBirth', e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Luogo di nascita *</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.birthCity}
-                    onChange={(e) => updateForm('birthCity', e.target.value)}
-                    placeholder="Città"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Provincia *</label>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 uppercase"
-                    value={formData.birthProvince}
-                    onChange={(e) => updateForm('birthProvince', e.target.value.toUpperCase())}
-                    placeholder="ES: RM"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Codice Fiscale *</label>
-                <input
-                  type="text"
-                  maxLength={16}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 uppercase"
-                  value={formData.fiscalCode}
-                  onChange={(e) => updateForm('fiscalCode', e.target.value.toUpperCase())}
-                />
-              </div>
-
-              <h3 className="text-lg font-medium text-gray-900 pt-4">Residenza</h3>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Indirizzo *</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                  value={formData.residenceStreet}
-                  onChange={(e) => updateForm('residenceStreet', e.target.value)}
-                  placeholder="Via e numero civico"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">CAP *</label>
-                  <input
-                    type="text"
-                    maxLength={5}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.residencePostalCode}
-                    onChange={(e) => updateForm('residencePostalCode', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Città *</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.residenceCity}
-                    onChange={(e) => updateForm('residenceCity', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Prov. *</label>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 uppercase"
-                    value={formData.residenceProvince}
-                    onChange={(e) => updateForm('residenceProvince', e.target.value.toUpperCase())}
-                  />
-                </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setStep('selection')}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Indietro
-                </button>
-                <button
-                  onClick={() => setStep('document')}
-                  disabled={!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.fiscalCode}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white py-3 rounded-lg font-medium transition-colors"
-                >
-                  Continua
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Document */}
-          {step === 'document' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Documento d'identità</h2>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo documento *</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                  value={formData.documentType}
-                  onChange={(e) => updateForm('documentType', e.target.value)}
-                >
-                  <option value="CARTA_IDENTITA">Carta d'identità</option>
-                  <option value="PASSAPORTO">Passaporto</option>
-                  <option value="PATENTE">Patente di guida</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Numero documento *</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                  value={formData.documentNumber}
-                  onChange={(e) => updateForm('documentNumber', e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data rilascio *</label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.documentIssueDate}
-                    onChange={(e) => updateForm('documentIssueDate', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data scadenza *</label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                    value={formData.documentExpiryDate}
-                    onChange={(e) => updateForm('documentExpiryDate', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-6 mt-6">
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded text-blue-600"
-                    checked={formData.isExempt}
-                    onChange={(e) => updateForm('isExempt', e.target.checked)}
-                  />
-                  <span className="text-sm text-gray-700">Esente da tassa di soggiorno</span>
-                </label>
-                {formData.isExempt && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Motivo esenzione</label>
+              {selectedRoom && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Check-in *</label>
                     <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                      value={formData.exemptionReason}
-                      onChange={(e) => updateForm('exemptionReason', e.target.value)}
-                      placeholder="Es: Minore di 14 anni"
+                      type="date"
+                      value={checkInDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setCheckInDate(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                )}
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Check-out *</label>
+                    <input
+                      type="date"
+                      value={checkOutDate}
+                      min={checkInDate || new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setCheckOutDate(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
 
-              <div className="flex space-x-4">
+              {checkInDate && checkOutDate && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <Users size={16} className="inline mr-2" />
+                    {language === 'it' ? 'Numero ospiti' : 'Number of guests'} *
+                  </label>
+                  <select
+                    value={numGuests}
+                    onChange={(e) => setNumGuests(parseInt(e.target.value))}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Array.from({ length: selectedRoom?.maxGuests || 1 }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n}>{n} {n === 1 ? t.guest : t.guests}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {canProceedToForm && (
                 <button
-                  onClick={() => setStep('personal')}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  onClick={handleProceedToForm}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-semibold flex items-center justify-center space-x-2 shadow-lg"
                 >
-                  Indietro
+                  <span>{language === 'it' ? 'Continua con i dati ospiti' : 'Continue with guest data'}</span>
+                  <ChevronRight size={20} />
                 </button>
-                <button
-                  onClick={() => setStep('confirm')}
-                  disabled={!formData.documentNumber || !formData.documentIssueDate || !formData.documentExpiryDate}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white py-3 rounded-lg font-medium transition-colors"
-                >
-                  Continua
-                </button>
-              </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 4: Confirm */}
-          {step === 'confirm' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Conferma dati</h2>
-
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-gray-600">Nome:</span>
-                  <span className="font-medium">{formData.firstName} {formData.lastName}</span>
-
-                  <span className="text-gray-600">Data nascita:</span>
-                  <span className="font-medium">{formData.dateOfBirth}</span>
-
-                  <span className="text-gray-600">Codice Fiscale:</span>
-                  <span className="font-medium">{formData.fiscalCode}</span>
-
-                  <span className="text-gray-600">Documento:</span>
-                  <span className="font-medium">{formData.documentType} - {formData.documentNumber}</span>
-
-                  <span className="text-gray-600">Check-in:</span>
-                  <span className="font-medium">{formData.checkInDate}</span>
-
-                  <span className="text-gray-600">Check-out:</span>
-                  <span className="font-medium">{formData.checkOutDate}</span>
+        {/* Step 2: Form */}
+        {step === 'form' && (
+          <>
+            {/* Summary */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-900">{t.bookingSummary}</h2>
+                <button onClick={() => setStep('selection')} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  {language === 'it' ? 'Modifica' : 'Edit'}
+                </button>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="flex items-start space-x-3">
+                  <MapPin className="text-blue-600 mt-1" size={20} />
+                  <div>
+                    <p className="text-sm text-slate-600">{t.structure}</p>
+                    <p className="font-semibold text-slate-900">{selectedProperty?.name}</p>
+                    <p className="text-sm text-slate-600">{selectedRoom?.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Calendar className="text-blue-600 mt-1" size={20} />
+                  <div>
+                    <p className="text-sm text-slate-600">{t.stayDates}</p>
+                    <p className="font-semibold text-slate-900">{formatDate(checkInDate)} - {formatDate(checkOutDate)}</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Users className="text-blue-600 mt-1" size={20} />
+                  <div>
+                    <p className="text-sm text-slate-600">{t.guests}</p>
+                    <p className="font-semibold text-slate-900">{numGuests} {numGuests === 1 ? t.guest : t.guests}</p>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <p className="text-sm text-gray-600">
-                Confermando, i tuoi dati verranno inviati alla struttura per il check-in.
-                I dati verranno trattati secondo la normativa sulla privacy.
-              </p>
-
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setStep('document')}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Indietro
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Invio in corso...
-                    </>
-                  ) : (
-                    'Conferma Check-in'
-                  )}
-                </button>
+            {/* Contact */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">{language === 'it' ? 'Contatti' : 'Contact'}</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Email *</label>
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">{language === 'it' ? 'Telefono' : 'Phone'} *</label>
+                  <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Success */}
-          {step === 'success' && result && (
-            <div className="text-center py-8">
-              <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Dati inviati con successo!
-              </h2>
-              <p className="text-gray-600">{result.message}</p>
-              <p className="text-sm text-gray-500 mt-4">
-                Riceverai conferma dalla struttura a breve.
-              </p>
-            </div>
-          )}
-        </div>
+            {/* Guest Forms */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {guests.map((guest, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-slate-900">{t.guestNumber} {index + 1} {t.requiredByLaw}</h2>
+                    {guests.length > 1 && (
+                      <button type="button" onClick={() => removeGuest(index)} className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg">
+                        <Trash2 size={20} />
+                      </button>
+                    )}
+                  </div>
+
+                  {error && index === 0 && (
+                    <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
+                      <AlertCircle size={18} className="mr-2" />{error}
+                    </div>
+                  )}
+
+                  {/* Personal Data */}
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-slate-900 mb-4">{t.personalData}</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.firstName} *</label>
+                        <input type="text" required value={guest.firstName} onChange={(e) => updateGuest(index, 'firstName', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.lastName} *</label>
+                        <input type="text" required value={guest.lastName} onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.dateOfBirth} *</label>
+                        <input type="date" required value={guest.dateOfBirth} onChange={(e) => updateGuest(index, 'dateOfBirth', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.fiscalCode} *</label>
+                        <input type="text" required maxLength={16} value={guest.fiscalCode} onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCity} *</label>
+                        <input type="text" required value={guest.birthCity} onChange={(e) => updateGuest(index, 'birthCity', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthProvince} *</label>
+                        <input type="text" required maxLength={2} value={guest.birthProvince} onChange={(e) => updateGuest(index, 'birthProvince', e.target.value.toUpperCase())}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceStreet} *</label>
+                        <input type="text" required value={guest.residenceStreet} onChange={(e) => updateGuest(index, 'residenceStreet', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.postalCode} *</label>
+                        <input type="text" required value={guest.residencePostalCode} onChange={(e) => updateGuest(index, 'residencePostalCode', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceCity} *</label>
+                        <input type="text" required value={guest.residenceCity} onChange={(e) => updateGuest(index, 'residenceCity', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceProvince} *</label>
+                        <input type="text" required maxLength={2} value={guest.residenceProvince} onChange={(e) => updateGuest(index, 'residenceProvince', e.target.value.toUpperCase())}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Document */}
+                  <div className="border-t pt-6 mb-6">
+                    <h3 className="font-semibold text-slate-900 mb-4">{t.identityDocument}</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentType} *</label>
+                        <select required value={guest.documentType} onChange={(e) => updateGuest(index, 'documentType', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                          <option value="CARTA_IDENTITA">{t.idCard}</option>
+                          <option value="PASSAPORTO">{t.passport}</option>
+                          <option value="PATENTE">{t.drivingLicense}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentNumber} *</label>
+                        <input type="text" required value={guest.documentNumber} onChange={(e) => updateGuest(index, 'documentNumber', e.target.value.toUpperCase())}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.issueDate} *</label>
+                        <input type="date" required value={guest.documentIssueDate} onChange={(e) => updateGuest(index, 'documentIssueDate', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.expiryDate} *</label>
+                        <input type="date" required value={guest.documentExpiryDate} onChange={(e) => updateGuest(index, 'documentExpiryDate', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload */}
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold text-slate-900 mb-2">{t.uploadDocument}</h3>
+                    <p className="text-sm text-slate-600 mb-4">{t.uploadDocumentDesc}</p>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentFront}</label>
+                        <input type="file" id={`front-${index}`} accept="image/*,application/pdf" className="hidden"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, index, 'front') }} />
+                        <label htmlFor={`front-${index}`}
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentFrontFile ? 'border-green-500 bg-green-50' : 'border-slate-300'}`}>
+                          {guest.uploadingFront ? (
+                            <div className="flex flex-col items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                              <p className="text-sm text-slate-600">{t.uploadingFile}</p>
+                            </div>
+                          ) : guest.documentFrontFile ? (
+                            <div className="flex flex-col items-center">
+                              <CheckCircle className="text-green-600 mb-2" size={32} />
+                              <p className="text-sm text-green-700 font-medium">{guest.documentFrontFile.name}</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <Upload className="text-slate-400 mb-2" size={32} />
+                              <p className="text-sm text-slate-600">{t.clickToUpload}</p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentBack}</label>
+                        <input type="file" id={`back-${index}`} accept="image/*,application/pdf" className="hidden"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, index, 'back') }} />
+                        <label htmlFor={`back-${index}`}
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentBackFile ? 'border-green-500 bg-green-50' : 'border-slate-300'}`}>
+                          {guest.uploadingBack ? (
+                            <div className="flex flex-col items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                              <p className="text-sm text-slate-600">{t.uploadingFile}</p>
+                            </div>
+                          ) : guest.documentBackFile ? (
+                            <div className="flex flex-col items-center">
+                              <CheckCircle className="text-green-600 mb-2" size={32} />
+                              <p className="text-sm text-green-700 font-medium">{guest.documentBackFile.name}</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <Upload className="text-slate-400 mb-2" size={32} />
+                              <p className="text-sm text-slate-600">{t.clickToUpload}</p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {guests.length < (selectedRoom?.maxGuests || 10) && (
+                <button type="button" onClick={addGuest}
+                  className="w-full bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 text-blue-600 py-4 rounded-xl font-medium flex items-center justify-center space-x-2">
+                  <Plus size={20} /><span>{t.addGuest}</span>
+                </button>
+              )}
+
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-xs text-slate-600">{t.privacyNotice}</p>
+              </div>
+
+              <button type="submit" disabled={submitting}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-semibold disabled:opacity-50 shadow-lg">
+                {submitting ? t.submitting : t.submit}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   )

@@ -52,6 +52,18 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        selectedRoom: {
+          select: {
+            name: true,
+            property: {
+              select: {
+                name: true,
+                city: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         submittedAt: 'desc',

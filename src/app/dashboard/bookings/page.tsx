@@ -26,7 +26,6 @@ import { it } from 'date-fns/locale'
 
 interface Booking {
   id: string
-  bookingCode: string | null
   guestName: string
   guestEmail: string
   guestPhone: string | null
@@ -129,12 +128,6 @@ export default function BookingsPage() {
     } catch (error) {
       console.error('Error fetching rooms:', error)
     }
-  }
-
-  const copyCheckInLink = (bookingCode: string) => {
-    const link = `${window.location.origin}/checkin/${bookingCode}`
-    navigator.clipboard.writeText(link)
-    alert('Link copiato negli appunti!')
   }
 
   const getStatusColor = (status: string) => {
@@ -412,25 +405,6 @@ export default function BookingsPage() {
                     </div>
                   </div>
 
-                  {/* Codice Prenotazione e Link Check-in */}
-                  {booking.bookingCode && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-blue-600 font-medium mb-1">Codice Prenotazione</p>
-                          <p className="text-sm font-bold text-blue-900">{booking.bookingCode}</p>
-                        </div>
-                        <button
-                          onClick={() => copyCheckInLink(booking.bookingCode!)}
-                          className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 bg-white px-3 py-2 rounded-lg border border-blue-300 hover:bg-blue-50 transition-colors text-sm font-medium"
-                          title="Copia link check-in"
-                        >
-                          <Copy size={14} />
-                          <span>Copia Link Check-in</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Dates & Status */}
@@ -994,43 +968,6 @@ function EditBookingModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Codice Prenotazione */}
-          {booking.bookingCode && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-blue-600 font-medium mb-1">Codice Prenotazione</p>
-                  <p className="text-lg font-bold text-blue-900">{booking.bookingCode}</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(booking.bookingCode!, 'bookingCode')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${copiedField === 'bookingCode'
-                      ? 'bg-green-50 border-green-300 text-green-700'
-                      : 'bg-white border-blue-300 text-blue-600 hover:bg-blue-50'
-                      }`}
-                  >
-                    <Copy size={16} />
-                    <span>{copiedField === 'bookingCode' ? 'Copiato!' : 'Copia Codice'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const link = `${window.location.origin}/checkin/${booking.bookingCode}`
-                      navigator.clipboard.writeText(link)
-                      alert('Link check-in copiato!')
-                    }}
-                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 bg-white px-3 py-2 rounded-lg border border-blue-300 hover:bg-blue-50 transition-colors text-sm font-medium"
-                  >
-                    <Copy size={16} />
-                    <span>Copia Link</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Info Proprietà (read-only) */}
           <div className="bg-slate-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">

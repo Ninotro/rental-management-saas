@@ -26,8 +26,19 @@ interface GuestCheckIn {
   submittedAt: string
   submittedToPolice: boolean
   submittedToPoliceAt: string | null
+  // Dati dal nuovo flusso (senza prenotazione)
+  selectedCheckIn: string | null
+  selectedCheckOut: string | null
+  selectedRoom: {
+    name: string
+    property: {
+      name: string
+      city: string
+      address: string
+    }
+  } | null
+  // Dati dal vecchio flusso (con prenotazione)
   booking: {
-    bookingCode: string
     checkIn: string
     checkOut: string
     touristTaxPaymentProof: string | null
@@ -39,7 +50,7 @@ interface GuestCheckIn {
     room: {
       name: string
     } | null
-  }
+  } | null
 }
 
 export default function GuestCheckInsPage() {
@@ -75,6 +86,22 @@ export default function GuestCheckInsPage() {
     }
   }
 
+  // Helper per ottenere i dati della struttura (da booking o selectedRoom)
+  const getPropertyName = (c: GuestCheckIn) =>
+    c.booking?.property?.name || c.selectedRoom?.property?.name || 'N/A'
+
+  const getPropertyCity = (c: GuestCheckIn) =>
+    c.booking?.property?.city || c.selectedRoom?.property?.city || 'N/A'
+
+  const getRoomName = (c: GuestCheckIn) =>
+    c.booking?.room?.name || c.selectedRoom?.name || 'N/A'
+
+  const getCheckInDate = (c: GuestCheckIn) =>
+    c.booking?.checkIn || c.selectedCheckIn || c.submittedAt
+
+  const getCheckOutDate = (c: GuestCheckIn) =>
+    c.booking?.checkOut || c.selectedCheckOut || c.submittedAt
+
   const filterCheckIns = () => {
     let filtered = [...checkIns]
 
@@ -85,7 +112,7 @@ export default function GuestCheckInsPage() {
           c.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           c.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           c.fiscalCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.booking.property.name.toLowerCase().includes(searchTerm.toLowerCase())
+          getPropertyName(c).toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -126,9 +153,9 @@ export default function GuestCheckInsPage() {
 
     // Prepara dati tabella
     const tableData = filteredCheckIns.map((checkIn) => [
-      new Date(checkIn.booking.checkIn).toLocaleDateString('it-IT'),
-      checkIn.booking.property.name,
-      checkIn.booking.property.city,
+      new Date(getCheckInDate(checkIn)).toLocaleDateString('it-IT'),
+      getPropertyName(checkIn),
+      getPropertyCity(checkIn),
       `${checkIn.firstName} ${checkIn.lastName}`,
       new Date(checkIn.dateOfBirth).toLocaleDateString('it-IT'),
       checkIn.fiscalCode,
@@ -185,7 +212,8 @@ export default function GuestCheckInsPage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
 
-    const checkInDate = new Date(checkIn.booking.checkIn)
+    const checkInDateStr = getCheckInDate(checkIn)
+    const checkInDate = new Date(checkInDateStr)
     checkInDate.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
 
     // Considera scaduto se la data di check-in è antecedente (prima) a oggi
@@ -375,15 +403,15 @@ export default function GuestCheckInsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-slate-900">{checkIn.booking.property.name}</p>
-                      <p className="text-sm text-slate-600">{checkIn.booking.room?.name || 'N/A'}</p>
-                      <p className="text-xs text-slate-500">{checkIn.booking.property.city}</p>
+                      <p className="font-medium text-slate-900">{getPropertyName(checkIn)}</p>
+                      <p className="text-sm text-slate-600">{getRoomName(checkIn)}</p>
+                      <p className="text-xs text-slate-500">{getPropertyCity(checkIn)}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <Calendar className="text-slate-400" size={16} />
-                      <span className="text-slate-900">{formatDate(checkIn.booking.checkIn)}</span>
+                      <span className="text-slate-900">{formatDate(getCheckInDate(checkIn))}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -455,6 +483,10 @@ export default function GuestCheckInsPage() {
           onClose={() => setShowDetailModal(false)}
           formatDate={formatDate}
           getDocumentTypeLabel={getDocumentTypeLabel}
+          getPropertyName={getPropertyName}
+          getRoomName={getRoomName}
+          getCheckInDate={getCheckInDate}
+          getCheckOutDate={getCheckOutDate}
         />
       )}
     </div>
@@ -467,11 +499,19 @@ function DetailCheckInModal({
   onClose,
   formatDate,
   getDocumentTypeLabel,
+  getPropertyName,
+  getRoomName,
+  getCheckInDate,
+  getCheckOutDate,
 }: {
   checkIn: GuestCheckIn
   onClose: () => void
   formatDate: (date: string) => string
   getDocumentTypeLabel: (type: string) => string
+  getPropertyName: (c: GuestCheckIn) => string
+  getRoomName: (c: GuestCheckIn) => string
+  getCheckInDate: (c: GuestCheckIn) => string
+  getCheckOutDate: (c: GuestCheckIn) => string
 }) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
@@ -526,31 +566,31 @@ function DetailCheckInModal({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Codice Prenotazione</p>
-                    <CopyButton text={checkIn.booking.bookingCode} fieldName="bookingCode" />
+                    <p className="text-sm text-slate-600">Struttura</p>
+                    <CopyButton text={getPropertyName(checkIn)} fieldName="property" />
                   </div>
-                  <p className="font-medium text-slate-900">{checkIn.booking.bookingCode}</p>
+                  <p className="font-medium text-slate-900">{getPropertyName(checkIn)}</p>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Struttura</p>
-                    <CopyButton text={checkIn.booking.property.name} fieldName="property" />
+                    <p className="text-sm text-slate-600">Stanza</p>
+                    <CopyButton text={getRoomName(checkIn)} fieldName="room" />
                   </div>
-                  <p className="font-medium text-slate-900">{checkIn.booking.property.name}</p>
+                  <p className="font-medium text-slate-900">{getRoomName(checkIn)}</p>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm text-slate-600">Check-in</p>
-                    <CopyButton text={formatDate(checkIn.booking.checkIn)} fieldName="checkIn" />
+                    <CopyButton text={formatDate(getCheckInDate(checkIn))} fieldName="checkIn" />
                   </div>
-                  <p className="font-medium text-slate-900">{formatDate(checkIn.booking.checkIn)}</p>
+                  <p className="font-medium text-slate-900">{formatDate(getCheckInDate(checkIn))}</p>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm text-slate-600">Check-out</p>
-                    <CopyButton text={formatDate(checkIn.booking.checkOut)} fieldName="checkOut" />
+                    <CopyButton text={formatDate(getCheckOutDate(checkIn))} fieldName="checkOut" />
                   </div>
-                  <p className="font-medium text-slate-900">{formatDate(checkIn.booking.checkOut)}</p>
+                  <p className="font-medium text-slate-900">{formatDate(getCheckOutDate(checkIn))}</p>
                 </div>
               </div>
             </div>
@@ -686,7 +726,7 @@ function DetailCheckInModal({
               )}
 
               {/* Screenshot Pagamento Tassa di Soggiorno */}
-              {checkIn.booking.touristTaxPaymentProof && (
+              {checkIn.booking?.touristTaxPaymentProof && (
                 <div className="mt-6 border-t pt-6">
                   <div className="flex items-center space-x-2 mb-3">
                     <CreditCard className="text-green-600" size={20} />
@@ -694,7 +734,7 @@ function DetailCheckInModal({
                   </div>
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                     <img
-                      src={checkIn.booking.touristTaxPaymentProof}
+                      src={checkIn.booking?.touristTaxPaymentProof || ''}
                       alt="Conferma pagamento tassa di soggiorno"
                       className="w-full max-w-md mx-auto rounded-lg border-2 border-green-300 shadow-lg"
                     />

@@ -132,10 +132,10 @@ export default function Calendar({ events, onDateClick, onEventClick, selectedDa
       const today = isToday(date)
       const selected = isSelected(date)
 
-      // Get unique rooms occupied for this day
+      // Get unique rooms occupied for this day (with property name)
       const occupiedRooms = dayEvents
         .filter(e => e.type === 'booking' && e.status !== 'cancelled' && e.roomName)
-        .map(e => e.roomName!)
+        .map(e => `${e.roomName}${e.propertyName ? ` (${e.propertyName})` : ''}`)
         .filter((value, index, self) => self.indexOf(value) === index)
 
       days.push(
