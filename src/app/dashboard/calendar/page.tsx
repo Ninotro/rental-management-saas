@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Calendar from '@/components/Calendar'
-import { Calendar as CalendarIcon, Home, Bed, Plus, X } from 'lucide-react'
+import { Calendar as CalendarIcon, Home, Bed, Plus, X, RefreshCw } from 'lucide-react'
 
 interface Property {
   id: string
@@ -68,6 +68,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
     fetchProperties()
@@ -132,6 +134,40 @@ export default function CalendarPage() {
       }
     } catch (error) {
       console.error('Error fetching blocked events:', error)
+    }
+  }
+
+  const handleSyncAllCalendars = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const response = await fetch('/api/sync-all-ical', {
+        method: 'POST',
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        setSyncResult({
+          success: true,
+          message: `Sincronizzazione completata: ${data.synced || 0} stanze sincronizzate, ${data.newBookings || 0} nuove prenotazioni importate`,
+        })
+        // Ricarica le prenotazioni dopo la sync
+        fetchBookings()
+      } else {
+        setSyncResult({
+          success: false,
+          message: data.error || 'Errore durante la sincronizzazione',
+        })
+      }
+    } catch (error) {
+      setSyncResult({
+        success: false,
+        message: 'Errore di connessione durante la sincronizzazione',
+      })
+    } finally {
+      setSyncing(false)
+      // Nascondi il messaggio dopo 5 secondi
+      setTimeout(() => setSyncResult(null), 5000)
     }
   }
 
@@ -211,14 +247,31 @@ export default function CalendarPage() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Calendario</h1>
           <p className="text-slate-600">Gestisci disponibilità e prenotazioni</p>
         </div>
-        <button
-          onClick={() => setShowBlockModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
-        >
-          <Plus size={20} />
-          <span>Blocca Date</span>
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSyncAllCalendars}
+            disabled={syncing}
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
+            <span>{syncing ? 'Sincronizzazione...' : 'Sincronizza Calendari'}</span>
+          </button>
+          <button
+            onClick={() => setShowBlockModal(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
+          >
+            <Plus size={20} />
+            <span>Blocca Date</span>
+          </button>
+        </div>
       </div>
+
+      {/* Sync Result Message */}
+      {syncResult && (
+        <div className={`p-4 rounded-xl ${syncResult.success ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+          {syncResult.message}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
