@@ -27,6 +27,9 @@ interface Booking {
   property: {
     name: string
   }
+  room?: {
+    name: string
+  } | null
 }
 
 interface CalendarEvent {
@@ -36,6 +39,9 @@ interface CalendarEvent {
   endDate: Date
   type: 'booking' | 'blocked' | 'maintenance'
   status?: 'confirmed' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out'
+  roomName?: string
+  propertyName?: string
+  guestName?: string
 }
 
 interface BlockedEvent {
@@ -149,6 +155,9 @@ export default function CalendarPage() {
       endDate: new Date(booking.checkOut),
       type: 'booking' as const,
       status: booking.status.toLowerCase() as 'confirmed' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out',
+      roomName: booking.room?.name,
+      propertyName: booking.property.name,
+      guestName: booking.guestName,
     }))
 
     const blockedCalendarEvents: CalendarEvent[] = filteredBlocked.map(event => ({

@@ -10,6 +10,9 @@ interface CalendarEvent {
   endDate: Date
   type: 'booking' | 'blocked' | 'maintenance'
   status?: 'confirmed' | 'pending' | 'cancelled' | 'checked_in' | 'checked_out'
+  roomName?: string
+  propertyName?: string
+  guestName?: string
 }
 
 interface CalendarProps {
@@ -129,32 +132,55 @@ export default function Calendar({ events, onDateClick, onEventClick, selectedDa
       const today = isToday(date)
       const selected = isSelected(date)
 
+      // Get unique rooms occupied for this day
+      const occupiedRooms = dayEvents
+        .filter(e => e.type === 'booking' && e.status !== 'cancelled' && e.roomName)
+        .map(e => e.roomName!)
+        .filter((value, index, self) => self.indexOf(value) === index)
+
       days.push(
         <div
           key={day}
           onClick={() => onDateClick?.(date)}
-          className={`aspect-square p-2 border border-slate-200 ${dateColor} cursor-pointer transition-colors relative ${
+          className={`min-h-[100px] p-2 border border-slate-200 ${dateColor} cursor-pointer transition-colors relative ${
             today ? 'ring-2 ring-blue-500' : ''
           } ${selected ? 'ring-2 ring-purple-500' : ''}`}
         >
           <div className="flex flex-col h-full">
-            <span className={`text-sm font-medium ${today ? 'text-blue-600' : 'text-slate-900'}`}>
-              {day}
-            </span>
-            <div className="flex-1 flex flex-col justify-center items-center gap-0.5 mt-1">
+            <div className="flex justify-between items-start">
+              <span className={`text-sm font-medium ${today ? 'text-blue-600' : 'text-slate-900'}`}>
+                {day}
+              </span>
+              {dayEvents.length > 0 && (
+                <span className="text-xs bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">
+                  {dayEvents.length}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 flex flex-col gap-0.5 mt-1 overflow-hidden">
               {checkIn && (
-                <div className="text-xs bg-green-500 text-white px-1 rounded w-full text-center">
+                <div className="text-[10px] bg-green-500 text-white px-1 rounded truncate text-center">
                   Check-in
                 </div>
               )}
               {checkOut && (
-                <div className="text-xs bg-orange-500 text-white px-1 rounded w-full text-center">
+                <div className="text-[10px] bg-orange-500 text-white px-1 rounded truncate text-center">
                   Check-out
                 </div>
               )}
-              {dayEvents.length > 0 && (
-                <div className="text-xs text-slate-600 font-medium">
-                  {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventi'}
+              {/* Show occupied rooms */}
+              {occupiedRooms.slice(0, 3).map((roomName, idx) => (
+                <div
+                  key={idx}
+                  className="text-[10px] bg-blue-600 text-white px-1 rounded truncate"
+                  title={roomName}
+                >
+                  {roomName}
+                </div>
+              ))}
+              {occupiedRooms.length > 3 && (
+                <div className="text-[10px] text-slate-500">
+                  +{occupiedRooms.length - 3} altre
                 </div>
               )}
             </div>

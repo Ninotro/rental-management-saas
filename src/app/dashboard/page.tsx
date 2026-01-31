@@ -3,13 +3,28 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, DollarSign, Home, TrendingUp, Users, ArrowUpRight, ClipboardCheck, AlertCircle } from 'lucide-react'
+import { Calendar, DollarSign, Home, TrendingUp, ArrowUpRight, ArrowDownRight, ClipboardCheck, AlertCircle } from 'lucide-react'
 
 interface DashboardStats {
   totalBookings: number
+  bookingsChange: number
   totalRevenue: number
+  revenueChange: number
   totalProperties: number
   upcomingCheckIns: number
+  checkInsToday: number
+  recentBookings: RecentBooking[]
+}
+
+interface RecentBooking {
+  id: string
+  guestName: string
+  propertyName: string
+  roomName: string | null
+  totalPrice: number
+  checkIn: string
+  checkOut: string
+  status: string
 }
 
 interface PendingCheckIn {
@@ -28,20 +43,28 @@ export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
     totalBookings: 0,
+    bookingsChange: 0,
     totalRevenue: 0,
+    revenueChange: 0,
     totalProperties: 0,
     upcomingCheckIns: 0,
+    checkInsToday: 0,
+    recentBookings: [],
   })
   const [pendingCheckIns, setPendingCheckIns] = useState<PendingCheckIn[]>([])
-  const [loadingPending, setLoadingPending] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setStats({
-      totalBookings: 24,
-      totalRevenue: 45000,
-      totalProperties: 5,
-      upcomingCheckIns: 3,
-    })
+    // Fetch real dashboard stats
+    fetch('/api/dashboard/stats')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setStats(data)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
 
     // Fetch pending check-ins
     fetch('/api/guest-checkins/pending')
@@ -52,27 +75,34 @@ export default function DashboardPage() {
         }
       })
       .catch(console.error)
-      .finally(() => setLoadingPending(false))
   }, [])
+
+  const formatChange = (change: number) => {
+    if (change > 0) return `+${change}%`
+    if (change < 0) return `${change}%`
+    return '0%'
+  }
 
   const statCards = [
     {
-      name: 'Prenotazioni Totali',
+      name: 'Prenotazioni Mese',
       value: stats.totalBookings,
       icon: Calendar,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      change: '+12%',
+      change: formatChange(stats.bookingsChange),
+      isPositive: stats.bookingsChange >= 0,
     },
     {
-      name: 'Ricavi Totali',
-      value: `€${stats.totalRevenue.toLocaleString()}`,
+      name: 'Ricavi Mese',
+      value: `€${stats.totalRevenue.toLocaleString('it-IT')}`,
       icon: DollarSign,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50',
       iconColor: 'text-green-600',
-      change: '+23%',
+      change: formatChange(stats.revenueChange),
+      isPositive: stats.revenueChange >= 0,
     },
     {
       name: 'Strutture Attive',
@@ -81,7 +111,8 @@ export default function DashboardPage() {
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       iconColor: 'text-purple-600',
-      change: '+2',
+      change: '',
+      isPositive: true,
     },
     {
       name: 'Check-in Prossimi',
@@ -90,7 +121,8 @@ export default function DashboardPage() {
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
       iconColor: 'text-orange-600',
-      change: '3 oggi',
+      change: stats.checkInsToday > 0 ? `${stats.checkInsToday} oggi` : '',
+      isPositive: true,
     },
   ]
 
@@ -118,16 +150,22 @@ export default function DashboardPage() {
                   <div className={`${stat.bgColor} p-3 rounded-xl`}>
                     <Icon className={stat.iconColor} size={24} />
                   </div>
-                  <span className="text-sm font-semibold text-green-600 flex items-center">
-                    {stat.change}
-                    <ArrowUpRight size={16} className="ml-1" />
-                  </span>
+                  {stat.change && (
+                    <span className={`text-sm font-semibold flex items-center ${stat.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                      {stat.change}
+                      {stat.isPositive ? (
+                        <ArrowUpRight size={16} className="ml-1" />
+                      ) : (
+                        <ArrowDownRight size={16} className="ml-1" />
+                      )}
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-sm font-medium text-slate-600 mb-1">
                   {stat.name}
                 </h3>
                 <p className="text-3xl font-bold text-slate-900">
-                  {stat.value}
+                  {loading ? '...' : stat.value}
                 </p>
               </div>
               <div className={`h-1 bg-gradient-to-r ${stat.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}></div>
@@ -142,28 +180,50 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-slate-900">Prenotazioni Recenti</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            <button
+              onClick={() => router.push('/dashboard/bookings')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
               Vedi tutte →
             </button>
           </div>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    M{i}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">Mario Rossi</p>
-                    <p className="text-sm text-slate-500">Villa al Mare</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">€1,200</p>
-                  <p className="text-xs text-slate-500">15-20 Gen</p>
-                </div>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-            ))}
+            ) : stats.recentBookings.length === 0 ? (
+              <p className="text-center text-slate-500 py-8">Nessuna prenotazione recente</p>
+            ) : (
+              stats.recentBookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                  onClick={() => router.push('/dashboard/bookings')}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
+                      {booking.guestName?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{booking.guestName || 'Ospite'}</p>
+                      <p className="text-sm text-slate-500">
+                        {booking.propertyName}
+                        {booking.roomName && ` - ${booking.roomName}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900">
+                      €{booking.totalPrice?.toLocaleString('it-IT') || '0'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(booking.checkIn).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })} - {new Date(booking.checkOut).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
