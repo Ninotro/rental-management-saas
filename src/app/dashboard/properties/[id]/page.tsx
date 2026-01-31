@@ -22,6 +22,7 @@ import {
   Key,
   ExternalLink,
   Calendar,
+  RefreshCw,
 } from 'lucide-react'
 import ImageLightbox from '@/components/ImageLightbox'
 import ICalConfigModal from '@/components/ICalConfigModal'
@@ -90,6 +91,8 @@ export default function PropertyDetailPage() {
   const [showAccessCodesModal, setShowAccessCodesModal] = useState(false)
   const [showICalConfigModal, setShowICalConfigModal] = useState(false)
   const [iCalConfigRoom, setICalConfigRoom] = useState<{ id: string, name: string } | null>(null)
+  const [syncingAll, setSyncingAll] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ success: boolean, message: string } | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -229,6 +232,45 @@ export default function PropertyDetailPage() {
     setLightboxImages(images)
     setLightboxIndex(index)
     setLightboxType(type)
+  }
+
+  const handleSyncAllCalendars = async () => {
+    setSyncingAll(true)
+    setSyncResult(null)
+
+    try {
+      const response = await fetch('/api/sync-all-ical', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ propertyId: params.id }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSyncResult({
+          success: true,
+          message: `Sincronizzazione completata: ${data.imported || 0} nuove prenotazioni, ${data.updated || 0} aggiornate`,
+        })
+        fetchRooms()
+      } else {
+        setSyncResult({
+          success: false,
+          message: data.error || 'Errore durante la sincronizzazione',
+        })
+      }
+    } catch (error) {
+      setSyncResult({
+        success: false,
+        message: 'Errore di connessione durante la sincronizzazione',
+      })
+    } finally {
+      setSyncingAll(false)
+      // Clear message after 5 seconds
+      setTimeout(() => setSyncResult(null), 5000)
+    }
   }
 
   const getRoomTypeLabel = (type: string) => {
@@ -427,14 +469,41 @@ export default function PropertyDetailPage() {
             <h2 className="text-2xl font-bold text-slate-900">Stanze</h2>
             <p className="text-slate-600">Gestisci le stanze di questa struttura</p>
           </div>
-          <button
-            onClick={() => setShowAddRoomModal(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl font-medium shadow-lg transition-all"
-          >
-            <Plus size={18} />
-            <span>Aggiungi Stanza</span>
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleSyncAllCalendars}
+              disabled={syncingAll}
+              className="flex items-center space-x-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-50"
+              title="Sincronizza tutti i calendari iCal di questa proprietà"
+            >
+              <RefreshCw size={18} className={syncingAll ? 'animate-spin' : ''} />
+              <span>{syncingAll ? 'Sincronizzazione...' : 'Sincronizza Calendari'}</span>
+            </button>
+            <button
+              onClick={() => setShowAddRoomModal(true)}
+              className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl font-medium shadow-lg transition-all"
+            >
+              <Plus size={18} />
+              <span>Aggiungi Stanza</span>
+            </button>
+          </div>
         </div>
+
+        {/* Sync Result Message */}
+        {syncResult && (
+          <div className={`mb-4 p-3 rounded-lg flex items-center ${
+            syncResult.success
+              ? 'bg-green-50 text-green-800'
+              : 'bg-red-50 text-red-800'
+          }`}>
+            {syncResult.success ? (
+              <RefreshCw size={18} className="mr-2" />
+            ) : (
+              <AlertCircle size={18} className="mr-2" />
+            )}
+            {syncResult.message}
+          </div>
+        )}
 
         {/* Rooms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
