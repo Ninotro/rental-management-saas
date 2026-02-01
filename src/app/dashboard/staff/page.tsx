@@ -143,61 +143,86 @@ export default function StaffPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
+          <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
+        </div>
+        <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento dipendenti...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Dipendenti</h1>
-          <p className="text-slate-600">Gestisci il tuo team e assegna i task</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Dipendenti</h1>
+            <p className="text-[#d4cdb0] text-lg">Gestisci il tuo team e assegna i task</p>
+          </div>
+          <button
+            onClick={() => setShowAssignModal(true)}
+            className="flex items-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white px-5 py-3 rounded-2xl font-medium border border-white/20 transition-all duration-200"
+          >
+            <Plus size={20} />
+            <span>Assegna Task</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowAssignModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg transition-all"
-        >
-          <Plus size={20} />
-          <span>Assegna Task</span>
-        </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <Users size={24} className="opacity-80" />
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-[#d4cdb0]/30 rounded-xl">
+              <Users size={24} className="text-[#3d4a3c]" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Totale Dipendenti</p>
+              <p className="text-2xl font-bold text-slate-900">{stats.totalStaff}</p>
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Totale Dipendenti</h3>
-          <p className="text-3xl font-bold">{stats.totalStaff}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <Clock size={24} className="opacity-80" />
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-amber-100 rounded-xl">
+              <Clock size={24} className="text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Task In Attesa</p>
+              <p className="text-2xl font-bold text-amber-600">{stats.pendingTasks}</p>
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Task In Attesa</h3>
-          <p className="text-3xl font-bold">{stats.pendingTasks}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <AlertCircle size={24} className="opacity-80" />
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <AlertCircle size={24} className="text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">In Corso</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.inProgressTasks}</p>
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">In Corso</h3>
-          <p className="text-3xl font-bold">{stats.inProgressTasks}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <CheckCircle size={24} className="opacity-80" />
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-100 rounded-xl">
+              <CheckCircle size={24} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Completati Oggi</p>
+              <p className="text-2xl font-bold text-emerald-600">{stats.completedToday}</p>
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Completati Oggi</h3>
-          <p className="text-3xl font-bold">{stats.completedToday}</p>
         </div>
       </div>
 
@@ -205,30 +230,40 @@ export default function StaffPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Staff List */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Team</h2>
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+                <Users size={16} className="text-[#3d4a3c]" />
+              </div>
+              Team
+            </h2>
             <div className="space-y-3">
               {staff.map(member => (
                 <div
                   key={member.id}
-                  className="p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors"
+                  className="p-4 border border-slate-200 rounded-2xl hover:border-[#3d4a3c]/30 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-xl flex items-center justify-center text-white font-bold">
                       {member.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-slate-900">{member.name}</h3>
-                      <p className="text-sm text-slate-600">{member.email}</p>
+                      <p className="text-sm text-slate-500">{member.email}</p>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-1.5 inline-block">
                     {assignments.filter(a => a.user.name === member.name && a.status === 'PENDING').length} task in attesa
                   </div>
                 </div>
               ))}
               {staff.length === 0 && (
-                <p className="text-center py-8 text-slate-500">Nessun dipendente trovato</p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Users className="text-slate-400" size={24} />
+                  </div>
+                  <p className="text-slate-500 font-medium">Nessun dipendente trovato</p>
+                </div>
               )}
             </div>
           </div>
@@ -236,27 +271,32 @@ export default function StaffPage() {
 
         {/* Assignments List */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Task Assegnati</h2>
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+                <Calendar size={16} className="text-[#3d4a3c]" />
+              </div>
+              Task Assegnati
+            </h2>
             <div className="space-y-3">
               {assignments.slice(0, 10).map(assignment => (
                 <div
                   key={assignment.id}
-                  className="p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors"
+                  className="p-4 border border-slate-200 rounded-2xl hover:border-[#3d4a3c]/30 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="font-semibold text-slate-900">
                         {getTaskTypeLabel(assignment.taskType)}
                       </h3>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-500">
                         {assignment.user.name}
                         {assignment.property && ` - ${assignment.property.name}`}
                         {assignment.room && ` - ${assignment.room.name}`}
                       </p>
                     </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                      className={`px-3 py-1 rounded-xl text-xs font-semibold border ${getStatusColor(
                         assignment.status
                       )}`}
                     >
@@ -264,7 +304,7 @@ export default function StaffPage() {
                     </span>
                   </div>
                   {assignment.notes && (
-                    <p className="text-sm text-slate-600 mt-2">{assignment.notes}</p>
+                    <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-xl px-3 py-2">{assignment.notes}</p>
                   )}
                   <div className="text-xs text-slate-500 mt-2">
                     {new Date(assignment.date).toLocaleDateString('it-IT')}
@@ -272,7 +312,12 @@ export default function StaffPage() {
                 </div>
               ))}
               {assignments.length === 0 && (
-                <p className="text-center py-8 text-slate-500">Nessun task assegnato</p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="text-slate-400" size={24} />
+                  </div>
+                  <p className="text-slate-500 font-medium">Nessun task assegnato</p>
+                </div>
               )}
             </div>
           </div>
@@ -391,20 +436,28 @@ function AssignTaskModal({
   const selectedProperty = properties.find(p => p.id === formData.propertyId)
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Assegna Task</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl my-8 overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Plus size={20} />
+              </div>
+              <h2 className="text-xl font-bold">Assegna Task</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
+        <div className="p-6">
         {error && (
-          <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 flex items-center">
+          <div className="bg-red-50 text-red-800 p-4 rounded-xl mb-6 flex items-center">
             <AlertCircle size={20} className="mr-2" />
             {error}
           </div>
@@ -419,7 +472,7 @@ function AssignTaskModal({
               </label>
               <select
                 required
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={formData.userId}
                 onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
               >
@@ -439,7 +492,7 @@ function AssignTaskModal({
               <input
                 type="date"
                 required
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
@@ -453,7 +506,7 @@ function AssignTaskModal({
             </label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.taskType}
               onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}
             >
@@ -474,7 +527,7 @@ function AssignTaskModal({
                 Struttura (Opzionale)
               </label>
               <select
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={formData.propertyId}
                 onChange={(e) => setFormData({ ...formData, propertyId: e.target.value, roomId: '' })}
               >
@@ -493,7 +546,7 @@ function AssignTaskModal({
                   Stanza (Opzionale)
                 </label>
                 <select
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   value={formData.roomId}
                   onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
                 >
@@ -515,7 +568,7 @@ function AssignTaskModal({
             </label>
             <textarea
               rows={4}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all resize-none"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Descrivi cosa deve fare il dipendente..."
@@ -523,23 +576,24 @@ function AssignTaskModal({
           </div>
 
           {/* Actions */}
-          <div className="flex space-x-3 pt-4 border-t">
+          <div className="flex gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl font-medium disabled:opacity-50 transition-all shadow-lg shadow-[#3d4a3c]/25"
             >
               {loading ? 'Assegnazione...' : 'Assegna Task'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

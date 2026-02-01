@@ -3,6 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import {
+  Clock,
+  User,
+  MapPin,
+  Calendar,
+  CheckCircle2,
+  X,
+  Eye,
+  AlertCircle,
+  ArrowLeft,
+  Copy,
+  Mail,
+  Phone,
+  CreditCard,
+  Home,
+  FileText,
+  Users,
+} from 'lucide-react'
 
 interface PendingCheckIn {
   id: string
@@ -150,6 +168,7 @@ export default function PendingCheckInsPage() {
       setShowApproveModal(false)
       setSelectedCheckIn(null)
       setSelectedBookingId(null)
+      window.dispatchEvent(new CustomEvent('checkInStatusUpdated'))
     } catch (err: any) {
       alert(err.message)
     } finally {
@@ -175,6 +194,7 @@ export default function PendingCheckInsPage() {
 
       // Rimuovi dalla lista
       setPendingCheckIns(prev => prev.filter(c => c.id !== checkIn.id))
+      window.dispatchEvent(new CustomEvent('checkInStatusUpdated'))
     } catch (err: any) {
       alert(err.message)
     } finally {
@@ -202,126 +222,170 @@ export default function PendingCheckInsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#d4cdb0] rounded-full animate-spin border-t-[#3d4a3c]"></div>
+          <Clock className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
+        </div>
+        <p className="mt-4 text-[#3d4a3c]/70 font-medium animate-pulse">Caricamento check-in...</p>
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Check-in in Attesa</h1>
-          <p className="text-gray-600 mt-1">
-            Gestisci i check-in inviati dagli ospiti e collegali alle prenotazioni
-          </p>
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24 blur-2xl"></div>
+
+        <div className="relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="text-white/80" size={20} />
+                <span className="text-white/80 text-sm font-medium">Approvazioni</span>
+              </div>
+              <h1 className="text-4xl font-bold mb-2">Check-in in Attesa</h1>
+              <p className="text-white/80 text-lg">
+                Gestisci i check-in inviati dagli ospiti e collegali alle prenotazioni
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex flex-wrap gap-4">
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{pendingCheckIns.length}</p>
+                    <p className="text-xs text-white/70">In Attesa</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <Link
-          href="/dashboard"
-          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Torna alla Dashboard
-        </Link>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-5 py-4 rounded-2xl flex items-center gap-3">
+          <AlertCircle size={20} />
           {error}
         </div>
       )}
 
       {pendingCheckIns.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <div className="text-gray-400 text-5xl mb-4">✓</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-white/50 p-12 text-center">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="text-emerald-500" size={40} />
+          </div>
+          <h3 className="text-2xl font-bold text-[#3d4a3c] mb-2">
             Nessun check-in in attesa
           </h3>
-          <p className="text-gray-600">
+          <p className="text-[#3d4a3c]/60 mb-6">
             Tutti i check-in sono stati gestiti.
           </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white px-6 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all"
+          >
+            <ArrowLeft size={18} />
+            Torna alla Dashboard
+          </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ospite
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Struttura / Stanza
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Inviato il
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Azioni
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {pendingCheckIns.map((checkIn) => (
-                <tr key={checkIn.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">
-                      {checkIn.firstName} {checkIn.lastName}
+        <div className="grid gap-4">
+          {pendingCheckIns.map((checkIn, index) => (
+            <div
+              key={checkIn.id}
+              className="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                  {/* Avatar & Main Info */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="relative flex-shrink-0 w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
                     </div>
-                    <div className="text-sm text-gray-500">{checkIn.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {checkIn.selectedRoom ? (
-                      <>
-                        <div className="text-gray-900">
-                          {checkIn.selectedRoom.property.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {checkIn.selectedRoom.name}
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-900">
-                      {formatDate(checkIn.selectedCheckIn)}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-[#3d4a3c] text-lg">
+                          {checkIn.firstName} {checkIn.lastName}
+                        </h3>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                          <Clock size={12} />
+                          In Attesa
+                        </span>
+                      </div>
+                      {checkIn.email && (
+                        <p className="text-sm text-[#3d4a3c]/60 flex items-center gap-1 mt-1">
+                          <Mail size={14} />
+                          {checkIn.email}
+                        </p>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      → {formatDate(checkIn.selectedCheckOut)}
+                  </div>
+
+                  {/* Property Info */}
+                  {checkIn.selectedRoom && (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-[#3d4a3c]/5 rounded-2xl">
+                      <Home size={18} className="text-[#3d4a3c]/60 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-[#3d4a3c] truncate">{checkIn.selectedRoom.property.name}</p>
+                        <p className="text-xs text-[#3d4a3c]/60">{checkIn.selectedRoom.name}</p>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDateTime(checkIn.submittedAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  )}
+
+                  {/* Date Info */}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-[#d4cdb0]/20 rounded-2xl">
+                    <Calendar size={18} className="text-[#3d4a3c] flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.selectedCheckIn)}</p>
+                      <p className="text-xs text-[#3d4a3c]/60">→ {formatDate(checkIn.selectedCheckOut)}</p>
+                    </div>
+                  </div>
+
+                  {/* Submitted At */}
+                  <div className="hidden xl:block text-sm text-[#3d4a3c]/60">
+                    <p className="font-medium">Inviato il</p>
+                    <p>{formatDateTime(checkIn.submittedAt)}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => openDetailModal(checkIn)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="p-2.5 text-[#3d4a3c]/60 hover:text-[#3d4a3c] hover:bg-[#d4cdb0]/30 rounded-xl transition-all duration-200"
+                      title="Visualizza dettagli"
                     >
-                      Dettagli
+                      <Eye size={20} />
                     </button>
                     <button
                       onClick={() => openApproveModal(checkIn)}
-                      className="text-green-600 hover:text-green-900"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white rounded-xl font-medium shadow-lg shadow-emerald-500/25 transition-all duration-200"
                     >
-                      Approva
+                      <CheckCircle2 size={18} />
+                      <span className="hidden sm:inline">Approva</span>
                     </button>
                     <button
                       onClick={() => handleReject(checkIn)}
                       disabled={processing}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
                     >
-                      Rifiuta
+                      <X size={18} />
+                      <span className="hidden sm:inline">Rifiuta</span>
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -340,42 +404,48 @@ export default function PendingCheckInsPage() {
 
       {/* Modal Approvazione */}
       {showApproveModal && selectedCheckIn && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Approva Check-in
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    {selectedCheckIn.firstName} {selectedCheckIn.lastName} - {' '}
-                    {selectedCheckIn.selectedRoom?.property.name} / {selectedCheckIn.selectedRoom?.name}
-                  </p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-5 text-white rounded-t-3xl">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <CheckCircle2 size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Approva Check-in</h2>
+                    <p className="text-white/80 text-sm">
+                      {selectedCheckIn.firstName} {selectedCheckIn.lastName} - {selectedCheckIn.selectedRoom?.property.name}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowApproveModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
                 >
-                  ✕
+                  <X size={22} />
                 </button>
               </div>
+            </div>
 
+            <div className="p-6">
               <div className="mb-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
+                <h3 className="font-semibold text-[#3d4a3c] mb-2">
                   Seleziona la prenotazione da collegare
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[#3d4a3c]/60">
                   Date richieste: {formatDate(selectedCheckIn.selectedCheckIn)} → {formatDate(selectedCheckIn.selectedCheckOut)}
                 </p>
               </div>
 
               {loadingSuggestions ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="w-10 h-10 border-4 border-[#d4cdb0] border-t-[#3d4a3c] rounded-full animate-spin"></div>
                 </div>
               ) : suggestions.length === 0 ? (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-5 py-4 rounded-2xl flex items-center gap-3">
+                  <AlertCircle size={20} />
                   Nessuna prenotazione corrispondente trovata. Verifica che esista una prenotazione per questo ospite.
                 </div>
               ) : (
@@ -383,10 +453,10 @@ export default function PendingCheckInsPage() {
                   {suggestions.map((booking) => (
                     <label
                       key={booking.id}
-                      className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
+                      className={`block p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 ${
                         selectedBookingId === booking.id
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-emerald-500 bg-emerald-50 shadow-lg'
+                          : 'border-[#3d4a3c]/10 hover:border-[#3d4a3c]/20 bg-white'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -396,17 +466,17 @@ export default function PendingCheckInsPage() {
                           value={booking.id}
                           checked={selectedBookingId === booking.id}
                           onChange={() => setSelectedBookingId(booking.id)}
-                          className="mt-1"
+                          className="mt-1 w-5 h-5 text-emerald-500"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-semibold text-[#3d4a3c]">
                               {booking.guestName}
                             </span>
                             <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${
+                              className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                                 booking.matchType === 'exact'
-                                  ? 'bg-green-100 text-green-700'
+                                  ? 'bg-emerald-100 text-emerald-700'
                                   : booking.matchType === 'name'
                                   ? 'bg-blue-100 text-blue-700'
                                   : 'bg-gray-100 text-gray-700'
@@ -415,14 +485,14 @@ export default function PendingCheckInsPage() {
                               {booking.matchScore}% match
                             </span>
                           </div>
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="text-sm text-[#3d4a3c]/70 mt-1">
                             {booking.property.name}
                             {booking.room && ` / ${booking.room.name}`}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-[#3d4a3c]/60">
                             {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-xs text-[#3d4a3c]/50 mt-1">
                             {booking.matchReason}
                           </div>
                         </div>
@@ -432,19 +502,29 @@ export default function PendingCheckInsPage() {
                 </div>
               )}
 
-              <div className="mt-6 pt-6 border-t flex justify-end gap-3">
+              <div className="mt-6 pt-6 border-t border-[#3d4a3c]/10 flex justify-end gap-3">
                 <button
                   onClick={() => setShowApproveModal(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-5 py-2.5 border border-[#3d4a3c]/20 rounded-xl text-[#3d4a3c] hover:bg-[#3d4a3c]/5 font-medium transition-colors"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={handleApprove}
                   disabled={!selectedBookingId || processing}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                 >
-                  {processing ? 'Approvazione...' : 'Approva e Collega'}
+                  {processing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Approvazione...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={18} />
+                      Approva e Collega
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -483,13 +563,14 @@ function DetailModal({
     <button
       type="button"
       onClick={() => copyToClipboard(text, fieldName)}
-      className={`ml-2 px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-xs font-medium ${
         copiedField === fieldName
-          ? 'bg-green-100 text-green-700'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+          : 'bg-white border-[#3d4a3c]/20 text-[#3d4a3c]/60 hover:bg-[#3d4a3c]/5'
       }`}
     >
-      {copiedField === fieldName ? '✓ Copiato' : 'Copia'}
+      {copiedField === fieldName ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+      {copiedField === fieldName ? 'Copiato!' : 'Copia'}
     </button>
   )
 
@@ -517,301 +598,263 @@ function DetailModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Dettagli Check-in</h2>
-              <p className="text-gray-600 mt-1">
-                {checkIn.firstName} {checkIn.lastName} - Inviato il {formatDate(checkIn.submittedAt)}
-              </p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">{checkIn.firstName} {checkIn.lastName}</h2>
+                <p className="text-[#d4cdb0]">Inviato il {formatDate(checkIn.submittedAt)}</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
             >
-              <span className="text-2xl text-gray-400 hover:text-gray-600">✕</span>
+              <X size={24} />
             </button>
           </div>
+        </div>
 
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <div className="space-y-6">
             {/* Soggiorno Selezionato */}
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
-                <span className="mr-2">🏨</span> Soggiorno Selezionato
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
+              <h3 className="font-semibold text-[#3d4a3c] mb-3 flex items-center gap-2">
+                <Home size={18} className="text-blue-600" />
+                Soggiorno Selezionato
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
+                <div className="bg-white rounded-xl p-3">
                   <p className="text-xs text-blue-600 mb-1">Struttura</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-[#3d4a3c]">
                     {checkIn.selectedRoom?.property.name || '-'}
                   </p>
                 </div>
-                <div>
+                <div className="bg-white rounded-xl p-3">
                   <p className="text-xs text-blue-600 mb-1">Stanza</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-[#3d4a3c]">
                     {checkIn.selectedRoom?.name || '-'}
                   </p>
                 </div>
-                <div>
+                <div className="bg-white rounded-xl p-3">
                   <p className="text-xs text-blue-600 mb-1">Check-in</p>
-                  <p className="font-medium text-gray-900">{formatDate(checkIn.selectedCheckIn)}</p>
+                  <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.selectedCheckIn)}</p>
                 </div>
-                <div>
+                <div className="bg-white rounded-xl p-3">
                   <p className="text-xs text-blue-600 mb-1">Check-out</p>
-                  <p className="font-medium text-gray-900">{formatDate(checkIn.selectedCheckOut)}</p>
+                  <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.selectedCheckOut)}</p>
                 </div>
               </div>
             </div>
 
             {/* Contatti */}
-            <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
-              <h3 className="font-semibold text-indigo-900 mb-4 flex items-center">
-                <span className="mr-2">📧</span> Contatti
+            <div className="bg-violet-50 rounded-2xl p-5 border border-violet-100">
+              <h3 className="font-semibold text-[#3d4a3c] mb-4 flex items-center gap-2">
+                <Mail size={18} className="text-violet-600" />
+                Contatti
               </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-indigo-600 mb-1">Email</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.email || '-'}
-                    {checkIn.email && <CopyButton text={checkIn.email} fieldName="email" />}
-                  </p>
+                <div className="flex items-center justify-between bg-white rounded-xl p-3">
+                  <div>
+                    <p className="text-violet-600 text-xs mb-1">Email</p>
+                    <p className="font-medium text-[#3d4a3c]">{checkIn.email || '-'}</p>
+                  </div>
+                  {checkIn.email && <CopyButton text={checkIn.email} fieldName="email" />}
                 </div>
-                <div>
-                  <p className="text-indigo-600 mb-1">Telefono</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.phone || '-'}
-                    {checkIn.phone && <CopyButton text={checkIn.phone} fieldName="phone" />}
-                  </p>
+                <div className="flex items-center justify-between bg-white rounded-xl p-3">
+                  <div>
+                    <p className="text-violet-600 text-xs mb-1">Telefono</p>
+                    <p className="font-medium text-[#3d4a3c]">{checkIn.phone || '-'}</p>
+                  </div>
+                  {checkIn.phone && <CopyButton text={checkIn.phone} fieldName="phone" />}
                 </div>
               </div>
             </div>
 
             {/* Dati Anagrafici */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <span className="mr-2">👤</span> Dati Anagrafici
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500 mb-1">Nome</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.firstName}
-                    <CopyButton text={checkIn.firstName} fieldName="firstName" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Cognome</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.lastName}
-                    <CopyButton text={checkIn.lastName} fieldName="lastName" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Data di Nascita</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {formatDate(checkIn.dateOfBirth)}
-                    <CopyButton text={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Luogo di Nascita</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.birthCity} ({checkIn.birthProvince})
-                    <CopyButton text={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Codice Fiscale</p>
-                  <p className="font-medium text-gray-900 flex items-center font-mono">
-                    {checkIn.fiscalCode}
-                    <CopyButton text={checkIn.fiscalCode} fieldName="fiscalCode" />
-                  </p>
-                </div>
+            <div className="bg-white rounded-2xl border border-[#3d4a3c]/10 overflow-hidden">
+              <div className="bg-[#3d4a3c]/5 px-5 py-3 border-b border-[#3d4a3c]/10">
+                <h3 className="font-semibold text-[#3d4a3c] flex items-center gap-2">
+                  <User size={18} className="text-[#3d4a3c]" />
+                  Dati Anagrafici
+                </h3>
               </div>
-            </div>
-
-            {/* Residenza */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <span className="mr-2">🏠</span> Indirizzo di Residenza
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="col-span-2">
-                  <p className="text-gray-500 mb-1">Via</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.residenceStreet}
-                    <CopyButton text={checkIn.residenceStreet} fieldName="street" />
-                  </p>
+              <div className="p-5 grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Nome</p>
+                    <p className="font-medium text-[#3d4a3c]">{checkIn.firstName}</p>
+                  </div>
+                  <CopyButton text={checkIn.firstName} fieldName="firstName" />
                 </div>
-                <div>
-                  <p className="text-gray-500 mb-1">CAP</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.residencePostalCode}
-                    <CopyButton text={checkIn.residencePostalCode} fieldName="postalCode" />
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Cognome</p>
+                    <p className="font-medium text-[#3d4a3c]">{checkIn.lastName}</p>
+                  </div>
+                  <CopyButton text={checkIn.lastName} fieldName="lastName" />
                 </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Città</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.residenceCity}
-                    <CopyButton text={checkIn.residenceCity} fieldName="city" />
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Data di Nascita</p>
+                    <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.dateOfBirth)}</p>
+                  </div>
+                  <CopyButton text={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
                 </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Provincia</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {checkIn.residenceProvince}
-                    <CopyButton text={checkIn.residenceProvince} fieldName="province" />
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Luogo di Nascita</p>
+                    <p className="font-medium text-[#3d4a3c]">{checkIn.birthCity} ({checkIn.birthProvince})</p>
+                  </div>
+                  <CopyButton text={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
                 </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Indirizzo Completo</p>
-                  <p className="font-medium text-gray-900 flex items-center text-xs">
-                    <CopyButton
-                      text={`${checkIn.residenceStreet}, ${checkIn.residencePostalCode} ${checkIn.residenceCity} (${checkIn.residenceProvince})`}
-                      fieldName="fullAddress"
-                    />
-                  </p>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Codice Fiscale</p>
+                    <p className="font-medium text-[#3d4a3c] font-mono">{checkIn.fiscalCode}</p>
+                  </div>
+                  <CopyButton text={checkIn.fiscalCode} fieldName="fiscalCode" />
                 </div>
               </div>
             </div>
 
             {/* Documento */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <span className="mr-2">🪪</span> Documento di Identità
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500 mb-1">Tipo</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {getDocumentTypeLabel(checkIn.documentType)}
-                    <CopyButton text={getDocumentTypeLabel(checkIn.documentType)} fieldName="docType" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Numero</p>
-                  <p className="font-medium text-gray-900 flex items-center font-mono">
-                    {checkIn.documentNumber}
-                    <CopyButton text={checkIn.documentNumber} fieldName="docNumber" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Data Rilascio</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {formatDate(checkIn.documentIssueDate)}
-                    <CopyButton text={formatDate(checkIn.documentIssueDate)} fieldName="docIssue" />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-1">Scadenza</p>
-                  <p className="font-medium text-gray-900 flex items-center">
-                    {formatDate(checkIn.documentExpiryDate)}
-                    <CopyButton text={formatDate(checkIn.documentExpiryDate)} fieldName="docExpiry" />
-                  </p>
-                </div>
+            <div className="bg-white rounded-2xl border border-[#3d4a3c]/10 overflow-hidden">
+              <div className="bg-[#3d4a3c]/5 px-5 py-3 border-b border-[#3d4a3c]/10">
+                <h3 className="font-semibold text-[#3d4a3c] flex items-center gap-2">
+                  <CreditCard size={18} className="text-[#3d4a3c]" />
+                  Documento di Identità
+                </h3>
               </div>
+              <div className="p-5">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[#3d4a3c]/60 text-xs mb-1">Tipo</p>
+                      <p className="font-medium text-[#3d4a3c]">{getDocumentTypeLabel(checkIn.documentType)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[#3d4a3c]/60 text-xs mb-1">Numero</p>
+                      <p className="font-medium text-[#3d4a3c] font-mono">{checkIn.documentNumber}</p>
+                    </div>
+                    <CopyButton text={checkIn.documentNumber} fieldName="docNumber" />
+                  </div>
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Data Rilascio</p>
+                    <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.documentIssueDate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#3d4a3c]/60 text-xs mb-1">Scadenza</p>
+                    <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.documentExpiryDate)}</p>
+                  </div>
+                </div>
 
-              {/* Immagini Documento */}
-              {(checkIn.documentFrontUrl || checkIn.documentBackUrl) && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Foto Documento</p>
-                  <div className="grid grid-cols-2 gap-4">
+                {(checkIn.documentFrontUrl || checkIn.documentBackUrl) && (
+                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-[#3d4a3c]/10">
                     {checkIn.documentFrontUrl && (
                       <div>
-                        <p className="text-xs text-gray-500 mb-2">Fronte</p>
+                        <p className="text-xs text-[#3d4a3c]/60 mb-2">Fronte</p>
                         <a href={checkIn.documentFrontUrl} target="_blank" rel="noopener noreferrer">
                           <img
                             src={checkIn.documentFrontUrl}
                             alt="Fronte documento"
-                            className="w-full rounded-lg border border-gray-300 hover:border-blue-500 transition-colors cursor-pointer"
+                            className="w-full rounded-xl border-2 border-[#3d4a3c]/10 hover:border-[#3d4a3c]/30 transition-colors cursor-pointer"
                           />
                         </a>
                       </div>
                     )}
                     {checkIn.documentBackUrl && (
                       <div>
-                        <p className="text-xs text-gray-500 mb-2">Retro</p>
+                        <p className="text-xs text-[#3d4a3c]/60 mb-2">Retro</p>
                         <a href={checkIn.documentBackUrl} target="_blank" rel="noopener noreferrer">
                           <img
                             src={checkIn.documentBackUrl}
                             alt="Retro documento"
-                            className="w-full rounded-lg border border-gray-300 hover:border-blue-500 transition-colors cursor-pointer"
+                            className="w-full rounded-xl border-2 border-[#3d4a3c]/10 hover:border-[#3d4a3c]/30 transition-colors cursor-pointer"
                           />
                         </a>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Tassa di Soggiorno */}
-            <div className={`rounded-xl p-4 ${checkIn.isExempt ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
-              <h3 className={`font-semibold mb-3 flex items-center ${checkIn.isExempt ? 'text-green-900' : 'text-amber-900'}`}>
-                <span className="mr-2">💰</span> Tassa di Soggiorno
+            <div className={`rounded-2xl p-5 border ${checkIn.isExempt ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+              <h3 className={`font-semibold mb-3 flex items-center gap-2 ${checkIn.isExempt ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <FileText size={18} />
+                Tassa di Soggiorno
               </h3>
 
               {checkIn.isExempt ? (
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
-                      ✓ ESENTE
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 rounded-xl">
+                    <CheckCircle2 size={20} className="text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-green-700">
-                      <span className="font-medium">Motivo:</span> {getExemptionLabel(checkIn.exemptionReason)}
-                    </p>
+                    <p className="font-bold text-emerald-700">ESENTE</p>
+                    <p className="text-sm text-emerald-600">{getExemptionLabel(checkIn.exemptionReason)}</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center">
-                    <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full text-sm font-bold">
                       Soggetto alla tassa
                     </span>
                   </div>
 
                   {checkIn.touristTaxPaymentProof ? (
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-green-700 mb-2">✓ Screenshot pagamento caricato</p>
+                      <p className="text-sm font-medium text-emerald-700 mb-2 flex items-center gap-2">
+                        <CheckCircle2 size={16} />
+                        Screenshot pagamento caricato
+                      </p>
                       <a href={checkIn.touristTaxPaymentProof} target="_blank" rel="noopener noreferrer">
                         <img
                           src={checkIn.touristTaxPaymentProof}
                           alt="Prova pagamento tassa"
-                          className="max-w-xs rounded-lg border-2 border-green-300 hover:border-green-500 transition-colors cursor-pointer"
+                          className="max-w-xs rounded-xl border-2 border-emerald-300 hover:border-emerald-500 transition-colors cursor-pointer"
                         />
                       </a>
                     </div>
                   ) : (
-                    <p className="text-sm text-amber-700">
-                      ⚠ Nessuna prova di pagamento caricata
+                    <p className="text-sm text-amber-700 flex items-center gap-2">
+                      <AlertCircle size={16} />
+                      Nessuna prova di pagamento caricata
                     </p>
                   )}
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Footer Actions */}
-          <div className="mt-6 pt-6 border-t flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Chiudi
-            </button>
-            <button
-              onClick={onApprove}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-            >
-              Approva Check-in
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="bg-[#3d4a3c]/5 px-6 py-4 border-t border-[#3d4a3c]/10 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 border border-[#3d4a3c]/20 rounded-xl text-[#3d4a3c] hover:bg-white font-medium transition-colors"
+          >
+            Chiudi
+          </button>
+          <button
+            onClick={onApprove}
+            className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
+            <CheckCircle2 size={18} />
+            Approva Check-in
+          </button>
         </div>
       </div>
     </div>

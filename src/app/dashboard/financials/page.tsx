@@ -308,43 +308,52 @@ export default function FinancialsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
+          <DollarSign className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
+        </div>
+        <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento dati finanziari...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Finanziario</h1>
-          <p className="text-slate-600">Monitora ricavi, spese e profitti</p>
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowAddExpenseModal(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
-          >
-            <Plus size={20} />
-            <span>Aggiungi Spesa</span>
-          </button>
-          <button className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all">
-            <Download size={20} />
-            <span>Esporta Report</span>
-          </button>
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Finanziario</h1>
+            <p className="text-[#d4cdb0] text-lg">Monitora ricavi, spese e profitti</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowAddExpenseModal(true)}
+              className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500 text-white px-5 py-3 rounded-2xl font-medium border border-red-400/30 transition-all duration-200"
+            >
+              <Plus size={20} />
+              <span>Aggiungi Spesa</span>
+            </button>
+            <button className="flex items-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white px-5 py-3 rounded-2xl font-medium border border-white/20 transition-all duration-200">
+              <Download size={20} />
+              <span>Esporta Report</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Period Filter */}
-      <div className="bg-white rounded-2xl shadow-lg p-4">
-        <div className="flex space-x-2">
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-4">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setPeriod('thisMonth')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
               period === 'thisMonth'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#3d4a3c] text-white shadow-lg'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -352,9 +361,9 @@ export default function FinancialsPage() {
           </button>
           <button
             onClick={() => setPeriod('lastMonth')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
               period === 'lastMonth'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#3d4a3c] text-white shadow-lg'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -362,9 +371,9 @@ export default function FinancialsPage() {
           </button>
           <button
             onClick={() => setPeriod('thisYear')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
               period === 'thisYear'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#3d4a3c] text-white shadow-lg'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -375,59 +384,59 @@ export default function FinancialsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <TrendingUp size={24} />
+            <div className="p-3 bg-emerald-100 rounded-xl">
+              <TrendingUp size={24} className="text-emerald-600" />
             </div>
-            <div className="flex items-center space-x-1 text-green-100 text-sm">
-              <TrendingUp size={16} />
-              <span>+{stats.revenueGrowth}%</span>
+            <div className="flex items-center gap-1 text-emerald-600 text-sm bg-emerald-50 px-2 py-1 rounded-lg">
+              <TrendingUp size={14} />
+              <span className="font-medium">+{stats.revenueGrowth}%</span>
             </div>
           </div>
-          <h3 className="text-green-100 text-sm font-medium mb-1">Ricavi Totali</h3>
-          <p className="text-3xl font-bold">{formatCurrency(stats.totalRevenue)}</p>
+          <h3 className="text-slate-500 text-sm font-medium mb-1">Ricavi Totali</h3>
+          <p className="text-3xl font-bold text-emerald-600">{formatCurrency(stats.totalRevenue)}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <TrendingDown size={24} />
+            <div className="p-3 bg-red-100 rounded-xl">
+              <TrendingDown size={24} className="text-red-600" />
             </div>
-            <div className="flex items-center space-x-1 text-red-100 text-sm">
-              <TrendingDown size={16} />
-              <span>{stats.expenseGrowth}%</span>
+            <div className="flex items-center gap-1 text-red-600 text-sm bg-red-50 px-2 py-1 rounded-lg">
+              <TrendingDown size={14} />
+              <span className="font-medium">{stats.expenseGrowth}%</span>
             </div>
           </div>
-          <h3 className="text-red-100 text-sm font-medium mb-1">Spese Totali</h3>
-          <p className="text-3xl font-bold">{formatCurrency(stats.totalExpenses)}</p>
+          <h3 className="text-slate-500 text-sm font-medium mb-1">Spese Totali</h3>
+          <p className="text-3xl font-bold text-red-600">{formatCurrency(stats.totalExpenses)}</p>
         </div>
 
-        <div className={`bg-gradient-to-br ${
-          stats.netProfit >= 0
-            ? 'from-blue-500 to-indigo-600'
-            : 'from-orange-500 to-red-600'
-        } rounded-2xl p-6 text-white shadow-lg`}>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <DollarSign size={24} />
+            <div className={`p-3 rounded-xl ${stats.netProfit >= 0 ? 'bg-[#d4cdb0]/30' : 'bg-amber-100'}`}>
+              <DollarSign size={24} className={stats.netProfit >= 0 ? 'text-[#3d4a3c]' : 'text-amber-600'} />
             </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Profitto Netto</h3>
-          <p className="text-3xl font-bold">{formatCurrency(stats.netProfit)}</p>
+          <h3 className="text-slate-500 text-sm font-medium mb-1">Profitto Netto</h3>
+          <p className={`text-3xl font-bold ${stats.netProfit >= 0 ? 'text-[#3d4a3c]' : 'text-amber-600'}`}>{formatCurrency(stats.netProfit)}</p>
         </div>
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue vs Expenses Trend */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Trend Finanziario</h2>
-              <p className="text-sm text-slate-600">Ultimi 6 mesi</p>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+                  <BarChart3 size={16} className="text-[#3d4a3c]" />
+                </div>
+                Trend Finanziario
+              </h2>
+              <p className="text-sm text-slate-500 ml-8">Ultimi 6 mesi</p>
             </div>
-            <BarChart3 className="text-blue-600" size={24} />
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={monthlyData}>
@@ -483,13 +492,17 @@ export default function FinancialsPage() {
         </div>
 
         {/* Expense Category Breakdown */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Spese per Categoria</h2>
-              <p className="text-sm text-slate-600">Periodo selezionato</p>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+                  <PieChart size={16} className="text-[#3d4a3c]" />
+                </div>
+                Spese per Categoria
+              </h2>
+              <p className="text-sm text-slate-500 ml-8">Periodo selezionato</p>
             </div>
-            <PieChart className="text-purple-600" size={24} />
           </div>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -530,17 +543,21 @@ export default function FinancialsPage() {
       {/* Recent Transactions and Expenses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Transactions and Bookings */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Entrate Recenti</h2>
-            <CreditCard className="text-green-600" size={24} />
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="p-1.5 bg-emerald-100 rounded-lg">
+                <CreditCard size={16} className="text-emerald-600" />
+              </div>
+              Entrate Recenti
+            </h2>
           </div>
           <div className="space-y-3">
             {/* Mostra prima le transactions, poi le prenotazioni */}
             {transactions.slice(0, 5).map(transaction => (
               <div
                 key={`transaction-${transaction.id}`}
-                className="p-4 border border-slate-200 rounded-lg hover:border-green-300 transition-colors"
+                className="p-4 border border-slate-200 rounded-2xl hover:border-emerald-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-2">
                   <div>
@@ -557,7 +574,7 @@ export default function FinancialsPage() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>{formatDate(transaction.date)}</span>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">{transaction.type}</span>
+                  <span className="px-2.5 py-1 bg-[#d4cdb0]/30 text-[#3d4a3c] rounded-lg font-medium">{transaction.type}</span>
                 </div>
               </div>
             ))}
@@ -572,40 +589,49 @@ export default function FinancialsPage() {
               .map(booking => (
                 <div
                   key={`booking-${booking.id}`}
-                  className="p-4 border border-slate-200 rounded-lg hover:border-green-300 transition-colors"
+                  className="p-4 border border-slate-200 rounded-2xl hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="font-semibold text-slate-900">{booking.guestName}</h3>
                       <p className="text-sm text-slate-600">{booking.property.name}</p>
                     </div>
-                    <span className="text-green-600 font-bold">
+                    <span className="text-emerald-600 font-bold">
                       +{formatCurrency(Number(booking.totalPrice))}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{formatDate(booking.createdAt)}</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded">Prenotazione</span>
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg font-medium">Prenotazione</span>
                   </div>
                 </div>
               ))}
             {transactions.length === 0 && bookings.filter(b => b.status !== 'CANCELLED').length === 0 && (
-              <p className="text-center py-8 text-slate-500">Nessuna entrata registrata</p>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="text-slate-400" size={24} />
+                </div>
+                <p className="text-slate-500 font-medium">Nessuna entrata registrata</p>
+              </div>
             )}
           </div>
         </div>
 
         {/* Recent Expenses */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Spese Recenti</h2>
-            <Receipt className="text-red-600" size={24} />
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="p-1.5 bg-red-100 rounded-lg">
+                <Receipt size={16} className="text-red-600" />
+              </div>
+              Spese Recenti
+            </h2>
           </div>
           <div className="space-y-3">
             {expenses.slice(0, 5).map(expense => (
               <div
                 key={expense.id}
-                className="p-4 border border-slate-200 rounded-lg hover:border-red-300 transition-colors"
+                className="p-4 border border-slate-200 rounded-2xl hover:border-red-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1">
@@ -767,20 +793,28 @@ function AddExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Aggiungi Spesa</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Plus size={20} />
+              </div>
+              <h2 className="text-xl font-bold">Aggiungi Spesa</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
+        <div className="p-6">
         {error && (
-          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
+          <div className="bg-red-50 text-red-800 p-3 rounded-xl mb-4 flex items-center">
             <AlertCircle size={18} className="mr-2" />
             {error}
           </div>
@@ -792,7 +826,7 @@ function AddExpenseModal({
               Struttura (Opzionale)
             </label>
             <select
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.propertyId}
               onChange={(e) => setFormData({ ...formData, propertyId: e.target.value })}
             >
@@ -811,7 +845,7 @@ function AddExpenseModal({
             </label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             >
@@ -832,7 +866,7 @@ function AddExpenseModal({
               required
               min="0"
               step="0.01"
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               placeholder="0.00"
@@ -846,7 +880,7 @@ function AddExpenseModal({
             <input
               type="date"
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             />
@@ -859,30 +893,31 @@ function AddExpenseModal({
             <textarea
               required
               rows={3}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Descrivi la spesa..."
             />
           </div>
 
-          <div className="flex space-x-3 pt-4">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-red-600 hover:to-rose-700 font-medium disabled:opacity-50 transition-all shadow-lg shadow-red-500/25"
             >
               {loading ? 'Creazione...' : 'Aggiungi Spesa'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )
@@ -952,20 +987,28 @@ function EditExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Modifica Spesa</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Edit size={20} />
+              </div>
+              <h2 className="text-xl font-bold">Modifica Spesa</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
+        <div className="p-6">
         {error && (
-          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
+          <div className="bg-red-50 text-red-800 p-3 rounded-xl mb-4 flex items-center">
             <AlertCircle size={18} className="mr-2" />
             {error}
           </div>
@@ -977,7 +1020,7 @@ function EditExpenseModal({
               Struttura (Opzionale)
             </label>
             <select
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.propertyId}
               onChange={(e) => setFormData({ ...formData, propertyId: e.target.value })}
             >
@@ -996,7 +1039,7 @@ function EditExpenseModal({
             </label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             >
@@ -1017,7 +1060,7 @@ function EditExpenseModal({
               required
               min="0"
               step="0.01"
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               placeholder="0.00"
@@ -1031,7 +1074,7 @@ function EditExpenseModal({
             <input
               type="date"
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             />
@@ -1044,30 +1087,31 @@ function EditExpenseModal({
             <textarea
               required
               rows={3}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all resize-none"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Descrivi la spesa..."
             />
           </div>
 
-          <div className="flex space-x-3 pt-4">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white rounded-xl hover:from-[#4a5a49] hover:to-[#5a6a59] font-medium disabled:opacity-50 transition-all shadow-lg shadow-[#3d4a3c]/25"
             >
               {loading ? 'Salvataggio...' : 'Salva Modifiche'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )
@@ -1123,20 +1167,28 @@ function DeleteExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Elimina Spesa</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Trash2 size={20} />
+              </div>
+              <h2 className="text-xl font-bold">Elimina Spesa</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
+        <div className="p-6">
         {error && (
-          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
+          <div className="bg-red-50 text-red-800 p-3 rounded-xl mb-4 flex items-center">
             <AlertCircle size={18} className="mr-2" />
             {error}
           </div>
@@ -1146,25 +1198,25 @@ function DeleteExpenseModal({
           <p className="text-slate-700 mb-4">
             Sei sicuro di voler eliminare questa spesa? Questa azione non può essere annullata.
           </p>
-          <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+          <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Categoria:</span>
+              <span className="text-sm text-slate-500">Categoria:</span>
               <span className="text-sm font-medium text-slate-900">{getCategoryLabel(expense.category)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Importo:</span>
-              <span className="text-sm font-medium text-red-600">
+              <span className="text-sm text-slate-500">Importo:</span>
+              <span className="text-sm font-bold text-red-600">
                 €{Number(expense.amount).toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Struttura:</span>
+              <span className="text-sm text-slate-500">Struttura:</span>
               <span className="text-sm font-medium text-slate-900">
                 {expense.property?.name || 'Spesa generale'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-slate-600">Descrizione:</span>
+              <span className="text-sm text-slate-500">Descrizione:</span>
               <span className="text-sm font-medium text-slate-900 truncate max-w-[200px]">
                 {expense.description}
               </span>
@@ -1172,22 +1224,23 @@ function DeleteExpenseModal({
           </div>
         </div>
 
-        <div className="flex space-x-3">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors disabled:opacity-50"
           >
             Annulla
           </button>
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 font-medium disabled:opacity-50 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-red-600 hover:to-rose-700 font-medium disabled:opacity-50 transition-all shadow-lg shadow-red-500/25"
           >
             {loading ? 'Eliminazione...' : 'Elimina Spesa'}
           </button>
+        </div>
         </div>
       </div>
     </div>

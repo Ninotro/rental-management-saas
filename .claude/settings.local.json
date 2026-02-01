@@ -13,7 +13,10 @@
       "Bash(curl:*)",
       "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\src\\\\app\\\\dashboard\\\\bookings\\\\page.tsx.backup\")",
       "Bash(npm run lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(ls:*)",
+      "Bash(.ts \")",
+      "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\public\")"
     ]
   }
 }

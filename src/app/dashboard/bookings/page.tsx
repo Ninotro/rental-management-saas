@@ -204,18 +204,19 @@ export default function BookingsPage() {
   }
 
   if (searchQuery) {
+    const query = searchQuery.toLowerCase()
     filteredBookings = filteredBookings.filter(b =>
-      b.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.guestEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.room?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      b.guestName.toLowerCase().includes(query) ||
+      b.guestEmail.toLowerCase().includes(query) ||
+      b.property.name.toLowerCase().includes(query) ||
+      (b.room?.name?.toLowerCase().includes(query) ?? false)
     )
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-12 h-12 border-4 border-[#d4cdb0] rounded-full animate-spin border-t-[#3d4a3c]"></div>
       </div>
     )
   }
@@ -225,12 +226,12 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Prenotazioni</h1>
-          <p className="text-slate-600">Gestisci le prenotazioni delle tue strutture</p>
+          <h1 className="text-3xl font-bold text-[#3d4a3c] mb-1">Prenotazioni</h1>
+          <p className="text-[#3d4a3c]/60">Gestisci le prenotazioni delle tue strutture</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
+          className="flex items-center space-x-2 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#3d4a3c] text-white px-6 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <Plus size={20} />
           <span>Nuova Prenotazione</span>
@@ -239,61 +240,68 @@ export default function BookingsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <Calendar size={24} className="opacity-80" />
-            <CheckCircle size={20} />
+            <div className="p-2 bg-[#d4cdb0]/20 rounded-xl">
+              <Calendar size={22} className="text-[#d4cdb0]" />
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Totale Prenotazioni</h3>
+          <h3 className="text-white/70 text-sm font-medium mb-1">Totale Prenotazioni</h3>
           <p className="text-3xl font-bold">{stats.total}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <CheckCircle size={24} className="opacity-80" />
+            <div className="p-2 bg-white/20 rounded-xl">
+              <CheckCircle size={22} />
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Confermate</h3>
+          <h3 className="text-white/70 text-sm font-medium mb-1">Confermate</h3>
           <p className="text-3xl font-bold">{stats.confirmed}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <Clock size={24} className="opacity-80" />
+            <div className="p-2 bg-white/20 rounded-xl">
+              <Clock size={22} />
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">In Attesa</h3>
+          <h3 className="text-white/70 text-sm font-medium mb-1">In Attesa</h3>
           <p className="text-3xl font-bold">{stats.pending}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign size={24} className="opacity-80" />
+            <div className="p-2 bg-white/20 rounded-xl">
+              <DollarSign size={22} />
+            </div>
           </div>
-          <h3 className="text-white/80 text-sm font-medium mb-1">Ricavi Totali</h3>
+          <h3 className="text-white/70 text-sm font-medium mb-1">Ricavi Totali</h3>
           <p className="text-3xl font-bold">€{stats.totalRevenue.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="space-y-3">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 p-4 space-y-3">
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#3d4a3c]/40" size={20} />
             <input
               type="text"
               placeholder="Cerca per nome ospite, stanza o struttura..."
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-12 pr-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-[#3d4a3c] placeholder-[#3d4a3c]/40 focus:ring-2 focus:ring-[#d4cdb0] focus:border-transparent bg-white/80 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             {['ALL', 'CONFIRMED', 'PENDING', 'CHECKED_IN'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${filterStatus === status
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-white text-slate-700 hover:bg-slate-50'
+              className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${filterStatus === status
+                ? 'bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white shadow-lg'
+                : 'bg-[#3d4a3c]/5 text-[#3d4a3c]/70 hover:bg-[#3d4a3c]/10'
                 }`}
             >
               {status === 'ALL' ? 'Tutte' : getStatusLabel(status)}
@@ -308,7 +316,7 @@ export default function BookingsPage() {
             <select
               value={filterProperty}
               onChange={(e) => setFilterProperty(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="w-full px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-[#3d4a3c] focus:ring-2 focus:ring-[#d4cdb0] focus:border-transparent bg-white/80"
             >
               <option value="ALL">Tutte le strutture</option>
               {properties.map((property) => (
@@ -324,7 +332,7 @@ export default function BookingsPage() {
               value={filterRoom}
               onChange={(e) => setFilterRoom(e.target.value)}
               disabled={filterProperty === 'ALL' || rooms.length === 0}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-[#3d4a3c] focus:ring-2 focus:ring-[#d4cdb0] focus:border-transparent bg-white/80 disabled:bg-[#3d4a3c]/5 disabled:cursor-not-allowed"
             >
               <option value="ALL">
                 {filterProperty === 'ALL'
@@ -347,7 +355,7 @@ export default function BookingsPage() {
                 setFilterProperty('ALL')
                 setFilterRoom('ALL')
               }}
-              className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors flex items-center space-x-2"
+              className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-medium transition-colors flex items-center space-x-2"
             >
               <X size={18} />
               <span>Cancella Filtri</span>
@@ -361,21 +369,21 @@ export default function BookingsPage() {
         {filteredBookings.map((booking) => (
           <div
             key={booking.id}
-            className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+            className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-white/50"
           >
             <div className="p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 {/* Guest Info */}
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                       {booking.guestName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900">
+                      <h3 className="text-lg font-bold text-[#3d4a3c]">
                         {booking.guestName}
                       </h3>
-                      <div className="flex items-center text-sm text-slate-600">
+                      <div className="flex items-center text-sm text-[#3d4a3c]/60">
                         <MapPin size={14} className="mr-1" />
                         {booking.property.name}
                         {booking.room && ` - ${booking.room.name}`}
@@ -385,22 +393,22 @@ export default function BookingsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center text-sm text-slate-600">
-                      <Mail size={14} className="mr-2" />
+                    <div className="flex items-center text-sm text-[#3d4a3c]/70">
+                      <Mail size={14} className="mr-2 text-[#3d4a3c]/40" />
                       {booking.guestEmail}
                     </div>
                     {booking.guestPhone && (
-                      <div className="flex items-center text-sm text-slate-600">
-                        <Phone size={14} className="mr-2" />
+                      <div className="flex items-center text-sm text-[#3d4a3c]/70">
+                        <Phone size={14} className="mr-2 text-[#3d4a3c]/40" />
                         {booking.guestPhone}
                       </div>
                     )}
-                    <div className="flex items-center text-sm text-slate-600">
-                      <Users size={14} className="mr-2" />
+                    <div className="flex items-center text-sm text-[#3d4a3c]/70">
+                      <Users size={14} className="mr-2 text-[#3d4a3c]/40" />
                       {booking.guests} {booking.guests === 1 ? 'ospite' : 'ospiti'}
                     </div>
-                    <div className="flex items-center text-sm text-slate-600">
-                      <DollarSign size={14} className="mr-2" />
+                    <div className="flex items-center text-sm font-semibold text-[#3d4a3c]">
+                      <DollarSign size={14} className="mr-2 text-emerald-500" />
                       €{booking.totalPrice.toLocaleString()}
                     </div>
                   </div>
@@ -409,17 +417,17 @@ export default function BookingsPage() {
 
                 {/* Dates & Status */}
                 <div className="flex flex-col items-end space-y-3">
-                  <div className="flex items-center space-x-4 bg-slate-50 px-4 py-3 rounded-xl">
+                  <div className="flex items-center space-x-4 bg-[#3d4a3c]/5 px-4 py-3 rounded-2xl">
                     <div className="text-center">
-                      <div className="text-xs text-slate-500 mb-1">Check-in</div>
-                      <div className="font-bold text-slate-900">
+                      <div className="text-xs text-[#3d4a3c]/50 mb-1">Check-in</div>
+                      <div className="font-bold text-[#3d4a3c]">
                         {format(new Date(booking.checkIn), 'd MMM', { locale: it })}
                       </div>
                     </div>
-                    <div className="text-slate-400">→</div>
+                    <div className="text-[#d4cdb0]">→</div>
                     <div className="text-center">
-                      <div className="text-xs text-slate-500 mb-1">Check-out</div>
-                      <div className="font-bold text-slate-900">
+                      <div className="text-xs text-[#3d4a3c]/50 mb-1">Check-out</div>
+                      <div className="font-bold text-[#3d4a3c]">
                         {format(new Date(booking.checkOut), 'd MMM', { locale: it })}
                       </div>
                     </div>
@@ -427,13 +435,13 @@ export default function BookingsPage() {
 
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${getStatusColor(
                         booking.status
                       )}`}
                     >
                       {getStatusLabel(booking.status)}
                     </span>
-                    <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-700">
+                    <span className="px-3 py-1.5 bg-[#d4cdb0]/30 rounded-xl text-xs font-semibold text-[#3d4a3c]">
                       {getChannelLabel(booking.channel)}
                     </span>
                   </div>
@@ -443,7 +451,7 @@ export default function BookingsPage() {
                       setSelectedBooking(booking)
                       setShowEditModal(true)
                     }}
-                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    className="flex items-center space-x-2 text-[#3d4a3c] hover:text-[#4a5a49] font-medium text-sm bg-[#d4cdb0]/30 hover:bg-[#d4cdb0]/50 px-3 py-2 rounded-xl transition-all duration-300"
                   >
                     <Edit size={16} />
                     <span>Modifica</span>
@@ -456,14 +464,14 @@ export default function BookingsPage() {
 
         {/* Empty State */}
         {filteredBookings.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-              <Calendar size={40} className="text-slate-400" />
+          <div className="flex flex-col items-center justify-center py-16 bg-white/80 backdrop-blur-sm rounded-3xl border border-white/50">
+            <div className="w-20 h-20 bg-[#3d4a3c]/5 rounded-2xl flex items-center justify-center mb-4">
+              <Calendar size={36} className="text-[#3d4a3c]/40" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-[#3d4a3c] mb-2">
               Nessuna prenotazione
             </h3>
-            <p className="text-slate-600 mb-6">
+            <p className="text-[#3d4a3c]/60 mb-6">
               {filterStatus === 'ALL'
                 ? 'Inizia aggiungendo la tua prima prenotazione'
                 : `Nessuna prenotazione con stato ${getStatusLabel(filterStatus)}`}
@@ -471,7 +479,7 @@ export default function BookingsPage() {
             {filterStatus === 'ALL' && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
+                className="flex items-center space-x-2 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white px-6 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Plus size={20} />
                 <span>Aggiungi Prenotazione</span>
@@ -617,19 +625,19 @@ function CreateBookingModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-8">
+      <div className="bg-white/95 backdrop-blur-xl rounded-3xl max-w-3xl w-full p-6 shadow-2xl my-8 border border-white/50">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Nuova Prenotazione</h2>
+          <h2 className="text-2xl font-bold text-[#3d4a3c]">Nuova Prenotazione</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-[#3d4a3c]/5 rounded-xl transition-colors text-[#3d4a3c]/60 hover:text-[#3d4a3c]"
           >
             <X size={20} />
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 flex items-center">
+          <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl mb-6 flex items-center border border-rose-200">
             <AlertCircle size={20} className="mr-2" />
             {error}
           </div>
@@ -644,7 +652,7 @@ function CreateBookingModal({
               </label>
               <select
                 required
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.propertyId}
                 onChange={(e) => setFormData({ ...formData, propertyId: e.target.value, roomId: '' })}
               >
@@ -664,7 +672,7 @@ function CreateBookingModal({
               <select
                 required
                 disabled={!formData.propertyId}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
                 value={formData.roomId}
                 onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
               >
@@ -696,7 +704,7 @@ function CreateBookingModal({
                 <input
                   type="text"
                   required
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guestName}
                   onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
                   placeholder="Mario Rossi"
@@ -710,7 +718,7 @@ function CreateBookingModal({
                 <input
                   type="email"
                   required
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guestEmail}
                   onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
                   placeholder="mario@example.com"
@@ -723,7 +731,7 @@ function CreateBookingModal({
                 </label>
                 <input
                   type="tel"
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guestPhone}
                   onChange={(e) => setFormData({ ...formData, guestPhone: e.target.value })}
                   placeholder="+39 123 456 7890"
@@ -739,7 +747,7 @@ function CreateBookingModal({
                   required
                   min="1"
                   max={selectedRoom?.maxGuests || selectedProperty?.maxGuests || 10}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guests}
                   onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
                 />
@@ -758,7 +766,7 @@ function CreateBookingModal({
                 <input
                   type="date"
                   required
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.checkIn}
                   onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
                 />
@@ -771,7 +779,7 @@ function CreateBookingModal({
                 <input
                   type="date"
                   required
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.checkOut}
                   onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
                 />
@@ -786,7 +794,7 @@ function CreateBookingModal({
                   required
                   min="0"
                   step="0.01"
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.totalPrice}
                   onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
                   placeholder="100.00"
@@ -802,7 +810,7 @@ function CreateBookingModal({
                 Stato
               </label>
               <select
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               >
@@ -819,7 +827,7 @@ function CreateBookingModal({
                 Canale
               </label>
               <select
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.channel}
                 onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
               >
@@ -838,7 +846,7 @@ function CreateBookingModal({
             </label>
             <textarea
               rows={3}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Note aggiuntive sulla prenotazione..."
@@ -850,7 +858,7 @@ function CreateBookingModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>
@@ -1023,7 +1031,7 @@ function EditBookingModal({
                   <input
                     type="text"
                     required
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.guestName}
                     onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
                   />
@@ -1049,7 +1057,7 @@ function EditBookingModal({
                   <input
                     type="email"
                     required
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.guestEmail}
                     onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
                   />
@@ -1074,7 +1082,7 @@ function EditBookingModal({
                 <div className="flex gap-2">
                   <input
                     type="tel"
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.guestPhone}
                     onChange={(e) => setFormData({ ...formData, guestPhone: e.target.value })}
                   />
@@ -1102,7 +1110,7 @@ function EditBookingModal({
                   type="number"
                   required
                   min="1"
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guests}
                   onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
                 />
@@ -1122,7 +1130,7 @@ function EditBookingModal({
                   <input
                     type="date"
                     required
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.checkIn}
                     onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
                   />
@@ -1148,7 +1156,7 @@ function EditBookingModal({
                   <input
                     type="date"
                     required
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.checkOut}
                     onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
                   />
@@ -1176,7 +1184,7 @@ function EditBookingModal({
                     required
                     min="0"
                     step="0.01"
-                    className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.totalPrice}
                     onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
                   />
@@ -1203,7 +1211,7 @@ function EditBookingModal({
                 Stato
               </label>
               <select
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               >
@@ -1220,7 +1228,7 @@ function EditBookingModal({
                 Canale
               </label>
               <select
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.channel}
                 onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
               >
@@ -1246,7 +1254,7 @@ function EditBookingModal({
                 <input
                   type="number"
                   step="0.01"
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.touristTaxTotal}
                   onChange={(e) => setFormData({ ...formData, touristTaxTotal: e.target.value })}
                   placeholder="0.00"
@@ -1271,7 +1279,7 @@ function EditBookingModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>

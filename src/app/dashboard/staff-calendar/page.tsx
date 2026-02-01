@@ -266,35 +266,46 @@ export default function StaffCalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
+          <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
+        </div>
+        <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento calendario...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Calendario Dipendenti</h1>
-          <p className="text-slate-600">Visualizza assegnazioni staff per stanza</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+        <div className="relative z-10">
+          <h1 className="text-4xl font-bold mb-2">Calendario Dipendenti</h1>
+          <p className="text-[#d4cdb0] text-lg">Visualizza assegnazioni staff per stanza</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Filtri</h2>
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+            <Home size={16} className="text-[#3d4a3c]" />
+          </div>
+          Filtri
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              <Home size={16} className="inline mr-2" />
               Struttura
             </label>
             <select
               value={selectedProperty}
               onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
             >
               <option value="all">Tutte le strutture</option>
               {properties.map(property => (
@@ -308,28 +319,33 @@ export default function StaffCalendarPage() {
       </div>
 
       {/* Staff Legend */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Legenda Dipendenti</h2>
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+            <Users size={16} className="text-[#3d4a3c]" />
+          </div>
+          Legenda Dipendenti
+        </h2>
         <div className="flex flex-wrap gap-4">
           {staff.map((member, index) => (
-            <div key={member.id} className="flex items-center">
-              <div 
-                className="w-6 h-6 rounded mr-2 border border-slate-300"
+            <div key={member.id} className="flex items-center bg-slate-50 rounded-xl px-3 py-2">
+              <div
+                className="w-5 h-5 rounded-lg mr-2"
                 style={{ backgroundColor: STAFF_COLORS[index % STAFF_COLORS.length] }}
               ></div>
-              <span className="text-sm text-slate-700">{member.name}</span>
+              <span className="text-sm font-medium text-slate-700">{member.name}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Calendar */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 overflow-x-auto">
         {/* Calendar Header */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={previousMonth}
-            className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors shadow-md flex items-center space-x-2"
+            className="p-3 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl transition-all shadow-md flex items-center space-x-2"
           >
             <ChevronLeft size={20} />
             <span className="font-medium">Precedente</span>
@@ -339,7 +355,7 @@ export default function StaffCalendarPage() {
           </h2>
           <button
             onClick={nextMonth}
-            className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors shadow-md flex items-center space-x-2"
+            className="p-3 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl transition-all shadow-md flex items-center space-x-2"
           >
             <span className="font-medium">Successivo</span>
             <ChevronRight size={20} />
@@ -386,9 +402,9 @@ export default function StaffCalendarPage() {
                       <td
                         key={dayIndex}
                         onClick={() => setSelectedDate(date)}
-                        className={`border border-slate-300 p-2 cursor-pointer transition-colors relative min-h-[80px] ${
-                          isToday ? 'ring-2 ring-blue-500' : ''
-                        } ${isSelected ? 'ring-2 ring-purple-500' : ''} ${
+                        className={`border border-slate-200 p-2 cursor-pointer transition-colors relative min-h-[80px] ${
+                          isToday ? 'ring-2 ring-[#3d4a3c]' : ''
+                        } ${isSelected ? 'ring-2 ring-[#d4cdb0]' : ''} ${
                           date.getDay() === 0 || date.getDay() === 6 ? 'bg-slate-50' : 'bg-white'
                         }`}
                       >
@@ -408,19 +424,19 @@ export default function StaffCalendarPage() {
                           
                           {/* Check-in/Check-out indicators */}
                           {checkIn && (
-                            <div className="text-xs bg-green-500 text-white px-1 rounded text-center font-semibold">
+                            <div className="text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded-lg text-center font-semibold">
                               Check-in
                             </div>
                           )}
                           {checkOut && (
-                            <div className="text-xs bg-orange-500 text-white px-1 rounded text-center font-semibold">
+                            <div className="text-xs bg-amber-500 text-white px-1.5 py-0.5 rounded-lg text-center font-semibold">
                               Check-out
                             </div>
                           )}
-                          
+
                           {/* Booking indicator */}
                           {bookings.length > 0 && assignments.length === 0 && (
-                            <div className="text-xs bg-blue-100 text-blue-800 px-1 rounded text-center">
+                            <div className="text-xs bg-[#d4cdb0]/30 text-[#3d4a3c] px-1.5 py-0.5 rounded-lg text-center font-medium">
                               Occupata
                             </div>
                           )}
@@ -437,10 +453,13 @@ export default function StaffCalendarPage() {
 
       {/* Selected Date Info */}
       {selectedDate && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-slate-900">
-              Dettagli per {selectedDate.toLocaleDateString('it-IT', {
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                <CalendarIcon size={20} className="text-[#3d4a3c]" />
+              </div>
+              {selectedDate.toLocaleDateString('it-IT', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -449,9 +468,9 @@ export default function StaffCalendarPage() {
             </h2>
             <button
               onClick={() => setSelectedDate(undefined)}
-              className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
             >
-              <X size={20} />
+              <X size={20} className="text-slate-400" />
             </button>
           </div>
 
@@ -465,26 +484,27 @@ export default function StaffCalendarPage() {
               if (assignments.length === 0 && bookings.length === 0) return null
 
               return (
-                <div key={room.id} className="border border-slate-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-slate-900 mb-2">
+                <div key={room.id} className="border border-slate-200 rounded-2xl p-4">
+                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <Bed size={16} className="text-[#3d4a3c]" />
                     {room.name} - {room.property.name}
                   </h3>
-                  
+
                   {assignments.length > 0 && (
-                    <div className="mb-2">
-                      <h4 className="text-sm font-medium text-slate-700 mb-1">Dipendenti assegnati:</h4>
-                      <div className="space-y-1">
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-slate-700 mb-2">Dipendenti assegnati:</h4>
+                      <div className="space-y-2">
                         {assignments.map(assignment => (
                             <div
                               key={assignment.id}
-                              className="flex items-center space-x-2 text-sm"
+                              className="flex items-center space-x-2 text-sm bg-slate-50 rounded-xl px-3 py-2"
                             >
                               <div
-                                className="w-4 h-4 rounded border border-slate-300"
+                                className="w-4 h-4 rounded-lg"
                                 style={{ backgroundColor: getStaffColor(assignment.userId) }}
                               ></div>
-                              <span className="text-slate-900">{assignment.user.name}</span>
-                              <span className="text-slate-600">- {getTaskTypeLabel(assignment.taskType)}</span>
+                              <span className="text-slate-900 font-medium">{assignment.user.name}</span>
+                              <span className="text-slate-500">- {getTaskTypeLabel(assignment.taskType)}</span>
                             </div>
                         ))}
                       </div>
@@ -493,13 +513,13 @@ export default function StaffCalendarPage() {
 
                   {bookings.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-slate-700 mb-1">Prenotazioni:</h4>
-                      <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-slate-700 mb-2">Prenotazioni:</h4>
+                      <div className="space-y-2">
                         {bookings.map(booking => (
-                          <div key={booking.id} className="text-sm text-slate-600">
+                          <div key={booking.id} className="text-sm text-slate-600 flex items-center gap-2">
                             {booking.guestName}
-                            {checkIn && <span className="ml-2 text-green-600 font-semibold">(Check-in)</span>}
-                            {checkOut && <span className="ml-2 text-orange-600 font-semibold">(Check-out)</span>}
+                            {checkIn && <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-lg">(Check-in)</span>}
+                            {checkOut && <span className="text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-lg">(Check-out)</span>}
                           </div>
                         ))}
                       </div>

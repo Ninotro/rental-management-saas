@@ -267,18 +267,20 @@ export default function GuestCheckInPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-[#d4cdb0]/30 to-[#3d4a3c]/10 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#d4cdb0] rounded-full animate-spin border-t-[#3d4a3c]"></div>
       </div>
     )
   }
 
   if (error && !booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <AlertCircle className="mx-auto text-red-600 mb-4" size={48} />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">{t.error}</h1>
+      <div className="min-h-screen bg-gradient-to-br from-[#d4cdb0]/30 to-[#3d4a3c]/10 flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-white/50">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-red-600" size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-[#3d4a3c] mb-2">{t.error}</h1>
           <p className="text-slate-600">{error}</p>
         </div>
       </div>
@@ -287,10 +289,12 @@ export default function GuestCheckInPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <CheckCircle className="mx-auto text-green-600 mb-4" size={48} />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">{t.successTitle}</h1>
+      <div className="min-h-screen bg-gradient-to-br from-[#d4cdb0]/30 to-[#3d4a3c]/10 flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-white/50">
+          <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="text-emerald-600" size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-[#3d4a3c] mb-2">{t.successTitle}</h1>
           <p className="text-slate-600 mb-6">{t.successMessage}</p>
           <p className="text-sm text-slate-500">{t.confirmationEmail}</p>
         </div>
@@ -301,16 +305,16 @@ export default function GuestCheckInPage() {
   if (!booking) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#d4cdb0]/30 to-[#3d4a3c]/10 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Language Switcher */}
         <div className="flex justify-end mb-4">
-          <div className="bg-white rounded-full shadow-lg p-2 flex space-x-2">
+          <div className="bg-white/90 backdrop-blur-sm rounded-full shadow-lg p-2 flex space-x-2 border border-white/50">
             <button
               onClick={() => setLanguage('it')}
               className={`px-4 py-2 rounded-full flex items-center space-x-2 transition-all ${language === 'it'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white shadow-md'
+                : 'text-[#3d4a3c] hover:bg-[#d4cdb0]/30'
                 }`}
             >
               <span className="text-xl">🇮🇹</span>
@@ -319,8 +323,8 @@ export default function GuestCheckInPage() {
             <button
               onClick={() => setLanguage('en')}
               className={`px-4 py-2 rounded-full flex items-center space-x-2 transition-all ${language === 'en'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white shadow-md'
+                : 'text-[#3d4a3c] hover:bg-[#d4cdb0]/30'
                 }`}
             >
               <span className="text-xl">🇬🇧</span>
@@ -331,25 +335,27 @@ export default function GuestCheckInPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">{t.title}</h1>
-          <p className="text-slate-600">{t.subtitle}</p>
+          <h1 className="text-4xl font-bold text-[#3d4a3c] mb-2">{t.title}</h1>
+          <p className="text-[#3d4a3c]/70">{t.subtitle}</p>
         </div>
 
         {/* Booking Summary */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 mb-6 border border-white/50">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-900">{t.bookingSummary}</h2>
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            <h2 className="text-xl font-bold text-[#3d4a3c]">{t.bookingSummary}</h2>
+            <span className="px-4 py-1.5 bg-[#d4cdb0]/40 text-[#3d4a3c] rounded-full text-sm font-bold">
               {bookingCode}
             </span>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start space-x-3">
-              <MapPin className="text-blue-600 mt-1" size={20} />
+              <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                <MapPin className="text-[#3d4a3c]" size={18} />
+              </div>
               <div>
-                <p className="text-sm text-slate-600">{t.structure}</p>
-                <p className="font-semibold text-slate-900">{booking.property.name}</p>
+                <p className="text-sm text-slate-500">{t.structure}</p>
+                <p className="font-semibold text-[#3d4a3c]">{booking.property.name}</p>
                 <p className="text-sm text-slate-600">{booking.room.name}</p>
                 <p className="text-sm text-slate-500">
                   {booking.property.address}, {booking.property.city}
@@ -358,28 +364,32 @@ export default function GuestCheckInPage() {
             </div>
 
             <div className="flex items-start space-x-3">
-              <Calendar className="text-blue-600 mt-1" size={20} />
+              <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                <Calendar className="text-[#3d4a3c]" size={18} />
+              </div>
               <div>
-                <p className="text-sm text-slate-600">{t.stayDates}</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500">{t.stayDates}</p>
+                <p className="font-semibold text-[#3d4a3c]">
                   {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
-              <Users className="text-blue-600 mt-1" size={20} />
+              <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                <Users className="text-[#3d4a3c]" size={18} />
+              </div>
               <div>
-                <p className="text-sm text-slate-600">{t.guests}</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500">{t.guests}</p>
+                <p className="font-semibold text-[#3d4a3c]">
                   {booking.guests} {booking.guests === 1 ? t.guest : t.guests}
                 </p>
               </div>
             </div>
 
             <div>
-              <p className="text-sm text-slate-600">{t.total}</p>
-              <p className="text-2xl font-bold text-blue-600">{formatCurrency(booking.totalPrice)}</p>
+              <p className="text-sm text-slate-500">{t.total}</p>
+              <p className="text-2xl font-bold text-[#3d4a3c]">{formatCurrency(booking.totalPrice)}</p>
             </div>
           </div>
         </div>
@@ -387,16 +397,16 @@ export default function GuestCheckInPage() {
         {/* Check-in Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {guests.map((guest, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
+            <div key={index} className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-[#3d4a3c]">
                   {t.guestNumber} {index + 1} {t.requiredByLaw}
                 </h2>
                 {guests.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeGuest(index)}
-                    className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-xl transition-colors"
                   >
                     <Trash2 size={20} />
                   </button>
@@ -404,7 +414,7 @@ export default function GuestCheckInPage() {
               </div>
 
               {error && index === 0 && (
-                <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 flex items-center">
+                <div className="bg-red-50 text-red-800 p-4 rounded-2xl mb-4 flex items-center border border-red-200">
                   <AlertCircle size={18} className="mr-2" />
                   {error}
                 </div>
@@ -412,7 +422,7 @@ export default function GuestCheckInPage() {
 
               {/* Personal Data */}
               <div className="mb-6">
-                <h3 className="font-semibold text-slate-900 mb-4">{t.personalData}</h3>
+                <h3 className="font-bold text-[#3d4a3c] mb-4">{t.personalData}</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -421,7 +431,7 @@ export default function GuestCheckInPage() {
                     <input
                       type="text"
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.firstName}
                       onChange={(e) => updateGuest(index, 'firstName', e.target.value)}
                     />
@@ -434,7 +444,7 @@ export default function GuestCheckInPage() {
                     <input
                       type="text"
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.lastName}
                       onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
                     />
@@ -447,21 +457,21 @@ export default function GuestCheckInPage() {
                     <input
                       type="date"
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.dateOfBirth}
                       onChange={(e) => updateGuest(index, 'dateOfBirth', e.target.value)}
                     />
                   </div>
 
-                  <div className="md:col-span-2 flex flex-col space-y-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                  <div className="md:col-span-2 flex flex-col space-y-4 bg-[#d4cdb0]/20 p-4 rounded-2xl border border-[#d4cdb0]/40">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 border-slate-300 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        className="w-5 h-5 border-slate-300 rounded text-[#3d4a3c] focus:ring-2 focus:ring-[#3d4a3c]/30"
                         checked={guest.isExempt}
                         onChange={(e) => updateGuest(index, 'isExempt', e.target.checked)}
                       />
-                      <span className="text-sm font-medium text-slate-700">{t.touristTaxExempt}</span>
+                      <span className="text-sm font-medium text-[#3d4a3c]">{t.touristTaxExempt}</span>
                     </label>
 
                     {guest.isExempt && (
@@ -471,7 +481,7 @@ export default function GuestCheckInPage() {
                         </label>
                         <select
                           required
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                           value={guest.exemptionReason}
                           onChange={(e) => updateGuest(index, 'exemptionReason', e.target.value)}
                         >
@@ -493,7 +503,7 @@ export default function GuestCheckInPage() {
                       type="text"
                       required
                       placeholder={t.placeholderCity}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.birthCity}
                       onChange={(e) => updateGuest(index, 'birthCity', e.target.value)}
                     />
@@ -508,7 +518,7 @@ export default function GuestCheckInPage() {
                       required
                       maxLength={2}
                       placeholder={t.placeholderProvince}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.birthProvince}
                       onChange={(e) => updateGuest(index, 'birthProvince', e.target.value.toUpperCase())}
                     />
@@ -522,7 +532,7 @@ export default function GuestCheckInPage() {
                       type="text"
                       required
                       placeholder={t.placeholderStreet}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.residenceStreet}
                       onChange={(e) => updateGuest(index, 'residenceStreet', e.target.value)}
                     />
@@ -536,7 +546,7 @@ export default function GuestCheckInPage() {
                       type="text"
                       required
                       placeholder={t.placeholderPostalCode}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.residencePostalCode}
                       onChange={(e) => updateGuest(index, 'residencePostalCode', e.target.value)}
                     />
@@ -550,7 +560,7 @@ export default function GuestCheckInPage() {
                       type="text"
                       required
                       placeholder={t.placeholderCity}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.residenceCity}
                       onChange={(e) => updateGuest(index, 'residenceCity', e.target.value)}
                     />
@@ -565,7 +575,7 @@ export default function GuestCheckInPage() {
                       required
                       maxLength={2}
                       placeholder={t.placeholderProvince}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.residenceProvince}
                       onChange={(e) => updateGuest(index, 'residenceProvince', e.target.value.toUpperCase())}
                     />
@@ -580,7 +590,7 @@ export default function GuestCheckInPage() {
                       required
                       maxLength={16}
                       placeholder={t.placeholderFiscalCode}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.fiscalCode}
                       onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
                     />
@@ -589,8 +599,8 @@ export default function GuestCheckInPage() {
               </div>
 
               {/* Document */}
-              <div className="border-t pt-6 mb-6">
-                <h3 className="font-semibold text-slate-900 mb-4">{t.identityDocument}</h3>
+              <div className="border-t border-slate-100 pt-6 mb-6">
+                <h3 className="font-bold text-[#3d4a3c] mb-4">{t.identityDocument}</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -598,7 +608,7 @@ export default function GuestCheckInPage() {
                     </label>
                     <select
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.documentType}
                       onChange={(e) => updateGuest(index, 'documentType', e.target.value)}
                     >
@@ -616,7 +626,7 @@ export default function GuestCheckInPage() {
                       type="text"
                       required
                       placeholder={t.placeholderDocNumber}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.documentNumber}
                       onChange={(e) => updateGuest(index, 'documentNumber', e.target.value.toUpperCase())}
                     />
@@ -629,7 +639,7 @@ export default function GuestCheckInPage() {
                     <input
                       type="date"
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.documentIssueDate}
                       onChange={(e) => updateGuest(index, 'documentIssueDate', e.target.value)}
                     />
@@ -642,7 +652,7 @@ export default function GuestCheckInPage() {
                     <input
                       type="date"
                       required
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.documentExpiryDate}
                       onChange={(e) => updateGuest(index, 'documentExpiryDate', e.target.value)}
                     />
@@ -651,8 +661,8 @@ export default function GuestCheckInPage() {
               </div>
 
               {/* Upload Documents */}
-              <div className="border-t pt-6">
-                <h3 className="font-semibold text-slate-900 mb-2">{t.uploadDocument}</h3>
+              <div className="border-t border-slate-100 pt-6">
+                <h3 className="font-bold text-[#3d4a3c] mb-2">{t.uploadDocument}</h3>
                 <p className="text-sm text-slate-600 mb-4">{t.uploadDocumentDesc}</p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -671,12 +681,12 @@ export default function GuestCheckInPage() {
                     />
                     <label
                       htmlFor={`docFront-${index}`}
-                      className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer ${guest.documentFrontFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
+                      className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-[#3d4a3c] transition-colors cursor-pointer ${guest.documentFrontFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
                         }`}
                     >
                       {guest.uploadingFront ? (
                         <div className="flex flex-col items-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#d4cdb0] border-t-[#3d4a3c] mb-2"></div>
                           <p className="text-sm text-slate-600">{t.uploadingFile}</p>
                         </div>
                       ) : guest.documentFrontFile ? (
@@ -711,12 +721,12 @@ export default function GuestCheckInPage() {
                     />
                     <label
                       htmlFor={`docBack-${index}`}
-                      className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer ${guest.documentBackFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
+                      className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-[#3d4a3c] transition-colors cursor-pointer ${guest.documentBackFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
                         }`}
                     >
                       {guest.uploadingBack ? (
                         <div className="flex flex-col items-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#d4cdb0] border-t-[#3d4a3c] mb-2"></div>
                           <p className="text-sm text-slate-600">{t.uploadingFile}</p>
                         </div>
                       ) : guest.documentBackFile ? (
@@ -744,7 +754,7 @@ export default function GuestCheckInPage() {
             <button
               type="button"
               onClick={addGuest}
-              className="w-full bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 text-blue-600 py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all"
+              className="w-full bg-white/80 backdrop-blur-sm border-2 border-dashed border-[#d4cdb0] hover:border-[#3d4a3c] text-[#3d4a3c] py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 transition-all hover:bg-[#d4cdb0]/20"
             >
               <Plus size={20} />
               <span>{t.addGuest}</span>
@@ -752,19 +762,19 @@ export default function GuestCheckInPage() {
           )}
 
           {/* Privacy Notice */}
-          <div className="bg-slate-50 rounded-lg p-4">
+          <div className="bg-[#d4cdb0]/20 rounded-2xl p-4 border border-[#d4cdb0]/40">
             <p className="text-xs text-slate-600">{t.privacyNotice}</p>
           </div>
 
           {/* Tourist Tax Section */}
           {booking.property.touristTaxRate && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-100">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <CheckCircle className="text-blue-600" size={24} />
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 border-2 border-[#d4cdb0]/50">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-[#d4cdb0]/40 p-3 rounded-2xl">
+                  <CheckCircle className="text-[#3d4a3c]" size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">{t.touristTaxTitle}</h2>
+                  <h2 className="text-xl font-bold text-[#3d4a3c]">{t.touristTaxTitle}</h2>
                   <p className="text-sm text-slate-600">{t.touristTaxDesc}</p>
                 </div>
               </div>
@@ -779,7 +789,7 @@ export default function GuestCheckInPage() {
 
                 return (
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+                    <div className="flex justify-between items-center p-4 bg-[#d4cdb0]/20 rounded-2xl border border-[#d4cdb0]/40">
                       <div>
                         <p className="text-sm text-slate-600">
                           {nonExemptCount} {nonExemptCount === 1 ? t.guest : t.guests} x {taxNights} {t.stayDates}
@@ -788,7 +798,7 @@ export default function GuestCheckInPage() {
                           href="https://idsportale.comune.palermo.it"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline font-medium"
+                          className="text-xs text-[#3d4a3c] hover:underline font-medium"
                         >
                           {t.touristTaxInfo}
                         </a>
@@ -797,7 +807,7 @@ export default function GuestCheckInPage() {
                         <p className="text-sm text-slate-500 line-through">
                           {nights > taxNights ? `${nights} notti` : ''}
                         </p>
-                        <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalTax)}</p>
+                        <p className="text-2xl font-bold text-[#3d4a3c]">{formatCurrency(totalTax)}</p>
                       </div>
                     </div>
 
@@ -828,15 +838,15 @@ export default function GuestCheckInPage() {
                         )}
 
                         {booking.property.bankAccountIBAN && (
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                            <h4 className="font-bold text-slate-900 mb-2 flex items-center space-x-2">
+                          <div className="bg-[#d4cdb0]/20 border border-[#d4cdb0]/40 rounded-2xl p-4">
+                            <h4 className="font-bold text-[#3d4a3c] mb-2 flex items-center space-x-2">
                               <span>🏦</span>
                               <span>{t.touristTaxBankTransfer}</span>
                             </h4>
                             <div className="space-y-1 text-sm">
                               <p className="flex justify-between">
                                 <span className="text-slate-500">{t.touristTaxIBAN}:</span>
-                                <span className="font-mono font-bold text-blue-700">{booking.property.bankAccountIBAN}</span>
+                                <span className="font-mono font-bold text-[#3d4a3c]">{booking.property.bankAccountIBAN}</span>
                               </p>
                               {booking.property.bankAccountHolder && (
                                 <p className="flex justify-between">
@@ -856,9 +866,9 @@ export default function GuestCheckInPage() {
 
                     {/* Upload Screenshot Pagamento */}
                     {totalTax > 0 && (
-                      <div className="mt-6 border-t pt-6">
-                        <h4 className="font-bold text-slate-900 mb-3 flex items-center space-x-2">
-                          <Upload size={20} className="text-blue-600" />
+                      <div className="mt-6 border-t border-slate-100 pt-6">
+                        <h4 className="font-bold text-[#3d4a3c] mb-3 flex items-center space-x-2">
+                          <Upload size={20} className="text-[#3d4a3c]" />
                           <span>Carica Screenshot Pagamento</span>
                         </h4>
                         <p className="text-sm text-slate-600 mb-4">
@@ -876,12 +886,12 @@ export default function GuestCheckInPage() {
                         />
                         <label
                           htmlFor="payment-proof"
-                          className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer ${guests[0].paymentProofFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center hover:border-[#3d4a3c] transition-colors cursor-pointer ${guests[0].paymentProofFile ? 'border-green-500 bg-green-50' : 'border-slate-300'
                             }`}
                         >
                           {guests[0].uploadingProof ? (
                             <div className="flex flex-col items-center">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#d4cdb0] border-t-[#3d4a3c] mb-2"></div>
                               <p className="text-sm text-slate-600">Caricamento...</p>
                             </div>
                           ) : guests[0].paymentProofFile ? (
@@ -910,7 +920,7 @@ export default function GuestCheckInPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-semibold disabled:opacity-50 transition-all shadow-lg"
+            className="w-full bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white py-4 rounded-2xl font-bold disabled:opacity-50 transition-all shadow-xl text-lg"
           >
             {submitting ? t.submitting : t.submit}
           </button>

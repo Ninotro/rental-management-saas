@@ -329,7 +329,7 @@ export default function GuestCheckInsPage() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-blue-600"></div>
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
           <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
         </div>
         <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento check-in...</p>
@@ -417,7 +417,7 @@ export default function GuestCheckInsPage() {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
               showFilters
-                ? 'bg-blue-100 text-blue-700 shadow-inner'
+                ? 'bg-[#d4cdb0]/30 text-[#3d4a3c] shadow-inner border border-[#3d4a3c]/20'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'
             }`}
           >
@@ -1002,7 +1002,7 @@ function EditCheckInModal({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl font-medium shadow-lg shadow-[#3d4a3c]/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving ? (
               <>

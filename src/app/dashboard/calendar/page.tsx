@@ -235,53 +235,77 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
+          <CalendarIcon className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
+        </div>
+        <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento calendario...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Calendario</h1>
-          <p className="text-slate-600">Gestisci disponibilità e prenotazioni</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleSyncAllCalendars}
-            disabled={syncing}
-            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all disabled:opacity-50"
-          >
-            <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
-            <span>{syncing ? 'Sincronizzazione...' : 'Sincronizza Calendari'}</span>
-          </button>
-          <button
-            onClick={() => setShowBlockModal(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
-          >
-            <Plus size={20} />
-            <span>Blocca Date</span>
-          </button>
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+        <div className="relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Calendario</h1>
+              <p className="text-[#d4cdb0] text-lg">Gestisci disponibilità e prenotazioni</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleSyncAllCalendars}
+                disabled={syncing}
+                className="flex items-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white px-5 py-3 rounded-2xl font-medium border border-white/20 transition-all duration-200 disabled:opacity-50"
+              >
+                <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
+                <span>{syncing ? 'Sincronizzazione...' : 'Sincronizza Calendari'}</span>
+              </button>
+              <button
+                onClick={() => setShowBlockModal(true)}
+                className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500 text-white px-5 py-3 rounded-2xl font-medium border border-red-400/30 transition-all duration-200"
+              >
+                <Plus size={20} />
+                <span>Blocca Date</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Sync Result Message */}
       {syncResult && (
-        <div className={`p-4 rounded-xl ${syncResult.success ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
-          {syncResult.message}
+        <div className={`p-4 rounded-2xl flex items-center gap-3 ${
+          syncResult.success
+            ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {syncResult.success ? (
+            <CheckCircle size={20} className="text-emerald-500 flex-shrink-0" />
+          ) : (
+            <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
+          )}
+          <span className="font-medium">{syncResult.message}</span>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Filtri</h2>
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="p-1.5 bg-[#d4cdb0]/30 rounded-lg">
+            <Home size={16} className="text-[#3d4a3c]" />
+          </div>
+          Filtri
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              <Home size={16} className="inline mr-2" />
               Struttura
             </label>
             <select
@@ -290,7 +314,7 @@ export default function CalendarPage() {
                 setSelectedProperty(e.target.value)
                 setSelectedRoom('all')
               }}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
             >
               <option value="all">Tutte le strutture</option>
               {properties.map(property => (
@@ -304,13 +328,12 @@ export default function CalendarPage() {
           {selectedProp?.hasRooms && rooms.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                <Bed size={16} className="inline mr-2" />
                 Stanza
               </label>
               <select
                 value={selectedRoom}
                 onChange={(e) => setSelectedRoom(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               >
                 <option value="all">Tutte le stanze</option>
                 {rooms.map(room => (
@@ -321,38 +344,6 @@ export default function CalendarPage() {
               </select>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-100">Prenotazioni Totali</span>
-            <CalendarIcon size={24} className="text-blue-200" />
-          </div>
-          <p className="text-3xl font-bold">{events.filter(e => e.type === 'booking').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-green-100">Confermate</span>
-            <CalendarIcon size={24} className="text-green-200" />
-          </div>
-          <p className="text-3xl font-bold">{events.filter(e => e.status === 'confirmed').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-yellow-100">In Attesa</span>
-            <CalendarIcon size={24} className="text-yellow-200" />
-          </div>
-          <p className="text-3xl font-bold">{events.filter(e => e.status === 'pending').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-red-100">Cancellate</span>
-            <CalendarIcon size={24} className="text-red-200" />
-          </div>
-          <p className="text-3xl font-bold">{events.filter(e => e.status === 'cancelled').length}</p>
         </div>
       </div>
 
@@ -394,9 +385,12 @@ export default function CalendarPage() {
         const hasEvents = checkInsToday.length > 0 || checkOutsToday.length > 0 || otherEvents.length > 0
 
         return (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                  <CalendarIcon size={20} className="text-[#3d4a3c]" />
+                </div>
                 {selectedDate.toLocaleDateString('it-IT', {
                   weekday: 'long',
                   year: 'numeric',
@@ -406,9 +400,9 @@ export default function CalendarPage() {
               </h2>
               <button
                 onClick={() => setSelectedDate(undefined)}
-                className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                <X size={20} />
+                <X size={20} className="text-slate-400" />
               </button>
             </div>
 
@@ -417,8 +411,10 @@ export default function CalendarPage() {
                 {/* Check-ins Section */}
                 {checkInsToday.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-green-700 mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <h3 className="text-lg font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 bg-emerald-100 rounded-lg">
+                        <CheckCircle size={16} className="text-emerald-600" />
+                      </div>
                       Check-in ({checkInsToday.length})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -429,24 +425,26 @@ export default function CalendarPage() {
                             setSelectedBookingId(event.id)
                             setShowBookingDetail(true)
                           }}
-                          className="p-4 bg-green-50 border border-green-200 rounded-xl cursor-pointer hover:shadow-md hover:border-green-400 transition-all"
+                          className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-emerald-400 transition-all duration-200"
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <p className="font-bold text-slate-900">{event.guestName}</p>
-                              <p className="text-sm text-green-700 font-medium mt-1">
-                                🏠 {event.propertyName}
+                              <p className="text-sm text-emerald-700 font-medium mt-1 flex items-center gap-1">
+                                <Home size={14} />
+                                {event.propertyName}
                               </p>
                               {event.roomName && (
-                                <p className="text-sm text-green-600">
-                                  🛏️ {event.roomName}
+                                <p className="text-sm text-emerald-600 flex items-center gap-1">
+                                  <Bed size={14} />
+                                  {event.roomName}
                                 </p>
                               )}
                               <p className="text-xs text-slate-500 mt-2">
                                 Check-out: {event.endDate.toLocaleDateString('it-IT')}
                               </p>
                             </div>
-                            <Eye size={18} className="text-green-500" />
+                            <Eye size={18} className="text-emerald-500" />
                           </div>
                         </div>
                       ))}
@@ -457,8 +455,10 @@ export default function CalendarPage() {
                 {/* Check-outs Section */}
                 {checkOutsToday.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-orange-700 mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                    <h3 className="text-lg font-semibold text-amber-700 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 bg-amber-100 rounded-lg">
+                        <Clock size={16} className="text-amber-600" />
+                      </div>
                       Check-out ({checkOutsToday.length})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -469,24 +469,26 @@ export default function CalendarPage() {
                             setSelectedBookingId(event.id)
                             setShowBookingDetail(true)
                           }}
-                          className="p-4 bg-orange-50 border border-orange-200 rounded-xl cursor-pointer hover:shadow-md hover:border-orange-400 transition-all"
+                          className="p-4 bg-amber-50 border border-amber-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-amber-400 transition-all duration-200"
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <p className="font-bold text-slate-900">{event.guestName}</p>
-                              <p className="text-sm text-orange-700 font-medium mt-1">
-                                🏠 {event.propertyName}
+                              <p className="text-sm text-amber-700 font-medium mt-1 flex items-center gap-1">
+                                <Home size={14} />
+                                {event.propertyName}
                               </p>
                               {event.roomName && (
-                                <p className="text-sm text-orange-600">
-                                  🛏️ {event.roomName}
+                                <p className="text-sm text-amber-600 flex items-center gap-1">
+                                  <Bed size={14} />
+                                  {event.roomName}
                                 </p>
                               )}
                               <p className="text-xs text-slate-500 mt-2">
                                 Check-in: {event.startDate.toLocaleDateString('it-IT')}
                               </p>
                             </div>
-                            <Eye size={18} className="text-orange-500" />
+                            <Eye size={18} className="text-amber-500" />
                           </div>
                         </div>
                       ))}
@@ -497,15 +499,17 @@ export default function CalendarPage() {
                 {/* Other Events (Blocked/Maintenance) */}
                 {otherEvents.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center gap-2">
+                      <div className="p-1.5 bg-red-100 rounded-lg">
+                        <AlertCircle size={16} className="text-red-600" />
+                      </div>
                       Blocchi ({otherEvents.length})
                     </h3>
                     <div className="space-y-2">
                       {otherEvents.map(event => (
                         <div
                           key={event.id}
-                          className="p-3 bg-red-50 border border-red-200 rounded-lg"
+                          className="p-4 bg-red-50 border border-red-200 rounded-2xl"
                         >
                           <p className="font-medium text-slate-900">{event.title}</p>
                           <p className="text-sm text-slate-600">
@@ -518,8 +522,11 @@ export default function CalendarPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-600">
-                Nessun evento per questa data
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CalendarIcon className="text-slate-400" size={24} />
+                </div>
+                <p className="text-slate-500 font-medium">Nessun evento per questa data</p>
               </div>
             )}
           </div>
@@ -739,9 +746,9 @@ function BookingDetailModal({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-3xl p-8">
+          <div className="w-12 h-12 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
         </div>
       </div>
     )
@@ -749,10 +756,13 @@ function BookingDetailModal({
 
   if (!booking) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl p-8">
-          <p className="text-red-600">Prenotazione non trovata</p>
-          <button onClick={onClose} className="mt-4 px-4 py-2 bg-slate-100 rounded-lg">Chiudi</button>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-3xl p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-red-500" size={32} />
+          </div>
+          <p className="text-red-600 font-medium mb-4">Prenotazione non trovata</p>
+          <button onClick={onClose} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">Chiudi</button>
         </div>
       </div>
     )
@@ -762,29 +772,38 @@ function BookingDetailModal({
   const allCheckInsComplete = hasCheckIns && booking.guestCheckIns.every(c => c.status === 'APPROVED')
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl my-8 max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Dettaglio Prenotazione</h2>
-            <p className="text-slate-600">{booking.property.name} {booking.room && `- ${booking.room.name}`}</p>
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-2xl">
+                <CalendarIcon size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Dettaglio Prenotazione</h2>
+                <p className="text-[#d4cdb0]">{booking.property.name} {booking.room && `- ${booking.room.name}`}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={24} />
-          </button>
         </div>
 
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+
         {/* Status Bar */}
-        <div className="flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-xl">
+        <div className="flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-2xl">
           <div className="flex items-center gap-4">
-            <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getStatusColor(booking.status)}`}>
+            <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${getStatusColor(booking.status)}`}>
               {getStatusLabel(booking.status)}
             </span>
-            <span className="px-3 py-1 bg-slate-200 rounded-full text-sm font-medium text-slate-700">
+            <span className="px-3 py-1.5 bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
               {getChannelLabel(booking.channel)}
             </span>
           </div>
@@ -793,7 +812,7 @@ function BookingDetailModal({
               <button
                 onClick={() => updateStatus('CHECKED_IN')}
                 disabled={updating}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl text-sm font-medium disabled:opacity-50 transition-all"
               >
                 Registra Check-in
               </button>
@@ -802,7 +821,7 @@ function BookingDetailModal({
               <button
                 onClick={() => updateStatus('CHECKED_OUT')}
                 disabled={updating}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 transition-all"
               >
                 Registra Check-out
               </button>
@@ -814,9 +833,9 @@ function BookingDetailModal({
           {/* Left Column - Booking Info */}
           <div className="space-y-6">
             {/* Date e Prezzo */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+            <div className="bg-gradient-to-br from-[#d4cdb0]/20 to-[#d4cdb0]/10 rounded-2xl p-4 border border-[#d4cdb0]/30">
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-                <CalendarIcon className="mr-2 text-blue-600" size={20} />
+                <CalendarIcon className="mr-2 text-[#3d4a3c]" size={20} />
                 Soggiorno
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -840,9 +859,9 @@ function BookingDetailModal({
             </div>
 
             {/* Dati Ospite */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200">
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-                <User className="mr-2 text-blue-600" size={20} />
+                <User className="mr-2 text-[#3d4a3c]" size={20} />
                 Dati Ospite
               </h3>
               <div className="space-y-3">
@@ -873,9 +892,9 @@ function BookingDetailModal({
             </div>
 
             {/* Tassa di Soggiorno */}
-            <div className={`rounded-xl p-4 border ${booking.touristTaxPaid ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+            <div className={`rounded-2xl p-4 border ${booking.touristTaxPaid ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-                <DollarSign className={`mr-2 ${booking.touristTaxPaid ? 'text-green-600' : 'text-yellow-600'}`} size={20} />
+                <DollarSign className={`mr-2 ${booking.touristTaxPaid ? 'text-emerald-600' : 'text-amber-600'}`} size={20} />
                 Tassa di Soggiorno
               </h3>
               <div className="flex items-center justify-between">
@@ -885,7 +904,7 @@ function BookingDetailModal({
                   ) : (
                     <p className="text-slate-600">Non calcolata</p>
                   )}
-                  <p className={`text-sm font-medium ${booking.touristTaxPaid ? 'text-green-600' : 'text-yellow-600'}`}>
+                  <p className={`text-sm font-medium ${booking.touristTaxPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
                     {booking.touristTaxPaid ? '✓ Pagata' : '⏳ Da pagare'}
                   </p>
                 </div>
@@ -895,7 +914,7 @@ function BookingDetailModal({
                     checked={booking.touristTaxPaid}
                     onChange={(e) => updateTouristTax(e.target.checked)}
                     disabled={updating}
-                    className="w-6 h-6 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                    className="w-6 h-6 text-emerald-600 border-slate-300 rounded-lg focus:ring-emerald-500"
                   />
                   <span className="text-sm font-medium text-slate-700">Segna come pagata</span>
                 </label>
@@ -916,16 +935,16 @@ function BookingDetailModal({
           {/* Right Column - Check-ins */}
           <div className="space-y-6">
             {/* Check-in Status */}
-            <div className={`rounded-xl p-4 border ${hasCheckIns ? (allCheckInsComplete ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200') : 'bg-orange-50 border-orange-200'}`}>
+            <div className={`rounded-2xl p-4 border ${hasCheckIns ? (allCheckInsComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-[#d4cdb0]/20 border-[#d4cdb0]/30') : 'bg-amber-50 border-amber-200'}`}>
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
                 {hasCheckIns ? (
                   allCheckInsComplete ? (
-                    <CheckCircle className="mr-2 text-green-600" size={20} />
+                    <CheckCircle className="mr-2 text-emerald-600" size={20} />
                   ) : (
-                    <Clock className="mr-2 text-blue-600" size={20} />
+                    <Clock className="mr-2 text-[#3d4a3c]" size={20} />
                   )
                 ) : (
-                  <AlertCircle className="mr-2 text-orange-600" size={20} />
+                  <AlertCircle className="mr-2 text-amber-600" size={20} />
                 )}
                 Stato Check-in Ospiti
               </h3>
@@ -937,33 +956,33 @@ function BookingDetailModal({
                       {booking.guestCheckIns.length} ospite/i registrato/i
                     </span>
                     {allCheckInsComplete && (
-                      <span className="text-sm font-bold text-green-600">✓ Tutti completati</span>
+                      <span className="text-sm font-bold text-emerald-600">✓ Tutti completati</span>
                     )}
                   </div>
 
                   {booking.guestCheckIns.map((checkIn) => (
-                    <div key={checkIn.id} className="bg-white rounded-lg p-3 border border-slate-200">
+                    <div key={checkIn.id} className="bg-white rounded-xl p-3 border border-slate-200">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-slate-900">
                             {checkIn.firstName} {checkIn.lastName}
                           </p>
-                          <p className="text-sm text-slate-600">{checkIn.fiscalCode}</p>
+                          <p className="text-sm text-slate-600 font-mono">{checkIn.fiscalCode}</p>
                           <p className="text-xs text-slate-500">
                             {checkIn.documentType.replace('_', ' ')} - {checkIn.documentNumber}
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            checkIn.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                            checkIn.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                            checkIn.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                            checkIn.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
                             'bg-red-100 text-red-800'
                           }`}>
                             {checkIn.status === 'APPROVED' ? 'Approvato' :
                              checkIn.status === 'PENDING' ? 'In attesa' : 'Rifiutato'}
                           </span>
                           {checkIn.submittedToPolice && (
-                            <p className="text-xs text-green-600 mt-1">✓ Comunicato PS</p>
+                            <p className="text-xs text-emerald-600 mt-1">✓ Comunicato PS</p>
                           )}
                         </div>
                       </div>
@@ -972,7 +991,9 @@ function BookingDetailModal({
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <AlertCircle className="mx-auto text-orange-400 mb-2" size={32} />
+                  <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <AlertCircle className="text-amber-500" size={28} />
+                  </div>
                   <p className="text-slate-700 font-medium">Nessun check-in registrato</p>
                   <p className="text-sm text-slate-500 mt-1">
                     L'ospite non ha ancora completato il check-in online
@@ -983,16 +1004,16 @@ function BookingDetailModal({
 
             {/* Note */}
             {booking.notes && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
                 <h3 className="font-semibold text-slate-900 mb-2">Note</h3>
                 <p className="text-slate-700 whitespace-pre-wrap">{booking.notes}</p>
               </div>
             )}
 
             {/* Struttura e Stanza */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200">
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-                <Home className="mr-2 text-blue-600" size={20} />
+                <Home className="mr-2 text-[#3d4a3c]" size={20} />
                 Struttura
               </h3>
               <div className="space-y-2">
@@ -1012,11 +1033,13 @@ function BookingDetailModal({
           </div>
         </div>
 
+        </div>
+
         {/* Footer */}
-        <div className="mt-6 pt-4 border-t flex justify-end">
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+            className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors border border-slate-200"
           >
             Chiudi
           </button>
@@ -1079,20 +1102,29 @@ function BlockDateModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Blocca Date</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <X size={20} />
+              </div>
+              <h2 className="text-xl font-bold">Blocca Date</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
+        <div className="p-6">
         {error && (
-          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4">
+          <div className="bg-red-50 text-red-800 p-3 rounded-xl mb-4 flex items-center gap-2">
+            <AlertCircle size={18} />
             {error}
           </div>
         )}
@@ -1104,7 +1136,7 @@ function BlockDateModal({
             </label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.propertyId}
               onChange={(e) => setFormData({ ...formData, propertyId: e.target.value })}
             >
@@ -1123,7 +1155,7 @@ function BlockDateModal({
             </label>
             <select
               required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             >
@@ -1132,30 +1164,32 @@ function BlockDateModal({
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Data Inizio *
-            </label>
-            <input
-              type="date"
-              required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Data Inizio *
+              </label>
+              <input
+                type="date"
+                required
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Data Fine *
-            </label>
-            <input
-              type="date"
-              required
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Data Fine *
+              </label>
+              <input
+                type="date"
+                required
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </div>
           </div>
 
           <div>
@@ -1164,7 +1198,7 @@ function BlockDateModal({
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder={formData.type === 'BLOCKED' ? 'Periodo bloccato' : 'Manutenzione'}
@@ -1177,30 +1211,31 @@ function BlockDateModal({
             </label>
             <textarea
               rows={3}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all resize-none"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Note aggiuntive..."
             />
           </div>
 
-          <div className="flex space-x-3 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
             >
               Annulla
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-red-600 hover:to-rose-700 font-medium disabled:opacity-50 transition-all shadow-lg shadow-red-500/25"
             >
               {loading ? 'Creazione...' : 'Blocca Date'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

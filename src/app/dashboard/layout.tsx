@@ -7,7 +7,6 @@ import { canManageUsers, canViewFinancials } from '@/lib/permissions'
 import {
   LayoutDashboard,
   Calendar,
-  Home,
   DollarSign,
   Users,
   UserCheck,
@@ -21,8 +20,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Sparkles,
+  Home,
 } from 'lucide-react'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 
 export default function DashboardLayout({
@@ -116,15 +116,15 @@ export default function DashboardLayout({
               <div className="flex items-center space-x-3">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-[#d4cdb0] to-[#c4b896] rounded-xl blur opacity-40 group-hover:opacity-60 transition duration-300"></div>
-                  <div className="relative w-10 h-10 bg-gradient-to-br from-[#d4cdb0] to-[#c4b896] rounded-xl flex items-center justify-center shadow-lg">
-                    <Home className="text-[#3d4a3c]" size={20} />
+                  <div className="relative w-11 h-11 bg-[#d4cdb0] rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                    <Image src="/logo-palermo.svg" alt="BookYourStayPalermo" width={36} height={36} className="object-contain" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white tracking-tight">
-                    Rental Manager
+                  <h1 className="text-lg font-bold text-white tracking-tight">
+                    BookYourStayPalermo
                   </h1>
-                  <p className="text-[10px] text-[#d4cdb0]/70 font-medium tracking-wider uppercase">Property Management</p>
+                  <p className="text-[10px] text-[#d4cdb0]/70 font-medium tracking-wider uppercase">CRM</p>
                 </div>
               </div>
             </div>
@@ -221,19 +221,6 @@ export default function DashboardLayout({
                 })}
               </nav>
 
-              {/* Pro Badge */}
-              {!sidebarCollapsed && (
-                <div className="mt-6 p-4 bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-2xl text-white">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Sparkles size={18} className="text-[#d4cdb0]" />
-                    <span className="font-semibold">Pro Version</span>
-                  </div>
-                  <p className="text-xs text-white/70 mb-3">Sblocca tutte le funzionalità premium</p>
-                  <button className="w-full py-2 bg-[#d4cdb0] hover:bg-[#c4b896] text-[#3d4a3c] rounded-xl text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
-                    Upgrade
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
