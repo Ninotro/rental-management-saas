@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink, CheckCircle2, AlertTriangle, Clock, Edit3, Trash2, ChevronDown, Users, Shield, Mail, Phone } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -32,7 +32,6 @@ interface GuestCheckIn {
   submittedAt: string
   submittedToPolice: boolean
   submittedToPoliceAt: string | null
-  // Dati dal nuovo flusso (senza prenotazione)
   selectedCheckIn: string | null
   selectedCheckOut: string | null
   selectedRoom: {
@@ -43,7 +42,6 @@ interface GuestCheckIn {
       address: string
     }
   } | null
-  // Dati dal vecchio flusso (con prenotazione)
   booking: {
     checkIn: string
     checkOut: string
@@ -71,6 +69,8 @@ export default function GuestCheckInsPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingCheckIn, setEditingCheckIn] = useState<GuestCheckIn | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   useEffect(() => {
     fetchCheckIns()
@@ -78,7 +78,7 @@ export default function GuestCheckInsPage() {
 
   useEffect(() => {
     filterCheckIns()
-  }, [checkIns, searchTerm, startDate, endDate])
+  }, [checkIns, searchTerm, startDate, endDate, statusFilter])
 
   const fetchCheckIns = async () => {
     try {
@@ -95,7 +95,6 @@ export default function GuestCheckInsPage() {
     }
   }
 
-  // Helper per ottenere i dati della struttura (da booking o selectedRoom)
   const getPropertyName = (c: GuestCheckIn) =>
     c.booking?.property?.name || c.selectedRoom?.property?.name || 'N/A'
 
@@ -114,7 +113,6 @@ export default function GuestCheckInsPage() {
   const filterCheckIns = () => {
     let filtered = [...checkIns]
 
-    // Filtra per termine di ricerca
     if (searchTerm) {
       filtered = filtered.filter(
         (c) =>
@@ -125,7 +123,6 @@ export default function GuestCheckInsPage() {
       )
     }
 
-    // Filtra per date
     if (startDate) {
       filtered = filtered.filter(
         (c) => new Date(c.submittedAt) >= new Date(startDate)
@@ -135,6 +132,16 @@ export default function GuestCheckInsPage() {
       filtered = filtered.filter(
         (c) => new Date(c.submittedAt) <= new Date(endDate)
       )
+    }
+
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'pending_police') {
+        filtered = filtered.filter(c => !c.submittedToPolice && isOverdue(c))
+      } else if (statusFilter === 'submitted') {
+        filtered = filtered.filter(c => c.submittedToPolice)
+      } else {
+        filtered = filtered.filter(c => c.status === statusFilter)
+      }
     }
 
     setFilteredCheckIns(filtered)
@@ -152,7 +159,6 @@ export default function GuestCheckInsPage() {
   const exportToPDF = () => {
     const doc = new jsPDF('landscape')
 
-    // Titolo
     doc.setFontSize(18)
     doc.text('Registro Check-in Ospiti', 14, 15)
 
@@ -160,7 +166,6 @@ export default function GuestCheckInsPage() {
     doc.text(`Generato il: ${new Date().toLocaleString('it-IT')}`, 14, 22)
     doc.text(`Totale ospiti: ${filteredCheckIns.length}`, 14, 27)
 
-    // Prepara dati tabella
     const tableData = filteredCheckIns.map((checkIn) => [
       new Date(getCheckInDate(checkIn)).toLocaleDateString('it-IT'),
       getPropertyName(checkIn),
@@ -172,7 +177,6 @@ export default function GuestCheckInsPage() {
       checkIn.documentNumber,
     ])
 
-    // Genera tabella
     autoTable(doc, {
       head: [
         [
@@ -193,7 +197,6 @@ export default function GuestCheckInsPage() {
       alternateRowStyles: { fillColor: [248, 250, 252] },
     })
 
-    // Salva PDF
     doc.save(`check-in-ospiti-${new Date().toISOString().split('T')[0]}.pdf`)
   }
 
@@ -214,28 +217,27 @@ export default function GuestCheckInsPage() {
     return labels[type] || type
   }
 
-  // Verifica se il check-in è scaduto (data di check-in antecedente a oggi)
   const isOverdue = (checkIn: GuestCheckIn) => {
     if (checkIn.submittedToPolice) return false
 
     const today = new Date()
-    today.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
+    today.setHours(0, 0, 0, 0)
 
     const checkInDateStr = getCheckInDate(checkIn)
     const checkInDate = new Date(checkInDateStr)
-    checkInDate.setHours(0, 0, 0, 0) // Imposta a mezzanotte per confronto solo delle date
+    checkInDate.setHours(0, 0, 0, 0)
 
-    // Considera scaduto se la data di check-in è antecedente (prima) a oggi
-    // Esempio: se oggi è il 10 gennaio e il check-in è il 9 gennaio o prima, è scaduto
     return checkInDate < today
   }
 
-  // Conta check-in da comunicare (non comunicati e scaduti)
   const getPendingCount = () => {
     return checkIns.filter(c => !c.submittedToPolice && isOverdue(c)).length
   }
 
-  // Aggiorna stato comunicazione
+  const getSubmittedCount = () => {
+    return checkIns.filter(c => c.submittedToPolice).length
+  }
+
   const togglePoliceSubmission = async (checkInId: string, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/guest-checkins/${checkInId}`, {
@@ -245,14 +247,11 @@ export default function GuestCheckInsPage() {
       })
 
       if (response.ok) {
-        // Aggiorna la lista locale
         setCheckIns(checkIns.map(c =>
           c.id === checkInId
             ? { ...c, submittedToPolice: !currentStatus, submittedToPoliceAt: !currentStatus ? new Date().toISOString() : null }
             : c
         ))
-
-        // Emetti evento per aggiornare il badge nel layout immediatamente
         window.dispatchEvent(new CustomEvent('checkInStatusUpdated'))
       }
     } catch (error) {
@@ -260,7 +259,6 @@ export default function GuestCheckInsPage() {
     }
   }
 
-  // Elimina check-in
   const handleDelete = async (checkIn: GuestCheckIn) => {
     if (!confirm(`Sei sicuro di voler eliminare il check-in di ${checkIn.firstName} ${checkIn.lastName}? Questa azione non può essere annullata.`)) {
       return
@@ -283,13 +281,11 @@ export default function GuestCheckInsPage() {
     }
   }
 
-  // Apri modal modifica
   const openEditModal = (checkIn: GuestCheckIn) => {
     setEditingCheckIn({ ...checkIn })
     setShowEditModal(true)
   }
 
-  // Salva modifiche
   const handleSaveEdit = async () => {
     if (!editingCheckIn) return
 
@@ -316,268 +312,350 @@ export default function GuestCheckInsPage() {
     }
   }
 
-  // Helper per lo status
-  const getStatusLabel = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'PENDING': return 'In Attesa'
-      case 'APPROVED': return 'Approvato'
-      case 'REJECTED': return 'Rifiutato'
-      default: return status
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800'
-      case 'APPROVED': return 'bg-green-100 text-green-800'
-      case 'REJECTED': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'PENDING':
+        return { label: 'In Attesa', icon: Clock, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', iconColor: 'text-amber-500' }
+      case 'APPROVED':
+        return { label: 'Approvato', icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', iconColor: 'text-emerald-500' }
+      case 'REJECTED':
+        return { label: 'Rifiutato', icon: X, bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', iconColor: 'text-red-500' }
+      default:
+        return { label: status, icon: Clock, bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', iconColor: 'text-gray-500' }
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin border-t-blue-600"></div>
+          <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-600" size={24} />
+        </div>
+        <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento check-in...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-slate-900">Check-in Ospiti</h1>
-            {getPendingCount() > 0 && (
-              <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm font-bold animate-pulse">
-                {getPendingCount()} da comunicare
-              </span>
-            )}
+    <div className="space-y-6 pb-8">
+      {/* Header con statistiche */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+        <div className="relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Check-in Ospiti</h1>
+              <p className="text-blue-100 text-lg">
+                Gestione dati ospiti per registrazione Questura
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex flex-wrap gap-4">
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{checkIns.length}</p>
+                    <p className="text-xs text-blue-100">Totale</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-400/30 rounded-xl">
+                    <CheckCircle2 size={20} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{getSubmittedCount()}</p>
+                    <p className="text-xs text-blue-100">Comunicati</p>
+                  </div>
+                </div>
+              </div>
+
+              {getPendingCount() > 0 && (
+                <div className="bg-red-500/30 backdrop-blur-sm rounded-2xl px-5 py-3 border border-red-400/30 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-400/30 rounded-xl">
+                      <AlertTriangle size={20} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{getPendingCount()}</p>
+                      <p className="text-xs text-red-100">Da comunicare</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-slate-600">
-            Dati ospiti per registrazione Questura - {filteredCheckIns.length} check-in completati
-          </p>
         </div>
-        <div className="flex space-x-3">
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Cerca ospite, CF, struttura..."
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 hover:shadow-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+              showFilters
+                ? 'bg-blue-100 text-blue-700 shadow-inner'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm hover:shadow-md'
+            }`}
+          >
+            <Filter size={18} />
+            <span>Filtri</span>
+            <ChevronDown size={16} className={`transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+
           <a
             href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-3 rounded-xl font-medium transition-all"
+            className="flex items-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 px-4 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md"
           >
-            <ExternalLink size={20} />
-            <span>Vai a Alloggiati Web</span>
+            <Shield size={18} />
+            <span className="hidden sm:inline">Alloggiati Web</span>
+            <ExternalLink size={14} />
           </a>
-          <a
-            href="https://osservatorioturistico.regione.sicilia.it/login/account/signin?ReturnUrl=%2flogin%2fissue%2fwsfed%3fwa%3dwsignin1.0%26wtrealm%3dhttps%253a%252f%252fregione.sicilia.turistat%252fapp%26wctx%3drm%253d0%2526id%253dpassive%2526ru%253d%25252fHome%26wct%3d2026-01-10T17%253a19%253a26Z%26wreply%3dhttps%253a%252f%252fosservatorioturistico.regione.sicilia.it%252fHome%252f&wa=wsignin1.0&wtrealm=https%3a%2f%2fregione.sicilia.turistat%2fapp&wctx=rm%3d0%26id%3dpassive%26ru%3d%252fHome&wct=2026-01-10T17%3a19%3a26Z&wreply=https%3a%2f%2fosservatorioturistico.regione.sicilia.it%2fHome%2f#/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-3 rounded-xl font-medium transition-all"
-          >
-            <ExternalLink size={20} />
-            <span>Vai a Osservatorio Turistico</span>
-          </a>
+
           <button
             onClick={exportToCSV}
-            className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-4 py-3 rounded-2xl font-medium shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
           >
-            <FileSpreadsheet size={20} />
-            <span>Export Excel</span>
+            <FileSpreadsheet size={18} />
+            <span className="hidden sm:inline">Excel</span>
           </button>
+
           <button
             onClick={exportToPDF}
-            className="flex items-center space-x-2 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium shadow-lg transition-all"
+            className="flex items-center gap-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white px-4 py-3 rounded-2xl font-medium shadow-lg shadow-rose-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-rose-500/30 hover:-translate-y-0.5"
           >
-            <FileText size={20} />
-            <span>Export PDF</span>
+            <FileText size={18} />
+            <span className="hidden sm:inline">PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Filtri */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <Filter className="text-blue-600" size={20} />
-          <h2 className="text-lg font-semibold text-slate-900">Filtri</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              type="text"
-              placeholder="Cerca per nome, cognome, CF, struttura..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div>
-            <input
-              type="date"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              placeholder="Data inizio"
-            />
-          </div>
-          <div>
-            <input
-              type="date"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              placeholder="Data fine"
-            />
+      {/* Filters Panel */}
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data inizio</label>
+              <input
+                type="date"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data fine</label>
+              <input
+                type="date"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Stato</label>
+              <select
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Tutti</option>
+                <option value="pending_police">Da comunicare</option>
+                <option value="submitted">Comunicati</option>
+                <option value="PENDING">In attesa approvazione</option>
+                <option value="APPROVED">Approvati</option>
+                <option value="REJECTED">Rifiutati</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                  setStatusFilter('all')
+                  setSearchTerm('')
+                }}
+                className="w-full px-4 py-2.5 text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-medium"
+              >
+                Azzera filtri
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Lista Check-in */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Ospite
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Struttura
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Data Arrivo
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Documento
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Stato Richiesta
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Stato Questura
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                  Azioni
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredCheckIns.map((checkIn) => (
-                <tr
-                  key={checkIn.id}
-                  className={`transition-colors ${isOverdue(checkIn)
-                    ? 'bg-red-50 hover:bg-red-100 border-l-4 border-red-500'
-                    : 'hover:bg-slate-50'
-                    }`}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="text-blue-600" size={20} />
+      {/* Check-in Cards Grid */}
+      {filteredCheckIns.length === 0 ? (
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-12 text-center">
+          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="text-slate-400" size={32} />
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">Nessun check-in trovato</h3>
+          <p className="text-slate-500">Prova a modificare i filtri di ricerca</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredCheckIns.map((checkIn, index) => {
+            const statusConfig = getStatusConfig(checkIn.status)
+            const StatusIcon = statusConfig.icon
+            const overdueStatus = isOverdue(checkIn)
+
+            return (
+              <div
+                key={checkIn.id}
+                className={`group bg-white rounded-2xl shadow-sm border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                  overdueStatus
+                    ? 'border-l-4 border-l-red-500 border-red-100'
+                    : 'border-slate-100 hover:border-blue-200'
+                }`}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    {/* Avatar & Main Info */}
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className={`relative flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg ${
+                        overdueStatus
+                          ? 'bg-gradient-to-br from-red-500 to-rose-600'
+                          : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                      }`}>
+                        {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+                        {checkIn.submittedToPolice && (
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+                            <CheckCircle2 size={12} className="text-white" />
+                          </div>
+                        )}
                       </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-slate-900 text-lg truncate">
+                            {checkIn.firstName} {checkIn.lastName}
+                          </h3>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}>
+                            <StatusIcon size={12} className={statusConfig.iconColor} />
+                            {statusConfig.label}
+                          </span>
+                          {overdueStatus && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse">
+                              <AlertTriangle size={12} />
+                              SCADUTO
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-500 font-mono">{checkIn.fiscalCode}</p>
+                      </div>
+                    </div>
+
+                    {/* Property Info */}
+                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl">
+                      <MapPin size={18} className="text-slate-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{getPropertyName(checkIn)}</p>
+                        <p className="text-xs text-slate-500">{getRoomName(checkIn)} - {getPropertyCity(checkIn)}</p>
+                      </div>
+                    </div>
+
+                    {/* Date Info */}
+                    <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 rounded-xl">
+                      <Calendar size={18} className="text-blue-500 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-slate-900">
-                          {checkIn.firstName} {checkIn.lastName}
-                        </p>
-                        <p className="text-sm text-slate-600">{checkIn.fiscalCode}</p>
+                        <p className="font-medium text-slate-900">{formatDate(getCheckInDate(checkIn))}</p>
+                        <p className="text-xs text-slate-500">Check-in</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-slate-900">{getPropertyName(checkIn)}</p>
-                      <p className="text-sm text-slate-600">{getRoomName(checkIn)}</p>
-                      <p className="text-xs text-slate-500">{getPropertyCity(checkIn)}</p>
+
+                    {/* Document Info */}
+                    <div className="hidden xl:flex items-center gap-3 px-4 py-2 bg-amber-50 rounded-xl">
+                      <CreditCard size={18} className="text-amber-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-slate-900 text-sm">{getDocumentTypeLabel(checkIn.documentType)}</p>
+                        <p className="text-xs text-slate-500 font-mono">{checkIn.documentNumber}</p>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="text-slate-400" size={16} />
-                      <span className="text-slate-900">{formatDate(getCheckInDate(checkIn))}</span>
+
+                    {/* Police Status Toggle */}
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => togglePoliceSubmission(checkIn.id, checkIn.submittedToPolice)}
+                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          checkIn.submittedToPolice
+                            ? 'bg-emerald-500 focus:ring-emerald-500'
+                            : 'bg-slate-300 focus:ring-slate-400'
+                        }`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                          checkIn.submittedToPolice ? 'translate-x-8' : 'translate-x-1'
+                        }`} />
+                      </button>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        {getDocumentTypeLabel(checkIn.documentType)}
-                      </p>
-                      <p className="text-xs text-slate-600">{checkIn.documentNumber}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(checkIn.status)}`}>
-                      {getStatusLabel(checkIn.status)}
-                    </span>
-                    <p className="text-xs text-slate-500 mt-1">{formatDate(checkIn.submittedAt)}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col space-y-1">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={checkIn.submittedToPolice}
-                          onChange={() => togglePoliceSubmission(checkIn.id, checkIn.submittedToPolice)}
-                          className="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
-                        />
-                        <span className={`text-sm font-medium ${checkIn.submittedToPolice ? 'text-green-600' : 'text-slate-600'}`}>
-                          {checkIn.submittedToPolice ? 'Comunicato' : 'Da comunicare'}
-                        </span>
-                      </label>
-                      {checkIn.submittedToPoliceAt && (
-                        <span className="text-xs text-slate-500">
-                          {formatDate(checkIn.submittedToPoliceAt)}
-                        </span>
-                      )}
-                      {isOverdue(checkIn) && (
-                        <span className="text-xs font-bold text-red-600">
-                          ⚠ SCADUTO
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           setSelectedCheckIn(checkIn)
                           setShowDetailModal(true)
                         }}
-                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                        className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
                         title="Visualizza dettagli"
                       >
-                        <Eye size={18} />
+                        <Eye size={20} />
                       </button>
                       <button
                         onClick={() => openEditModal(checkIn)}
-                        className="text-amber-600 hover:text-amber-700 font-medium text-sm"
+                        className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all duration-200"
                         title="Modifica"
                       >
-                        ✏️
+                        <Edit3 size={20} />
                       </button>
                       <button
                         onClick={() => handleDelete(checkIn)}
-                        className="text-red-600 hover:text-red-700 font-medium text-sm"
+                        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
                         title="Elimina"
                       >
-                        🗑️
+                        <Trash2 size={20} />
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {filteredCheckIns.length === 0 && (
-            <div className="text-center py-12">
-              <User className="mx-auto text-slate-400 mb-4" size={48} />
-              <p className="text-slate-600">Nessun check-in trovato</p>
-            </div>
-          )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
-      </div>
+      )}
+
+      {/* Results count */}
+      {filteredCheckIns.length > 0 && (
+        <div className="text-center text-sm text-slate-500">
+          Visualizzati <span className="font-semibold text-slate-700">{filteredCheckIns.length}</span> di <span className="font-semibold text-slate-700">{checkIns.length}</span> check-in
+        </div>
+      )}
 
       {/* Modal Dettagli */}
       {showDetailModal && selectedCheckIn && (
@@ -595,163 +673,248 @@ export default function GuestCheckInsPage() {
 
       {/* Modal Modifica */}
       {showEditModal && editingCheckIn && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Modifica Check-in</h2>
-              <button
-                onClick={() => { setShowEditModal(false); setEditingCheckIn(null); }}
-                className="p-2 hover:bg-slate-100 rounded-lg"
-              >
-                <X size={24} />
-              </button>
+        <EditCheckInModal
+          checkIn={editingCheckIn}
+          setCheckIn={setEditingCheckIn}
+          onClose={() => { setShowEditModal(false); setEditingCheckIn(null); }}
+          onSave={handleSaveEdit}
+          saving={saving}
+        />
+      )}
+    </div>
+  )
+}
+
+// Componente Modal Modifica
+function EditCheckInModal({
+  checkIn,
+  setCheckIn,
+  onClose,
+  onSave,
+  saving,
+}: {
+  checkIn: GuestCheckIn
+  setCheckIn: (c: GuestCheckIn) => void
+  onClose: () => void
+  onSave: () => void
+  saving: boolean
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Edit3 size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Modifica Check-in</h2>
+                <p className="text-blue-100 text-sm">{checkIn.firstName} {checkIn.lastName}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="bg-slate-50 rounded-2xl p-4">
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Stato Richiesta</label>
+              <div className="flex gap-3">
+                {['PENDING', 'APPROVED', 'REJECTED'].map((status) => {
+                  const config = {
+                    PENDING: { label: 'In Attesa', icon: Clock, color: 'amber' },
+                    APPROVED: { label: 'Approvato', icon: CheckCircle2, color: 'emerald' },
+                    REJECTED: { label: 'Rifiutato', icon: X, color: 'red' },
+                  }[status]!
+                  const Icon = config.icon
+                  const isSelected = checkIn.status === status
+
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setCheckIn({ ...checkIn, status: status as any })}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                        isSelected
+                          ? `bg-${config.color}-50 border-${config.color}-500 text-${config.color}-700`
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                      style={isSelected ? {
+                        backgroundColor: config.color === 'amber' ? '#fffbeb' : config.color === 'emerald' ? '#ecfdf5' : '#fef2f2',
+                        borderColor: config.color === 'amber' ? '#f59e0b' : config.color === 'emerald' ? '#10b981' : '#ef4444',
+                        color: config.color === 'amber' ? '#b45309' : config.color === 'emerald' ? '#047857' : '#b91c1c',
+                      } : {}}
+                    >
+                      <Icon size={18} />
+                      <span className="font-medium">{config.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div className="space-y-6">
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Stato Richiesta</label>
-                <select
-                  value={editingCheckIn.status}
-                  onChange={(e) => setEditingCheckIn({ ...editingCheckIn, status: e.target.value as any })}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2"
-                >
-                  <option value="PENDING">In Attesa</option>
-                  <option value="APPROVED">Approvato</option>
-                  <option value="REJECTED">Rifiutato</option>
-                </select>
-              </div>
-
-              {/* Contatti */}
+            {/* Contatti */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Mail size={16} className="text-blue-500" />
+                Contatti
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Email</label>
                   <input
                     type="email"
-                    value={editingCheckIn.email || ''}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, email: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.email || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, email: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Telefono</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Telefono</label>
                   <input
                     type="tel"
-                    value={editingCheckIn.phone || ''}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, phone: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.phone || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, phone: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Dati Anagrafici */}
+            {/* Dati Anagrafici */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <User size={16} className="text-blue-500" />
+                Dati Anagrafici
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Nome</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Nome</label>
                   <input
                     type="text"
-                    value={editingCheckIn.firstName}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, firstName: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.firstName}
+                    onChange={(e) => setCheckIn({ ...checkIn, firstName: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Cognome</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Cognome</label>
                   <input
                     type="text"
-                    value={editingCheckIn.lastName}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, lastName: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.lastName}
+                    onChange={(e) => setCheckIn({ ...checkIn, lastName: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Codice Fiscale</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Codice Fiscale</label>
                   <input
                     type="text"
-                    value={editingCheckIn.fiscalCode}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, fiscalCode: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    value={checkIn.fiscalCode}
+                    onChange={(e) => setCheckIn({ ...checkIn, fiscalCode: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Data di Nascita</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Data di Nascita</label>
                   <input
                     type="date"
-                    value={editingCheckIn.dateOfBirth?.split('T')[0] || ''}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, dateOfBirth: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.dateOfBirth?.split('T')[0] || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, dateOfBirth: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Città di Nascita</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Città di Nascita</label>
                   <input
                     type="text"
-                    value={editingCheckIn.birthCity}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, birthCity: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.birthCity}
+                    onChange={(e) => setCheckIn({ ...checkIn, birthCity: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Provincia di Nascita</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Provincia di Nascita</label>
                   <input
                     type="text"
-                    value={editingCheckIn.birthProvince}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, birthProvince: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    value={checkIn.birthProvince}
+                    onChange={(e) => setCheckIn({ ...checkIn, birthProvince: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     maxLength={2}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Residenza */}
+            {/* Residenza */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <MapPin size={16} className="text-blue-500" />
+                Residenza
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Indirizzo</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Indirizzo</label>
                   <input
                     type="text"
-                    value={editingCheckIn.residenceStreet}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceStreet: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.residenceStreet}
+                    onChange={(e) => setCheckIn({ ...checkIn, residenceStreet: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">CAP</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">CAP</label>
                   <input
                     type="text"
-                    value={editingCheckIn.residencePostalCode}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residencePostalCode: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.residencePostalCode}
+                    onChange={(e) => setCheckIn({ ...checkIn, residencePostalCode: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Città</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Città</label>
                   <input
                     type="text"
-                    value={editingCheckIn.residenceCity}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceCity: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.residenceCity}
+                    onChange={(e) => setCheckIn({ ...checkIn, residenceCity: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Provincia</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Provincia</label>
                   <input
                     type="text"
-                    value={editingCheckIn.residenceProvince}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, residenceProvince: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    value={checkIn.residenceProvince}
+                    onChange={(e) => setCheckIn({ ...checkIn, residenceProvince: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     maxLength={2}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Documento */}
+            {/* Documento */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <CreditCard size={16} className="text-blue-500" />
+                Documento
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Tipo Documento</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Tipo Documento</label>
                   <select
-                    value={editingCheckIn.documentType}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentType: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.documentType}
+                    onChange={(e) => setCheckIn({ ...checkIn, documentType: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
                     <option value="CARTA_IDENTITA">Carta d'Identità</option>
                     <option value="PASSAPORTO">Passaporto</option>
@@ -759,86 +922,102 @@ export default function GuestCheckInsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Numero Documento</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Numero Documento</label>
                   <input
                     type="text"
-                    value={editingCheckIn.documentNumber}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentNumber: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 uppercase"
+                    value={checkIn.documentNumber}
+                    onChange={(e) => setCheckIn({ ...checkIn, documentNumber: e.target.value.toUpperCase() })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Data Rilascio</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Data Rilascio</label>
                   <input
                     type="date"
-                    value={editingCheckIn.documentIssueDate?.split('T')[0] || ''}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentIssueDate: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.documentIssueDate?.split('T')[0] || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, documentIssueDate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Data Scadenza</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Data Scadenza</label>
                   <input
                     type="date"
-                    value={editingCheckIn.documentExpiryDate?.split('T')[0] || ''}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, documentExpiryDate: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    value={checkIn.documentExpiryDate?.split('T')[0] || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, documentExpiryDate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
-              </div>
-
-              {/* Esenzione Tassa */}
-              <div className="bg-amber-50 rounded-lg p-4">
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={editingCheckIn.isExempt}
-                    onChange={(e) => setEditingCheckIn({ ...editingCheckIn, isExempt: e.target.checked })}
-                    className="w-5 h-5 text-amber-600 rounded"
-                  />
-                  <span className="font-medium text-slate-900">Esente dalla tassa di soggiorno</span>
-                </label>
-                {editingCheckIn.isExempt && (
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Motivo Esenzione</label>
-                    <select
-                      value={editingCheckIn.exemptionReason || ''}
-                      onChange={(e) => setEditingCheckIn({ ...editingCheckIn, exemptionReason: e.target.value })}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
-                    >
-                      <option value="">Seleziona motivo...</option>
-                      <option value="MINORE_14">Minore di 14 anni</option>
-                      <option value="RESIDENTE">Residente nel Comune</option>
-                      <option value="ACCOMPAGNATORE_PAZIENTE">Accompagnatore paziente</option>
-                      <option value="FORZE_ORDINE">Forze dell'ordine</option>
-                      <option value="DISABILE">Persona con disabilità</option>
-                      <option value="AUTISTA_PULLMAN">Autista pullman</option>
-                      <option value="ALTRO">Altro</option>
-                    </select>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-6 pt-6 border-t flex justify-end gap-3">
-              <button
-                onClick={() => { setShowEditModal(false); setEditingCheckIn(null); }}
-                className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={saving}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? 'Salvataggio...' : 'Salva Modifiche'}
-              </button>
+            {/* Esenzione */}
+            <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={checkIn.isExempt}
+                    onChange={(e) => setCheckIn({ ...checkIn, isExempt: e.target.checked })}
+                    className="sr-only"
+                  />
+                  <div className={`w-12 h-7 rounded-full transition-colors duration-200 ${checkIn.isExempt ? 'bg-amber-500' : 'bg-slate-300'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 translate-y-1 ${checkIn.isExempt ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                  </div>
+                </div>
+                <span className="font-medium text-slate-900">Esente dalla tassa di soggiorno</span>
+              </label>
+
+              {checkIn.isExempt && (
+                <div className="mt-4">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Motivo Esenzione</label>
+                  <select
+                    value={checkIn.exemptionReason || ''}
+                    onChange={(e) => setCheckIn({ ...checkIn, exemptionReason: e.target.value })}
+                    className="w-full border border-amber-200 rounded-xl px-4 py-2.5 text-slate-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">Seleziona motivo...</option>
+                    <option value="MINORE_14">Minore di 14 anni</option>
+                    <option value="RESIDENTE">Residente nel Comune</option>
+                    <option value="ACCOMPAGNATORE_PAZIENTE">Accompagnatore paziente</option>
+                    <option value="FORZE_ORDINE">Forze dell'ordine</option>
+                    <option value="DISABILE">Persona con disabilità</option>
+                    <option value="AUTISTA_PULLMAN">Autista pullman</option>
+                    <option value="ALTRO">Altro</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-medium"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Salvataggio...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={18} />
+                Salva Modifiche
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -865,7 +1044,6 @@ function DetailCheckInModal({
 }) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  // Funzione per copiare testo in maiuscolo
   const copyToClipboard = async (text: string, fieldName: string) => {
     try {
       const upperText = text.toUpperCase()
@@ -881,232 +1059,194 @@ function DetailCheckInModal({
     <button
       type="button"
       onClick={() => copyToClipboard(text, fieldName)}
-      className={`flex items-center space-x-1 px-2 py-1 rounded-lg border transition-colors text-xs font-medium ${copiedField === fieldName
-        ? 'bg-green-50 border-green-300 text-green-700'
-        : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'
-        }`}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-200 text-xs font-medium ${
+        copiedField === fieldName
+          ? 'bg-emerald-50 border-emerald-300 text-emerald-700 scale-95'
+          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+      }`}
     >
-      <Copy size={12} />
-      <span>{copiedField === fieldName ? 'Copiato!' : 'Copia'}</span>
+      {copiedField === fieldName ? (
+        <>
+          <CheckCircle2 size={12} />
+          Copiato!
+        </>
+      ) : (
+        <>
+          <Copy size={12} />
+          Copia
+        </>
+      )}
     </button>
   )
 
+  const DataRow = ({ label, value, fieldName, mono = false }: { label: string; value: string; fieldName: string; mono?: boolean }) => (
+    <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+      <span className="text-sm text-slate-500">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-medium text-slate-900 ${mono ? 'font-mono' : ''}`}>{value}</span>
+        <CopyButton text={value} fieldName={fieldName} />
+      </div>
+    </div>
+  )
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Dettagli Check-in</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
-            title="Chiudi"
-          >
-            <X size={24} />
-          </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">{checkIn.firstName} {checkIn.lastName}</h2>
+                <p className="text-blue-100 font-mono">{checkIn.fiscalCode}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Dati Prenotazione */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-              <MapPin className="mr-2 text-blue-600" size={20} />
-              Prenotazione
-            </h3>
-            <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="space-y-6">
+            {/* Prenotazione */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
+              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <MapPin size={16} className="text-blue-600" />
+                </div>
+                Prenotazione
+              </h3>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Struttura</p>
-                    <CopyButton text={getPropertyName(checkIn)} fieldName="property" />
-                  </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-xs text-slate-500 mb-1">Struttura</p>
                   <p className="font-medium text-slate-900">{getPropertyName(checkIn)}</p>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Stanza</p>
-                    <CopyButton text={getRoomName(checkIn)} fieldName="room" />
-                  </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-xs text-slate-500 mb-1">Stanza</p>
                   <p className="font-medium text-slate-900">{getRoomName(checkIn)}</p>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Check-in</p>
-                    <CopyButton text={formatDate(getCheckInDate(checkIn))} fieldName="checkIn" />
-                  </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-xs text-slate-500 mb-1">Check-in</p>
                   <p className="font-medium text-slate-900">{formatDate(getCheckInDate(checkIn))}</p>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Check-out</p>
-                    <CopyButton text={formatDate(getCheckOutDate(checkIn))} fieldName="checkOut" />
-                  </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-xs text-slate-500 mb-1">Check-out</p>
                   <p className="font-medium text-slate-900">{formatDate(getCheckOutDate(checkIn))}</p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Dati Personali */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-              <User className="mr-2 text-blue-600" size={20} />
-              Dati Personali
-            </h3>
-            <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Nome</p>
-                    <CopyButton text={checkIn.firstName} fieldName="firstName" />
-                  </div>
-                  <p className="font-medium text-slate-900">{checkIn.firstName}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Cognome</p>
-                    <CopyButton text={checkIn.lastName} fieldName="lastName" />
-                  </div>
-                  <p className="font-medium text-slate-900">{checkIn.lastName}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Data di Nascita</p>
-                    <CopyButton text={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
-                  </div>
-                  <p className="font-medium text-slate-900">{formatDate(checkIn.dateOfBirth)}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Luogo di Nascita</p>
-                    <CopyButton text={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
-                  </div>
-                  <p className="font-medium text-slate-900">{checkIn.birthCity} ({checkIn.birthProvince})</p>
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Indirizzo Residenza</p>
-                    <CopyButton text={`${checkIn.residenceStreet}, ${checkIn.residencePostalCode} ${checkIn.residenceCity} (${checkIn.residenceProvince})`} fieldName="residence" />
-                  </div>
-                  <p className="font-medium text-slate-900">
-                    {checkIn.residenceStreet}, {checkIn.residencePostalCode} {checkIn.residenceCity} ({checkIn.residenceProvince})
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Codice Fiscale</p>
-                    <CopyButton text={checkIn.fiscalCode} fieldName="fiscalCode" />
-                  </div>
-                  <p className="font-medium text-slate-900">{checkIn.fiscalCode}</p>
-                </div>
+            {/* Dati Personali */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <User size={16} className="text-blue-600" />
+                  Dati Personali
+                </h3>
+              </div>
+              <div className="p-5">
+                <DataRow label="Nome" value={checkIn.firstName} fieldName="firstName" />
+                <DataRow label="Cognome" value={checkIn.lastName} fieldName="lastName" />
+                <DataRow label="Data di Nascita" value={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
+                <DataRow label="Luogo di Nascita" value={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
+                <DataRow label="Codice Fiscale" value={checkIn.fiscalCode} fieldName="fiscalCode" mono />
+                <DataRow label="Residenza" value={`${checkIn.residenceStreet}, ${checkIn.residencePostalCode} ${checkIn.residenceCity} (${checkIn.residenceProvince})`} fieldName="residence" />
+                {checkIn.email && <DataRow label="Email" value={checkIn.email} fieldName="email" />}
+                {checkIn.phone && <DataRow label="Telefono" value={checkIn.phone} fieldName="phone" />}
               </div>
             </div>
-          </div>
 
-          {/* Documento */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-              <CreditCard className="mr-2 text-blue-600" size={20} />
-              Documento Identità
-            </h3>
-            <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Tipo Documento</p>
-                    <CopyButton text={getDocumentTypeLabel(checkIn.documentType)} fieldName="documentType" />
-                  </div>
-                  <p className="font-medium text-slate-900">
-                    {getDocumentTypeLabel(checkIn.documentType)}
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Numero Documento</p>
-                    <CopyButton text={checkIn.documentNumber} fieldName="documentNumber" />
-                  </div>
-                  <p className="font-medium text-slate-900">{checkIn.documentNumber}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Data Rilascio</p>
-                    <CopyButton text={formatDate(checkIn.documentIssueDate)} fieldName="documentIssueDate" />
-                  </div>
-                  <p className="font-medium text-slate-900">
-                    {formatDate(checkIn.documentIssueDate)}
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-slate-600">Data Scadenza</p>
-                    <CopyButton text={formatDate(checkIn.documentExpiryDate)} fieldName="documentExpiryDate" />
-                  </div>
-                  <p className="font-medium text-slate-900">
-                    {formatDate(checkIn.documentExpiryDate)}
-                  </p>
-                </div>
+            {/* Documento */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <CreditCard size={16} className="text-blue-600" />
+                  Documento Identità
+                </h3>
+              </div>
+              <div className="p-5">
+                <DataRow label="Tipo Documento" value={getDocumentTypeLabel(checkIn.documentType)} fieldName="documentType" />
+                <DataRow label="Numero" value={checkIn.documentNumber} fieldName="documentNumber" mono />
+                <DataRow label="Data Rilascio" value={formatDate(checkIn.documentIssueDate)} fieldName="documentIssueDate" />
+                <DataRow label="Data Scadenza" value={formatDate(checkIn.documentExpiryDate)} fieldName="documentExpiryDate" />
               </div>
 
               {/* Immagini Documento */}
               {(checkIn.documentFrontUrl || checkIn.documentBackUrl) && (
-                <div className="mt-4">
-                  <p className="text-sm text-slate-600 mb-2">Foto Documento</p>
+                <div className="px-5 pb-5">
+                  <p className="text-sm font-medium text-slate-700 mb-3">Foto Documento</p>
                   <div className="grid grid-cols-2 gap-4">
                     {checkIn.documentFrontUrl && (
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Fronte</p>
+                      <div className="group relative">
+                        <p className="text-xs text-slate-500 mb-2">Fronte</p>
                         <img
                           src={checkIn.documentFrontUrl}
                           alt="Fronte documento"
-                          className="w-full rounded-lg border border-slate-300"
+                          className="w-full rounded-xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => window.open(checkIn.documentFrontUrl!, '_blank')}
                         />
                       </div>
                     )}
                     {checkIn.documentBackUrl && (
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Retro</p>
+                      <div className="group relative">
+                        <p className="text-xs text-slate-500 mb-2">Retro</p>
                         <img
                           src={checkIn.documentBackUrl}
                           alt="Retro documento"
-                          className="w-full rounded-lg border border-slate-300"
+                          className="w-full rounded-xl border border-slate-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => window.open(checkIn.documentBackUrl!, '_blank')}
                         />
                       </div>
                     )}
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Tassa di Soggiorno */}
-              {(checkIn.isExempt || checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) && (
-                <div className="mt-6 border-t pt-6">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <CreditCard className="text-amber-600" size={20} />
-                    <p className="font-bold text-slate-900">Tassa di Soggiorno</p>
-                  </div>
+            {/* Tassa di Soggiorno */}
+            {(checkIn.isExempt || checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) && (
+              <div className={`rounded-2xl p-5 border ${checkIn.isExempt ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <CreditCard size={16} className={checkIn.isExempt ? 'text-emerald-600' : 'text-amber-600'} />
+                  Tassa di Soggiorno
+                </h3>
 
-                  {checkIn.isExempt ? (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
-                        ✓ ESENTE
-                      </span>
+                {checkIn.isExempt ? (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-xl">
+                      <CheckCircle2 size={20} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-emerald-700">ESENTE</p>
                       {checkIn.exemptionReason && (
-                        <p className="text-sm text-green-700 mt-2">
-                          <span className="font-medium">Motivo:</span> {checkIn.exemptionReason}
-                        </p>
+                        <p className="text-sm text-emerald-600">{checkIn.exemptionReason}</p>
                       )}
                     </div>
-                  ) : (checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) ? (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                      <p className="text-sm font-medium text-green-700 mb-2">✓ Prova di pagamento caricata</p>
-                      <img
-                        src={checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof || ''}
-                        alt="Conferma pagamento tassa di soggiorno"
-                        className="w-full max-w-md mx-auto rounded-lg border-2 border-green-300 shadow-lg"
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </div>
+                  </div>
+                ) : (checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) ? (
+                  <div>
+                    <p className="text-sm font-medium text-amber-700 mb-3 flex items-center gap-2">
+                      <CheckCircle2 size={16} />
+                      Prova di pagamento caricata
+                    </p>
+                    <img
+                      src={checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof || ''}
+                      alt="Conferma pagamento"
+                      className="max-w-md rounded-xl border border-amber-300 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                      onClick={() => window.open(checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof!, '_blank')}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </div>
