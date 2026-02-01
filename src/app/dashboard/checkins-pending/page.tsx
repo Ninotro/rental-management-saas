@@ -301,29 +301,29 @@ export default function PendingCheckInsPage() {
           {pendingCheckIns.map((checkIn, index) => (
             <div
               key={checkIn.id}
-              className="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              className="group bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   {/* Avatar & Main Info */}
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="relative flex-shrink-0 w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <div className="relative flex-shrink-0 w-14 h-14 bg-[#d4cdb0] rounded-2xl flex items-center justify-center text-[#3d4a3c] font-bold text-lg shadow-lg">
                       {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-[#3d4a3c] text-lg">
+                        <h3 className="font-bold text-white text-lg">
                           {checkIn.firstName} {checkIn.lastName}
                         </h3>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-400/20 text-amber-200 border border-amber-400/30">
                           <Clock size={12} />
                           In Attesa
                         </span>
                       </div>
                       {checkIn.email && (
-                        <p className="text-sm text-[#3d4a3c]/60 flex items-center gap-1 mt-1">
+                        <p className="text-sm text-white/70 flex items-center gap-1 mt-1">
                           <Mail size={14} />
                           {checkIn.email}
                         </p>
@@ -333,27 +333,27 @@ export default function PendingCheckInsPage() {
 
                   {/* Property Info */}
                   {checkIn.selectedRoom && (
-                    <div className="flex items-center gap-3 px-4 py-3 bg-[#3d4a3c]/5 rounded-2xl">
-                      <Home size={18} className="text-[#3d4a3c]/60 flex-shrink-0" />
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-2xl">
+                      <Home size={18} className="text-[#d4cdb0] flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="font-medium text-[#3d4a3c] truncate">{checkIn.selectedRoom.property.name}</p>
-                        <p className="text-xs text-[#3d4a3c]/60">{checkIn.selectedRoom.name}</p>
+                        <p className="font-medium text-white truncate">{checkIn.selectedRoom.property.name}</p>
+                        <p className="text-xs text-white/60">{checkIn.selectedRoom.name}</p>
                       </div>
                     </div>
                   )}
 
                   {/* Date Info */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-[#d4cdb0]/20 rounded-2xl">
-                    <Calendar size={18} className="text-[#3d4a3c] flex-shrink-0" />
+                    <Calendar size={18} className="text-[#d4cdb0] flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-[#3d4a3c]">{formatDate(checkIn.selectedCheckIn)}</p>
-                      <p className="text-xs text-[#3d4a3c]/60">→ {formatDate(checkIn.selectedCheckOut)}</p>
+                      <p className="font-medium text-white">{formatDate(checkIn.selectedCheckIn)}</p>
+                      <p className="text-xs text-white/60">→ {formatDate(checkIn.selectedCheckOut)}</p>
                     </div>
                   </div>
 
                   {/* Submitted At */}
-                  <div className="hidden xl:block text-sm text-[#3d4a3c]/60">
-                    <p className="font-medium">Inviato il</p>
+                  <div className="hidden xl:block text-sm text-white/60">
+                    <p className="font-medium text-white/80">Inviato il</p>
                     <p>{formatDateTime(checkIn.submittedAt)}</p>
                   </div>
 
@@ -361,14 +361,14 @@ export default function PendingCheckInsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => openDetailModal(checkIn)}
-                      className="p-2.5 text-[#3d4a3c]/60 hover:text-[#3d4a3c] hover:bg-[#d4cdb0]/30 rounded-xl transition-all duration-200"
+                      className="p-2.5 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
                       title="Visualizza dettagli"
                     >
                       <Eye size={20} />
                     </button>
                     <button
                       onClick={() => openApproveModal(checkIn)}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white rounded-xl font-medium shadow-lg shadow-emerald-500/25 transition-all duration-200"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#d4cdb0] hover:bg-[#c4b896] text-[#3d4a3c] rounded-xl font-medium shadow-lg transition-all duration-200"
                     >
                       <CheckCircle2 size={18} />
                       <span className="hidden sm:inline">Approva</span>
@@ -376,7 +376,7 @@ export default function PendingCheckInsPage() {
                     <button
                       onClick={() => handleReject(checkIn)}
                       disabled={processing}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
                     >
                       <X size={18} />
                       <span className="hidden sm:inline">Rifiuta</span>

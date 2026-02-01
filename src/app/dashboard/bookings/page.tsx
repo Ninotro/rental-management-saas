@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   Calendar,
   MapPin,
@@ -188,30 +188,34 @@ export default function BookingsPage() {
       .reduce((sum, b) => sum + Number(b.totalPrice), 0),
   }
 
-  // Filtri
-  let filteredBookings = bookings
+  // Filtri con useMemo per garantire re-render corretto
+  const filteredBookings = useMemo(() => {
+    let result = [...bookings]
 
-  if (filterStatus !== 'ALL') {
-    filteredBookings = filteredBookings.filter(b => b.status === filterStatus)
-  }
+    if (filterStatus !== 'ALL') {
+      result = result.filter(b => b.status === filterStatus)
+    }
 
-  if (filterProperty !== 'ALL') {
-    filteredBookings = filteredBookings.filter(b => b.property.id === filterProperty)
-  }
+    if (filterProperty !== 'ALL') {
+      result = result.filter(b => b.property.id === filterProperty)
+    }
 
-  if (filterRoom !== 'ALL') {
-    filteredBookings = filteredBookings.filter(b => b.room?.id === filterRoom)
-  }
+    if (filterRoom !== 'ALL') {
+      result = result.filter(b => b.room?.id === filterRoom)
+    }
 
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase()
-    filteredBookings = filteredBookings.filter(b =>
-      b.guestName.toLowerCase().includes(query) ||
-      b.guestEmail.toLowerCase().includes(query) ||
-      b.property.name.toLowerCase().includes(query) ||
-      (b.room?.name?.toLowerCase().includes(query) ?? false)
-    )
-  }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(b =>
+        b.guestName.toLowerCase().includes(query) ||
+        b.guestEmail.toLowerCase().includes(query) ||
+        b.property.name.toLowerCase().includes(query) ||
+        (b.room?.name?.toLowerCase().includes(query) ?? false)
+      )
+    }
+
+    return result
+  }, [bookings, filterStatus, filterProperty, filterRoom, searchQuery])
 
   if (loading) {
     return (
@@ -369,21 +373,21 @@ export default function BookingsPage() {
         {filteredBookings.map((booking) => (
           <div
             key={booking.id}
-            className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-white/50"
+            className="bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
           >
             <div className="p-6">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 {/* Guest Info */}
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <div className="w-12 h-12 bg-[#d4cdb0] rounded-2xl flex items-center justify-center text-[#3d4a3c] font-bold text-lg shadow-lg">
                       {booking.guestName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-[#3d4a3c]">
+                      <h3 className="text-lg font-bold text-white">
                         {booking.guestName}
                       </h3>
-                      <div className="flex items-center text-sm text-[#3d4a3c]/60">
+                      <div className="flex items-center text-sm text-white/70">
                         <MapPin size={14} className="mr-1" />
                         {booking.property.name}
                         {booking.room && ` - ${booking.room.name}`}
@@ -393,22 +397,22 @@ export default function BookingsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center text-sm text-[#3d4a3c]/70">
-                      <Mail size={14} className="mr-2 text-[#3d4a3c]/40" />
+                    <div className="flex items-center text-sm text-white/80">
+                      <Mail size={14} className="mr-2 text-[#d4cdb0]" />
                       {booking.guestEmail}
                     </div>
                     {booking.guestPhone && (
-                      <div className="flex items-center text-sm text-[#3d4a3c]/70">
-                        <Phone size={14} className="mr-2 text-[#3d4a3c]/40" />
+                      <div className="flex items-center text-sm text-white/80">
+                        <Phone size={14} className="mr-2 text-[#d4cdb0]" />
                         {booking.guestPhone}
                       </div>
                     )}
-                    <div className="flex items-center text-sm text-[#3d4a3c]/70">
-                      <Users size={14} className="mr-2 text-[#3d4a3c]/40" />
+                    <div className="flex items-center text-sm text-white/80">
+                      <Users size={14} className="mr-2 text-[#d4cdb0]" />
                       {booking.guests} {booking.guests === 1 ? 'ospite' : 'ospiti'}
                     </div>
-                    <div className="flex items-center text-sm font-semibold text-[#3d4a3c]">
-                      <DollarSign size={14} className="mr-2 text-emerald-500" />
+                    <div className="flex items-center text-sm font-semibold text-[#d4cdb0]">
+                      <DollarSign size={14} className="mr-2 text-emerald-400" />
                       €{booking.totalPrice.toLocaleString()}
                     </div>
                   </div>
@@ -417,17 +421,17 @@ export default function BookingsPage() {
 
                 {/* Dates & Status */}
                 <div className="flex flex-col items-end space-y-3">
-                  <div className="flex items-center space-x-4 bg-[#3d4a3c]/5 px-4 py-3 rounded-2xl">
+                  <div className="flex items-center space-x-4 bg-white/10 px-4 py-3 rounded-2xl">
                     <div className="text-center">
-                      <div className="text-xs text-[#3d4a3c]/50 mb-1">Check-in</div>
-                      <div className="font-bold text-[#3d4a3c]">
+                      <div className="text-xs text-white/60 mb-1">Check-in</div>
+                      <div className="font-bold text-white">
                         {format(new Date(booking.checkIn), 'd MMM', { locale: it })}
                       </div>
                     </div>
                     <div className="text-[#d4cdb0]">→</div>
                     <div className="text-center">
-                      <div className="text-xs text-[#3d4a3c]/50 mb-1">Check-out</div>
-                      <div className="font-bold text-[#3d4a3c]">
+                      <div className="text-xs text-white/60 mb-1">Check-out</div>
+                      <div className="font-bold text-white">
                         {format(new Date(booking.checkOut), 'd MMM', { locale: it })}
                       </div>
                     </div>
@@ -441,7 +445,7 @@ export default function BookingsPage() {
                     >
                       {getStatusLabel(booking.status)}
                     </span>
-                    <span className="px-3 py-1.5 bg-[#d4cdb0]/30 rounded-xl text-xs font-semibold text-[#3d4a3c]">
+                    <span className="px-3 py-1.5 bg-[#d4cdb0]/30 rounded-xl text-xs font-semibold text-white">
                       {getChannelLabel(booking.channel)}
                     </span>
                   </div>
@@ -451,7 +455,7 @@ export default function BookingsPage() {
                       setSelectedBooking(booking)
                       setShowEditModal(true)
                     }}
-                    className="flex items-center space-x-2 text-[#3d4a3c] hover:text-[#4a5a49] font-medium text-sm bg-[#d4cdb0]/30 hover:bg-[#d4cdb0]/50 px-3 py-2 rounded-xl transition-all duration-300"
+                    className="flex items-center space-x-2 text-[#3d4a3c] hover:text-[#3d4a3c] font-medium text-sm bg-[#d4cdb0] hover:bg-[#c4b896] px-3 py-2 rounded-xl transition-all duration-300"
                   >
                     <Edit size={16} />
                     <span>Modifica</span>

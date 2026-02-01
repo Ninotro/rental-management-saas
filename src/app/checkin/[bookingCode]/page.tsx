@@ -60,6 +60,7 @@ interface GuestFormData {
   isExempt: boolean
   exemptionReason: string
   paymentProofFile: File | null
+  paymentProofUrl: string | null
   uploadingProof: boolean
 }
 
@@ -103,6 +104,7 @@ export default function GuestCheckInPage() {
       isExempt: false,
       exemptionReason: '',
       paymentProofFile: null,
+      paymentProofUrl: null,
       uploadingProof: false,
     }
   }
@@ -155,7 +157,7 @@ export default function GuestCheckInPage() {
           updatedGuests[guestIndex].documentBackFile = file
         } else if (type === 'proof') {
           updatedGuests[guestIndex].paymentProofFile = file
-          updatedGuests[guestIndex].documentFrontUrl = data.url // Store URL temporarily
+          updatedGuests[guestIndex].paymentProofUrl = data.url
         }
         setGuests(updatedGuests)
       } else {
@@ -232,12 +234,12 @@ export default function GuestCheckInPage() {
       }
 
       // Update booking with payment proof if uploaded
-      if (guests[0].paymentProofFile && guests[0].documentFrontUrl && booking) {
+      if (guests[0].paymentProofFile && guests[0].paymentProofUrl && booking) {
         await fetch(`/api/bookings/${booking.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            touristTaxPaymentProof: guests[0].documentFrontUrl,
+            touristTaxPaymentProof: guests[0].paymentProofUrl,
           }),
         })
       }
