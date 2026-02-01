@@ -61,7 +61,7 @@ export async function PATCH(
     const body = await request.json()
     const {
       name, address, city, country, description,
-      maxGuests, bedrooms, bathrooms, active, accessCodes,
+      maxGuests, bedrooms, bathrooms, active, accessCodes, alloggiatiCredentials,
       touristTaxRate, touristTaxMaxNights, touristTaxExemptAge, paypalEmail
     } = body
 
@@ -77,6 +77,7 @@ export async function PATCH(
     if (bathrooms !== undefined && bathrooms !== null) updateData.bathrooms = parseInt(bathrooms.toString())
     if (active !== undefined) updateData.active = active
     if (accessCodes !== undefined) updateData.accessCodes = accessCodes
+    if (alloggiatiCredentials !== undefined) updateData.alloggiatiCredentials = alloggiatiCredentials
     if (touristTaxRate !== undefined) updateData.touristTaxRate = touristTaxRate !== null ? parseFloat(touristTaxRate.toString()) : null
     if (touristTaxMaxNights !== undefined) updateData.touristTaxMaxNights = touristTaxMaxNights !== null ? parseInt(touristTaxMaxNights.toString()) : null
     if (touristTaxExemptAge !== undefined) updateData.touristTaxExemptAge = touristTaxExemptAge !== null ? parseInt(touristTaxExemptAge.toString()) : null

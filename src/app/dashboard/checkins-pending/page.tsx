@@ -235,16 +235,16 @@ export default function PendingCheckInsPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-8 text-white shadow-2xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24 blur-2xl"></div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#d4cdb0]/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#d4cdb0]/5 rounded-full translate-y-24 -translate-x-24 blur-2xl"></div>
 
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="text-white/80" size={20} />
-                <span className="text-white/80 text-sm font-medium">Approvazioni</span>
+                <Clock className="text-[#d4cdb0]" size={20} />
+                <span className="text-[#d4cdb0] text-sm font-medium">Approvazioni</span>
               </div>
               <h1 className="text-4xl font-bold mb-2">Check-in in Attesa</h1>
               <p className="text-white/80 text-lg">
@@ -254,14 +254,14 @@ export default function PendingCheckInsPage() {
 
             {/* Quick Stats */}
             <div className="flex flex-wrap gap-4">
-              <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20">
+              <div className="bg-[#d4cdb0]/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-[#d4cdb0]/20">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-xl">
+                  <div className="p-2 bg-[#d4cdb0]/20 rounded-xl">
                     <Users size={20} />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{pendingCheckIns.length}</p>
-                    <p className="text-xs text-white/70">In Attesa</p>
+                    <p className="text-xs text-[#d4cdb0]/70">In Attesa</p>
                   </div>
                 </div>
               </div>

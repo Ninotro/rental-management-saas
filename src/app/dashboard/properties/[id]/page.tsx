@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
 import {
   Home,
   MapPin,
@@ -23,6 +22,7 @@ import {
   ExternalLink,
   Calendar,
   RefreshCw,
+  Shield,
 } from 'lucide-react'
 import ImageLightbox from '@/components/ImageLightbox'
 import ICalConfigModal from '@/components/ICalConfigModal'
@@ -70,6 +70,7 @@ interface Property {
   }
   images?: PropertyImage[]
   accessCodes?: Record<string, string> | null
+  alloggiatiCredentials?: { username: string; password: string } | null
 }
 export default function PropertyDetailPage() {
   const params = useParams()
@@ -89,6 +90,7 @@ export default function PropertyDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [lightboxType, setLightboxType] = useState<'property' | 'room'>('property')
   const [showAccessCodesModal, setShowAccessCodesModal] = useState(false)
+  const [showAlloggiatiModal, setShowAlloggiatiModal] = useState(false)
   const [showICalConfigModal, setShowICalConfigModal] = useState(false)
   const [iCalConfigRoom, setICalConfigRoom] = useState<{ id: string, name: string } | null>(null)
   const [syncingAll, setSyncingAll] = useState(false)
@@ -330,7 +332,14 @@ export default function PropertyDetailPage() {
               className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg font-medium transition-colors"
             >
               <Key size={18} />
-              <span>Gestisci Codici Accesso</span>
+              <span>Codici Accesso</span>
+            </button>
+            <button
+              onClick={() => setShowAlloggiatiModal(true)}
+              className="flex items-center space-x-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <Shield size={18} />
+              <span>Alloggiati Web</span>
             </button>
             <button
               onClick={() => setShowEditPropertyModal(true)}
@@ -508,7 +517,8 @@ export default function PropertyDetailPage() {
         {/* Rooms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {rooms.map((room) => {
-            const roomPrimaryImage = room.images?.find(img => img.isPrimary)
+            // Trova l'immagine principale, altrimenti usa la prima disponibile
+            const roomPrimaryImage = room.images?.find(img => img.isPrimary) || room.images?.[0]
             return (
               <div
                 key={room.id}
@@ -517,11 +527,10 @@ export default function PropertyDetailPage() {
                 {/* Room Image */}
                 <div className="relative h-40 bg-gradient-to-br from-purple-400 to-pink-400 group">
                   {roomPrimaryImage ? (
-                    <Image
+                    <img
                       src={roomPrimaryImage.url}
                       alt={room.name}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -823,6 +832,14 @@ export default function PropertyDetailPage() {
         />
       )}
 
+      {showAlloggiatiModal && property && (
+        <AlloggiatiCredentialsModal
+          property={property}
+          onClose={() => setShowAlloggiatiModal(false)}
+          onSuccess={fetchProperty}
+        />
+      )}
+
       {/* iCal Configuration Modal */}
       {showICalConfigModal && iCalConfigRoom && (
         <ICalConfigModal
@@ -937,6 +954,153 @@ function AccessCodesModal({
             className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-all shadow-lg"
           >
             {loading ? 'Salvataggio...' : 'Salva Codici'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AlloggiatiCredentialsModal({
+  property,
+  onClose,
+  onSuccess,
+}: {
+  property: Property
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [credentials, setCredentials] = useState({
+    username: property.alloggiatiCredentials?.username || '',
+    password: property.alloggiatiCredentials?.password || '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+
+  const handleSave = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          alloggiatiCredentials: credentials.username || credentials.password
+            ? credentials
+            : null
+        }),
+      })
+
+      if (response.ok) {
+        onSuccess()
+        onClose()
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Errore nel salvataggio delle credenziali')
+      }
+    } catch (err) {
+      setError('Errore nel salvataggio delle credenziali')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+              <Shield className="text-amber-600" size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Credenziali Alloggiati Web</h2>
+              <p className="text-sm text-slate-500">Portale Polizia di Stato</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-4 text-sm font-medium flex items-center">
+            <AlertCircle size={18} className="mr-2" />
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Nome Utente
+            </label>
+            <input
+              type="text"
+              placeholder="Inserisci username"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              value={credentials.username}
+              onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Inserisci password"
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-amber-500 focus:border-transparent pr-12"
+                value={credentials.password}
+                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? 'Nascondi' : 'Mostra'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
+            <p className="text-sm text-amber-800">
+              <strong>Portale Alloggiati Web:</strong>
+            </p>
+            <a
+              href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-amber-700 hover:text-amber-900 underline flex items-center mt-1"
+            >
+              <ExternalLink size={14} className="mr-1" />
+              alloggiatiweb.poliziadistato.it
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 font-medium disabled:opacity-50 transition-all shadow-lg"
+          >
+            {loading ? 'Salvataggio...' : 'Salva Credenziali'}
           </button>
         </div>
       </div>
