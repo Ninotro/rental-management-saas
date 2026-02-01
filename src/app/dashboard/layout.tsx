@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Sparkles,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
@@ -36,7 +37,6 @@ export default function DashboardLayout({
   const [pendingCheckIns, setPendingCheckIns] = useState(0)
   const [pendingApproval, setPendingApproval] = useState(0)
 
-  // Load sidebar state from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('sidebarCollapsed')
     if (saved) {
@@ -44,7 +44,6 @@ export default function DashboardLayout({
     }
   }, [])
 
-  // Save sidebar state to localStorage
   const toggleSidebar = () => {
     const newState = !sidebarCollapsed
     setSidebarCollapsed(newState)
@@ -67,10 +66,8 @@ export default function DashboardLayout({
 
     if (session) {
       fetchPendingCount()
-      // Aggiorna ogni minuto per controlli più frequenti
       const interval = setInterval(fetchPendingCount, 60 * 1000)
 
-      // Ascolta eventi personalizzati per aggiornare il badge immediatamente
       const handleCheckInUpdate = () => {
         fetchPendingCount()
       }
@@ -86,10 +83,10 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Calendario', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Calendario Dipendenti', href: '/dashboard/staff-calendar', icon: CalendarDays },
+    { name: 'Calendario Staff', href: '/dashboard/staff-calendar', icon: CalendarDays },
     { name: 'Prenotazioni', href: '/dashboard/bookings', icon: Calendar },
     { name: 'Check-in Ospiti', href: '/dashboard/guest-checkins', icon: ClipboardCheck },
-    { name: 'Check-in in Attesa', href: '/dashboard/checkins-pending', icon: Clock, badge: 'pending' },
+    { name: 'Check-in Pending', href: '/dashboard/checkins-pending', icon: Clock, badge: 'pending' },
     { name: 'Strutture', href: '/dashboard/properties', icon: Home },
     { name: 'Dipendenti', href: '/dashboard/staff', icon: UserCheck },
   ]
@@ -104,47 +101,56 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-100 via-[#e8e4d9] to-[#d4cdb0]/30">
       {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-[#3d4a3c]/95 backdrop-blur-xl shadow-2xl border-b border-[#3d4a3c] sticky top-0 z-50">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden mr-2 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                className="lg:hidden mr-3 p-2 rounded-xl hover:bg-white/10 transition-all duration-300 text-white"
               >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+                {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Home className="text-white" size={20} />
+              <div className="flex items-center space-x-3">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#d4cdb0] to-[#c4b896] rounded-xl blur opacity-40 group-hover:opacity-60 transition duration-300"></div>
+                  <div className="relative w-10 h-10 bg-gradient-to-br from-[#d4cdb0] to-[#c4b896] rounded-xl flex items-center justify-center shadow-lg">
+                    <Home className="text-[#3d4a3c]" size={20} />
+                  </div>
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Rental Manager
-                </h1>
+                <div>
+                  <h1 className="text-xl font-bold text-white tracking-tight">
+                    Rental Manager
+                  </h1>
+                  <p className="text-[10px] text-[#d4cdb0]/70 font-medium tracking-wider uppercase">Property Management</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative">
-                <Bell size={20} className="text-slate-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <div className="flex items-center space-x-2">
+              <button className="relative p-2.5 rounded-xl hover:bg-white/10 transition-all duration-300 group">
+                <Bell size={20} className="text-[#d4cdb0] group-hover:text-white transition-colors" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
               </button>
-              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-                <Settings size={20} className="text-slate-600" />
-              </button>
-              <div className="hidden sm:flex items-center space-x-3 pl-3 border-l border-slate-200">
+              <Link href="/dashboard/settings" className="p-2.5 rounded-xl hover:bg-white/10 transition-all duration-300 group">
+                <Settings size={20} className="text-[#d4cdb0] group-hover:text-white transition-colors" />
+              </Link>
+              <div className="hidden sm:flex items-center space-x-3 pl-4 ml-2 border-l border-white/20">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-slate-900">{session?.user?.name}</p>
-                  <p className="text-xs text-slate-500">{session?.user?.role}</p>
+                  <p className="text-sm font-semibold text-white">{session?.user?.name}</p>
+                  <p className="text-xs text-[#d4cdb0]/70 capitalize">{session?.user?.role?.toLowerCase()}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
-                  {session?.user?.name?.charAt(0).toUpperCase()}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-[#d4cdb0] to-amber-400 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                  <div className="relative w-10 h-10 bg-gradient-to-br from-[#d4cdb0] to-[#c4b896] rounded-full flex items-center justify-center text-[#3d4a3c] font-bold shadow-lg">
+                    {session?.user?.name?.charAt(0).toUpperCase()}
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => signOut()}
-                className="hidden sm:flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+                className="hidden sm:flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 border border-white/10 hover:border-white/20"
               >
                 <LogOut size={16} />
                 <span>Esci</span>
@@ -157,60 +163,91 @@ export default function DashboardLayout({
       <div className="flex">
         {/* Sidebar Desktop */}
         <div
-          className={`hidden lg:block ${sidebarCollapsed ? 'w-20' : 'w-64'} min-h-screen flex-shrink-0 transition-all duration-300 ease-in-out border-r border-slate-200/60 bg-white/30 backdrop-blur-sm`}
+          className={`hidden lg:block ${sidebarCollapsed ? 'w-20' : 'w-72'} min-h-[calc(100vh-64px)] flex-shrink-0 transition-all duration-500 ease-out`}
         >
-          <nav className="sticky top-20 p-4">
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={toggleSidebar}
-                className="p-1.5 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all"
-              >
-                {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-              </button>
+          <div className="sticky top-20 p-4">
+            <div className={`bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'p-3' : 'p-4'}`}>
+              {/* Collapse Button */}
+              <div className={`flex ${sidebarCollapsed ? 'justify-center' : 'justify-end'} mb-4`}>
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 rounded-xl bg-[#3d4a3c]/5 hover:bg-[#3d4a3c]/10 text-[#3d4a3c] transition-all duration-300 group"
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                  ) : (
+                    <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                  )}
+                </button>
+              </div>
+
+              {/* Navigation */}
+              <nav className="space-y-1.5">
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href
+                  const Icon = item.icon
+                  const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
+                  const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
+                  const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
+                  const hasBadge = showBadge || showPendingBadge
+
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      title={sidebarCollapsed ? item.name : ''}
+                      className={`relative group flex items-center ${sidebarCollapsed ? 'justify-center px-3' : 'justify-between px-4'} py-3 text-sm font-medium rounded-2xl transition-all duration-300 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white shadow-lg shadow-[#3d4a3c]/20'
+                          : 'text-[#3d4a3c]/80 hover:bg-[#3d4a3c]/5 hover:text-[#3d4a3c]'
+                      }`}
+                    >
+                      <div className="flex items-center min-w-0">
+                        <Icon className={`${sidebarCollapsed ? '' : 'mr-3'} flex-shrink-0 transition-transform duration-300 ${isActive ? '' : 'group-hover:scale-110'}`} size={20} />
+                        {!sidebarCollapsed && (
+                          <span className="truncate">{item.name}</span>
+                        )}
+                      </div>
+                      {hasBadge && !sidebarCollapsed && (
+                        <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-lg`}>
+                          {badgeCount}
+                        </span>
+                      )}
+                      {hasBadge && sidebarCollapsed && (
+                        <span className={`absolute top-2 right-2 w-2.5 h-2.5 ${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} rounded-full animate-pulse ring-2 ring-white`}></span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </nav>
+
+              {/* Pro Badge */}
+              {!sidebarCollapsed && (
+                <div className="mt-6 p-4 bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49] rounded-2xl text-white">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Sparkles size={18} className="text-[#d4cdb0]" />
+                    <span className="font-semibold">Pro Version</span>
+                  </div>
+                  <p className="text-xs text-white/70 mb-3">Sblocca tutte le funzionalità premium</p>
+                  <button className="w-full py-2 bg-[#d4cdb0] hover:bg-[#c4b896] text-[#3d4a3c] rounded-xl text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                    Upgrade
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href
-                const Icon = item.icon
-                const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
-                const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
-                const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
-                const hasBadge = showBadge || showPendingBadge
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    title={sidebarCollapsed ? item.name : ''}
-                    className={`${isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'text-slate-700 hover:bg-white hover:shadow-md'
-                      } group flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-3 text-sm font-medium rounded-xl transition-all duration-200 relative`}
-                  >
-                    <div className="flex items-center min-w-0">
-                      <Icon className={`${sidebarCollapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : 'text-slate-500'} flex-shrink-0`} size={20} />
-                      {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
-                    </div>
-                    {hasBadge && !sidebarCollapsed && (
-                      <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse ml-2`}>
-                        {badgeCount}
-                      </span>
-                    )}
-                    {hasBadge && sidebarCollapsed && (
-                      <span className={`absolute top-2 right-2 w-2 h-2 ${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} rounded-full animate-pulse`}></span>
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-          </nav>
+          </div>
         </div>
 
         {/* Sidebar Mobile */}
         {sidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setSidebarOpen(false)}>
-            <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <nav className="p-4 mt-16">
-                <div className="space-y-2">
+          <>
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-transform duration-300 ease-out">
+              <div className="p-4 pt-20">
+                <nav className="space-y-1.5">
                   {navigation.map((item) => {
                     const isActive = pathname === item.href
                     const Icon = item.icon
@@ -218,44 +255,48 @@ export default function DashboardLayout({
                     const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
                     const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
                     const hasBadge = showBadge || showPendingBadge
+
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={() => setSidebarOpen(false)}
-                        className={`${isActive
-                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                          : 'text-slate-700 hover:bg-slate-100'
-                          } group flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all`}
+                        className={`group flex items-center justify-between px-4 py-3.5 text-sm font-medium rounded-2xl transition-all duration-300 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white shadow-lg'
+                            : 'text-[#3d4a3c]/80 hover:bg-[#3d4a3c]/5'
+                        }`}
                       >
                         <div className="flex items-center">
-                          <Icon className={`mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`} size={20} />
+                          <Icon className={`mr-3 ${isActive ? 'text-white' : 'text-[#3d4a3c]/60'}`} size={20} />
                           {item.name}
                         </div>
                         {hasBadge && (
-                          <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-red-600'} text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse`}>
+                          <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse`}>
                             {badgeCount}
                           </span>
                         )}
                       </Link>
                     )
                   })}
-                  <button
-                    onClick={() => signOut()}
-                    className="w-full flex items-center space-x-3 text-red-600 hover:bg-red-50 px-4 py-3 rounded-xl transition-all mt-4"
-                  >
-                    <LogOut size={20} />
-                    <span className="font-medium">Esci</span>
-                  </button>
-                </div>
-              </nav>
+                </nav>
+                <button
+                  onClick={() => signOut()}
+                  className="w-full mt-6 flex items-center justify-center space-x-2 text-rose-600 hover:bg-rose-50 px-4 py-3.5 rounded-2xl transition-all duration-300 font-medium"
+                >
+                  <LogOut size={20} />
+                  <span>Esci</span>
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Main content */}
-        <main className="flex-1 p-4 lg:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className="flex-1 p-4 lg:p-8 min-h-[calc(100vh-64px)]">
+          <div className="max-w-[1400px] mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

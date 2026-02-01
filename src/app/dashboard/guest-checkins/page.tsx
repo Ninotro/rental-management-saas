@@ -329,8 +329,8 @@ export default function GuestCheckInsPage() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin border-t-blue-600"></div>
-          <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-600" size={24} />
+          <div className="w-16 h-16 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-blue-600"></div>
+          <Users className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#3d4a3c]" size={24} />
         </div>
         <p className="mt-4 text-slate-600 font-medium animate-pulse">Caricamento check-in...</p>
       </div>
@@ -340,7 +340,7 @@ export default function GuestCheckInsPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header con statistiche */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-3xl p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#3d4a3c] via-[#4a5a49] to-[#3d4a3c] rounded-3xl p-8 text-white shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
 
@@ -348,7 +348,7 @@ export default function GuestCheckInsPage() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h1 className="text-4xl font-bold mb-2">Check-in Ospiti</h1>
-              <p className="text-blue-100 text-lg">
+              <p className="text-[#d4cdb0] text-lg">
                 Gestione dati ospiti per registrazione Questura
               </p>
             </div>
@@ -362,7 +362,7 @@ export default function GuestCheckInsPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{checkIns.length}</p>
-                    <p className="text-xs text-blue-100">Totale</p>
+                    <p className="text-xs text-[#d4cdb0]">Totale</p>
                   </div>
                 </div>
               </div>
@@ -374,7 +374,7 @@ export default function GuestCheckInsPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{getSubmittedCount()}</p>
-                    <p className="text-xs text-blue-100">Comunicati</p>
+                    <p className="text-xs text-[#d4cdb0]">Comunicati</p>
                   </div>
                 </div>
               </div>
@@ -405,7 +405,7 @@ export default function GuestCheckInsPage() {
           <input
             type="text"
             placeholder="Cerca ospite, CF, struttura..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200 hover:shadow-md"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent shadow-sm transition-all duration-200 hover:shadow-md"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -430,7 +430,7 @@ export default function GuestCheckInsPage() {
             href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 px-4 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            className="flex items-center gap-2 bg-white text-[#3d4a3c] border border-[#3d4a3c]/20 hover:bg-[#d4cdb0]/20 px-4 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <Shield size={18} />
             <span className="hidden sm:inline">Alloggiati Web</span>
@@ -463,7 +463,7 @@ export default function GuestCheckInsPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Data inizio</label>
               <input
                 type="date"
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
@@ -472,7 +472,7 @@ export default function GuestCheckInsPage() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Data fine</label>
               <input
                 type="date"
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -480,7 +480,7 @@ export default function GuestCheckInsPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Stato</label>
               <select
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -531,7 +531,7 @@ export default function GuestCheckInsPage() {
                 className={`group bg-white rounded-2xl shadow-sm border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                   overdueStatus
                     ? 'border-l-4 border-l-red-500 border-red-100'
-                    : 'border-slate-100 hover:border-blue-200'
+                    : 'border-slate-100 hover:border-[#3d4a3c]/20'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -542,7 +542,7 @@ export default function GuestCheckInsPage() {
                       <div className={`relative flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg ${
                         overdueStatus
                           ? 'bg-gradient-to-br from-red-500 to-rose-600'
-                          : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                          : 'bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49]'
                       }`}>
                         {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
                         {checkIn.submittedToPolice && (
@@ -582,8 +582,8 @@ export default function GuestCheckInsPage() {
                     </div>
 
                     {/* Date Info */}
-                    <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 rounded-xl">
-                      <Calendar size={18} className="text-blue-500 flex-shrink-0" />
+                    <div className="flex items-center gap-3 px-4 py-2 bg-[#d4cdb0]/20 rounded-xl">
+                      <Calendar size={18} className="text-[#3d4a3c] flex-shrink-0" />
                       <div>
                         <p className="font-medium text-slate-900">{formatDate(getCheckInDate(checkIn))}</p>
                         <p className="text-xs text-slate-500">Check-in</p>
@@ -622,7 +622,7 @@ export default function GuestCheckInsPage() {
                           setSelectedCheckIn(checkIn)
                           setShowDetailModal(true)
                         }}
-                        className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                        className="p-2.5 text-slate-400 hover:text-[#3d4a3c] hover:bg-[#d4cdb0]/20 rounded-xl transition-all duration-200"
                         title="Visualizza dettagli"
                       >
                         <Eye size={20} />
@@ -703,7 +703,7 @@ function EditCheckInModal({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-xl">
@@ -711,7 +711,7 @@ function EditCheckInModal({
               </div>
               <div>
                 <h2 className="text-xl font-bold">Modifica Check-in</h2>
-                <p className="text-blue-100 text-sm">{checkIn.firstName} {checkIn.lastName}</p>
+                <p className="text-[#d4cdb0] text-sm">{checkIn.firstName} {checkIn.lastName}</p>
               </div>
             </div>
             <button
@@ -765,7 +765,7 @@ function EditCheckInModal({
             {/* Contatti */}
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <Mail size={16} className="text-blue-500" />
+                <Mail size={16} className="text-[#3d4a3c]" />
                 Contatti
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -775,7 +775,7 @@ function EditCheckInModal({
                     type="email"
                     value={checkIn.email || ''}
                     onChange={(e) => setCheckIn({ ...checkIn, email: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -784,7 +784,7 @@ function EditCheckInModal({
                     type="tel"
                     value={checkIn.phone || ''}
                     onChange={(e) => setCheckIn({ ...checkIn, phone: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -793,7 +793,7 @@ function EditCheckInModal({
             {/* Dati Anagrafici */}
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <User size={16} className="text-blue-500" />
+                <User size={16} className="text-[#3d4a3c]" />
                 Dati Anagrafici
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -803,7 +803,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.firstName}
                     onChange={(e) => setCheckIn({ ...checkIn, firstName: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -812,7 +812,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.lastName}
                     onChange={(e) => setCheckIn({ ...checkIn, lastName: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -821,7 +821,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.fiscalCode}
                     onChange={(e) => setCheckIn({ ...checkIn, fiscalCode: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -830,7 +830,7 @@ function EditCheckInModal({
                     type="date"
                     value={checkIn.dateOfBirth?.split('T')[0] || ''}
                     onChange={(e) => setCheckIn({ ...checkIn, dateOfBirth: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -839,7 +839,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.birthCity}
                     onChange={(e) => setCheckIn({ ...checkIn, birthCity: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -848,7 +848,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.birthProvince}
                     onChange={(e) => setCheckIn({ ...checkIn, birthProvince: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                     maxLength={2}
                   />
                 </div>
@@ -858,7 +858,7 @@ function EditCheckInModal({
             {/* Residenza */}
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <MapPin size={16} className="text-blue-500" />
+                <MapPin size={16} className="text-[#3d4a3c]" />
                 Residenza
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -868,7 +868,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.residenceStreet}
                     onChange={(e) => setCheckIn({ ...checkIn, residenceStreet: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -877,7 +877,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.residencePostalCode}
                     onChange={(e) => setCheckIn({ ...checkIn, residencePostalCode: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -886,7 +886,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.residenceCity}
                     onChange={(e) => setCheckIn({ ...checkIn, residenceCity: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -895,7 +895,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.residenceProvince}
                     onChange={(e) => setCheckIn({ ...checkIn, residenceProvince: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                     maxLength={2}
                   />
                 </div>
@@ -905,7 +905,7 @@ function EditCheckInModal({
             {/* Documento */}
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <CreditCard size={16} className="text-blue-500" />
+                <CreditCard size={16} className="text-[#3d4a3c]" />
                 Documento
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -914,7 +914,7 @@ function EditCheckInModal({
                   <select
                     value={checkIn.documentType}
                     onChange={(e) => setCheckIn({ ...checkIn, documentType: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   >
                     <option value="CARTA_IDENTITA">Carta d'Identità</option>
                     <option value="PASSAPORTO">Passaporto</option>
@@ -927,7 +927,7 @@ function EditCheckInModal({
                     type="text"
                     value={checkIn.documentNumber}
                     onChange={(e) => setCheckIn({ ...checkIn, documentNumber: e.target.value.toUpperCase() })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 uppercase font-mono focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -936,7 +936,7 @@ function EditCheckInModal({
                     type="date"
                     value={checkIn.documentIssueDate?.split('T')[0] || ''}
                     onChange={(e) => setCheckIn({ ...checkIn, documentIssueDate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -945,7 +945,7 @@ function EditCheckInModal({
                     type="date"
                     value={checkIn.documentExpiryDate?.split('T')[0] || ''}
                     onChange={(e) => setCheckIn({ ...checkIn, documentExpiryDate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -1002,7 +1002,7 @@ function EditCheckInModal({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving ? (
               <>
@@ -1093,7 +1093,7 @@ function DetailCheckInModal({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold">
@@ -1101,7 +1101,7 @@ function DetailCheckInModal({
               </div>
               <div>
                 <h2 className="text-xl font-bold">{checkIn.firstName} {checkIn.lastName}</h2>
-                <p className="text-blue-100 font-mono">{checkIn.fiscalCode}</p>
+                <p className="text-[#d4cdb0] font-mono">{checkIn.fiscalCode}</p>
               </div>
             </div>
             <button
@@ -1120,7 +1120,7 @@ function DetailCheckInModal({
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
               <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <div className="p-1.5 bg-blue-100 rounded-lg">
-                  <MapPin size={16} className="text-blue-600" />
+                  <MapPin size={16} className="text-[#3d4a3c]" />
                 </div>
                 Prenotazione
               </h3>
@@ -1148,7 +1148,7 @@ function DetailCheckInModal({
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <User size={16} className="text-blue-600" />
+                  <User size={16} className="text-[#3d4a3c]" />
                   Dati Personali
                 </h3>
               </div>
@@ -1168,7 +1168,7 @@ function DetailCheckInModal({
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <div className="bg-slate-50 px-5 py-3 border-b border-slate-200">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <CreditCard size={16} className="text-blue-600" />
+                  <CreditCard size={16} className="text-[#3d4a3c]" />
                   Documento Identità
                 </h3>
               </div>
