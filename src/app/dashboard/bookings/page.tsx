@@ -20,6 +20,7 @@ import {
   XCircle,
   Copy,
   ExternalLink,
+  Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -130,6 +131,28 @@ export default function BookingsPage() {
     }
   }
 
+  const handleDeleteBooking = async (booking: Booking) => {
+    if (!confirm(`Sei sicuro di voler eliminare la prenotazione di ${booking.guestName}?\n\nQuesta azione non può essere annullata.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setBookings(bookings.filter(b => b.id !== booking.id))
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Errore durante l\'eliminazione')
+      }
+    } catch (error) {
+      console.error('Error deleting booking:', error)
+      alert('Errore durante l\'eliminazione della prenotazione')
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
@@ -192,26 +215,35 @@ export default function BookingsPage() {
   const filteredBookings = useMemo(() => {
     let result = [...bookings]
 
+    // Filtro per stato
     if (filterStatus !== 'ALL') {
       result = result.filter(b => b.status === filterStatus)
     }
 
+    // Filtro per proprietà
     if (filterProperty !== 'ALL') {
-      result = result.filter(b => b.property.id === filterProperty)
+      result = result.filter(b => b.property?.id === filterProperty)
     }
 
+    // Filtro per stanza
     if (filterRoom !== 'ALL') {
       result = result.filter(b => b.room?.id === filterRoom)
     }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(b =>
-        b.guestName.toLowerCase().includes(query) ||
-        b.guestEmail.toLowerCase().includes(query) ||
-        b.property.name.toLowerCase().includes(query) ||
-        (b.room?.name?.toLowerCase().includes(query) ?? false)
-      )
+    // Filtro per ricerca testuale
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim()
+      result = result.filter(b => {
+        const guestName = (b.guestName || '').toLowerCase()
+        const guestEmail = (b.guestEmail || '').toLowerCase()
+        const propertyName = (b.property?.name || '').toLowerCase()
+        const roomName = (b.room?.name || '').toLowerCase()
+
+        return guestName.includes(query) ||
+               guestEmail.includes(query) ||
+               propertyName.includes(query) ||
+               roomName.includes(query)
+      })
     }
 
     return result
@@ -450,16 +482,25 @@ export default function BookingsPage() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedBooking(booking)
-                      setShowEditModal(true)
-                    }}
-                    className="flex items-center space-x-2 text-[#3d4a3c] hover:text-[#3d4a3c] font-medium text-sm bg-[#d4cdb0] hover:bg-[#c4b896] px-3 py-2 rounded-xl transition-all duration-300"
-                  >
-                    <Edit size={16} />
-                    <span>Modifica</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        setSelectedBooking(booking)
+                        setShowEditModal(true)
+                      }}
+                      className="flex items-center space-x-2 text-[#3d4a3c] hover:text-[#3d4a3c] font-medium text-sm bg-[#d4cdb0] hover:bg-[#c4b896] px-3 py-2 rounded-xl transition-all duration-300"
+                    >
+                      <Edit size={16} />
+                      <span>Modifica</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBooking(booking)}
+                      className="flex items-center space-x-2 text-white font-medium text-sm bg-red-500 hover:bg-red-600 px-3 py-2 rounded-xl transition-all duration-300"
+                      title="Elimina prenotazione"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

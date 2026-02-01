@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { deleteImage } from '@/lib/cloudinary'
+
+interface CheckInToClean {
+  id: string
+  documentFrontUrl: string | null
+  documentBackUrl: string | null
+  touristTaxPaymentProof: string | null
+  booking: {
+    touristTaxPaymentProof: string | null
+  } | null
+}
 
 // Helper per estrarre il public_id da un URL Cloudinary
 function extractPublicId(url: string | null): string | null {
@@ -160,7 +170,7 @@ export async function POST(request: NextRequest) {
     await prisma.guestCheckIn.updateMany({
       where: {
         id: {
-          in: checkInsToClean.map(c => c.id)
+          in: checkInsToClean.map((c: CheckInToClean) => c.id)
         }
       },
       data: {
@@ -181,7 +191,7 @@ export async function POST(request: NextRequest) {
         documentFrontUrl: null,
         documentBackUrl: null,
         touristTaxPaymentProof: null,
-        exemptionReason: checkInsToClean.some(c => c.id) ? '[RIMOSSO SE PRESENTE]' : null,
+        exemptionReason: checkInsToClean.some((c: CheckInToClean) => c.id) ? '[RIMOSSO SE PRESENTE]' : null,
         // Flag anonimizzazione
         dataAnonymized: true,
         dataAnonymizedAt: now
@@ -190,18 +200,18 @@ export async function POST(request: NextRequest) {
 
     // Aggiorna anche il payment proof nei booking collegati
     const bookingIds = checkInsToClean
-      .filter(c => c.booking?.touristTaxPaymentProof)
-      .map(c => c.id)
+      .filter((c: CheckInToClean) => c.booking?.touristTaxPaymentProof)
+      .map((c: CheckInToClean) => c.id)
 
     if (bookingIds.length > 0) {
       // Trova i booking IDs reali
       const checkInsWithBooking = await prisma.guestCheckIn.findMany({
-        where: { id: { in: checkInsToClean.map(c => c.id) } },
+        where: { id: { in: checkInsToClean.map((c: CheckInToClean) => c.id) } },
         select: { bookingId: true }
       })
 
       const realBookingIds = checkInsWithBooking
-        .map(c => c.bookingId)
+        .map((c: { bookingId: string | null }) => c.bookingId)
         .filter(Boolean) as string[]
 
       if (realBookingIds.length > 0) {

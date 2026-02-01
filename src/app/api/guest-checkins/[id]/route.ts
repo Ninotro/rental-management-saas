@@ -184,8 +184,8 @@ export async function DELETE(
           where: { id: bookingId },
           data: {
             guestName: 'Da assegnare',
-            guestEmail: null,
-            guestPhone: null,
+            guestEmail: '',
+            guestPhone: '',
             guests: 1, // Reset a 1 ospite di default
           },
         })
@@ -200,8 +200,8 @@ export async function DELETE(
           where: { id: bookingId },
           data: {
             guestName: additionalGuests > 0 ? `${baseName} +${additionalGuests}` : baseName,
-            guestEmail: firstCheckIn.email || null,
-            guestPhone: firstCheckIn.phone || null,
+            guestEmail: firstCheckIn.email || '',
+            guestPhone: firstCheckIn.phone || '',
             guests: totalGuests,
           },
         })
