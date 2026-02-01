@@ -149,9 +149,64 @@ export async function DELETE(
 
     const { id } = await params
 
+    // Prima recupera il check-in per sapere se era collegato a una prenotazione
+    const checkIn = await prisma.guestCheckIn.findUnique({
+      where: { id },
+      select: { bookingId: true, status: true },
+    })
+
+    if (!checkIn) {
+      return NextResponse.json({ error: 'Check-in non trovato' }, { status: 404 })
+    }
+
+    const wasLinkedToBooking = checkIn.bookingId && checkIn.status === 'APPROVED'
+    const bookingId = checkIn.bookingId
+
+    // Elimina il check-in
     await prisma.guestCheckIn.delete({
       where: { id },
     })
+
+    // Se era collegato a una prenotazione, aggiorna i dati della prenotazione
+    if (wasLinkedToBooking && bookingId) {
+      // Conta i check-in rimanenti approvati per questa prenotazione
+      const remainingCheckIns = await prisma.guestCheckIn.findMany({
+        where: {
+          bookingId,
+          status: 'APPROVED',
+        },
+        orderBy: { submittedAt: 'asc' },
+      })
+
+      if (remainingCheckIns.length === 0) {
+        // Nessun check-in rimasto - "libera" la prenotazione
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: {
+            guestName: 'Da assegnare',
+            guestEmail: null,
+            guestPhone: null,
+            guests: 1, // Reset a 1 ospite di default
+          },
+        })
+      } else {
+        // Ci sono ancora check-in - aggiorna con il primo ospite rimasto
+        const firstCheckIn = remainingCheckIns[0]
+        const totalGuests = remainingCheckIns.length
+        const baseName = `${firstCheckIn.firstName} ${firstCheckIn.lastName}`
+        const additionalGuests = totalGuests - 1
+
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: {
+            guestName: additionalGuests > 0 ? `${baseName} +${additionalGuests}` : baseName,
+            guestEmail: firstCheckIn.email || null,
+            guestPhone: firstCheckIn.phone || null,
+            guests: totalGuests,
+          },
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, message: 'Check-in eliminato' })
   } catch (error) {
