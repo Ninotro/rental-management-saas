@@ -17,12 +17,14 @@ export async function GET(request: NextRequest) {
       include: {
         property: {
           select: {
+            id: true,
             name: true,
             city: true,
           },
         },
         room: {
           select: {
+            id: true,
             name: true,
           },
         },

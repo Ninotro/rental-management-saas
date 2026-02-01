@@ -496,18 +496,23 @@ export default function GuestCheckInsPage() {
             <span className="hidden sm:inline">PDF</span>
           </button>
 
-          {/* GDPR Cleanup Button */}
-          {cleanupEligibleCount > 0 && (
-            <button
-              onClick={() => setShowCleanupModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-3 rounded-2xl font-medium shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-              title="Pulizia dati GDPR"
-            >
-              <ShieldOff size={18} />
-              <span className="hidden sm:inline">Pulizia GDPR</span>
+          {/* GDPR Cleanup Button - Sempre visibile */}
+          <button
+            onClick={() => setShowCleanupModal(true)}
+            disabled={cleanupEligibleCount === 0}
+            className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+              cleanupEligibleCount > 0
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:-translate-y-0.5'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+            title={cleanupEligibleCount > 0 ? `Pulisci dati di ${cleanupEligibleCount} ospiti` : 'Nessun dato da pulire'}
+          >
+            <ShieldOff size={18} />
+            <span className="hidden sm:inline">Pulizia GDPR</span>
+            {cleanupEligibleCount > 0 && (
               <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs font-bold">{cleanupEligibleCount}</span>
-            </button>
-          )}
+            )}
+          </button>
         </div>
       </div>
 
