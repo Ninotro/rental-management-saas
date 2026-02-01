@@ -459,6 +459,7 @@ model GuestCheckIn {
   // Dati anagrafici
   firstName           String       // Nome
   lastName            String       // Cognome
+  nationality         String?      // Nazionalità (es. "Italia", "Germania")
   dateOfBirth         DateTime     // Data di nascita
   birthCity           String       // Città di nascita
   birthProvince       String       // Provincia di nascita
@@ -484,6 +485,8 @@ model GuestCheckIn {
   submittedAt         DateTime     @default(now()) // Quando il guest ha compilato il form
   submittedToPolice   Boolean      @default(false) // Se comunicato alla Questura
   submittedToPoliceAt DateTime?    // Quando è stato comunicato alla Questura
+  dataAnonymized      Boolean      @default(false) // Se i dati sono stati anonimizzati per GDPR
+  dataAnonymizedAt    DateTime?    // Quando i dati sono stati anonimizzati
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 

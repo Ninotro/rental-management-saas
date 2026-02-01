@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       // Dati anagrafici
       firstName,
       lastName,
+      nationality,
       dateOfBirth,
       birthCity,
       birthProvince,
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
         // Dati anagrafici
         firstName,
         lastName,
+        nationality: nationality || null,
         dateOfBirth: new Date(dateOfBirth),
         birthCity,
         birthProvince: birthProvince.toUpperCase(),

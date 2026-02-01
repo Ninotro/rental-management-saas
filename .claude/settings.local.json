@@ -16,7 +16,8 @@
       "Bash(npx eslint:*)",
       "Bash(ls:*)",
       "Bash(.ts \")",
-      "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\public\")"
+      "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\public\")",
+      "Bash(npx prisma:*)"
     ]
   }
 }

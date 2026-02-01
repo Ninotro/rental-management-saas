@@ -39,6 +39,7 @@ interface BookingInfo {
 interface GuestFormData {
   firstName: string
   lastName: string
+  nationality: string
   dateOfBirth: string
   birthCity: string
   birthProvince: string
@@ -83,6 +84,7 @@ export default function GuestCheckInPage() {
     return {
       firstName: '',
       lastName: '',
+      nationality: 'Italia',
       dateOfBirth: '',
       birthCity: '',
       birthProvince: '',
@@ -207,6 +209,7 @@ export default function GuestCheckInPage() {
             bookingCode,
             firstName: guest.firstName,
             lastName: guest.lastName,
+            nationality: guest.nationality,
             dateOfBirth: guest.dateOfBirth,
             birthCity: guest.birthCity,
             birthProvince: guest.birthProvince,
@@ -450,6 +453,61 @@ export default function GuestCheckInPage() {
                       value={guest.lastName}
                       onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {t.nationality} *
+                    </label>
+                    <select
+                      required
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
+                      value={guest.nationality}
+                      onChange={(e) => updateGuest(index, 'nationality', e.target.value)}
+                    >
+                      <option value="Italia">Italia</option>
+                      <option value="Germania">Germania</option>
+                      <option value="Francia">Francia</option>
+                      <option value="Spagna">Spagna</option>
+                      <option value="Regno Unito">Regno Unito</option>
+                      <option value="Stati Uniti">Stati Uniti</option>
+                      <option value="Paesi Bassi">Paesi Bassi</option>
+                      <option value="Belgio">Belgio</option>
+                      <option value="Austria">Austria</option>
+                      <option value="Svizzera">Svizzera</option>
+                      <option value="Polonia">Polonia</option>
+                      <option value="Portogallo">Portogallo</option>
+                      <option value="Grecia">Grecia</option>
+                      <option value="Svezia">Svezia</option>
+                      <option value="Norvegia">Norvegia</option>
+                      <option value="Danimarca">Danimarca</option>
+                      <option value="Finlandia">Finlandia</option>
+                      <option value="Irlanda">Irlanda</option>
+                      <option value="Repubblica Ceca">Repubblica Ceca</option>
+                      <option value="Romania">Romania</option>
+                      <option value="Ungheria">Ungheria</option>
+                      <option value="Croazia">Croazia</option>
+                      <option value="Slovenia">Slovenia</option>
+                      <option value="Slovacchia">Slovacchia</option>
+                      <option value="Bulgaria">Bulgaria</option>
+                      <option value="Lituania">Lituania</option>
+                      <option value="Lettonia">Lettonia</option>
+                      <option value="Estonia">Estonia</option>
+                      <option value="Lussemburgo">Lussemburgo</option>
+                      <option value="Malta">Malta</option>
+                      <option value="Cipro">Cipro</option>
+                      <option value="Australia">Australia</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Brasile">Brasile</option>
+                      <option value="Argentina">Argentina</option>
+                      <option value="Giappone">Giappone</option>
+                      <option value="Cina">Cina</option>
+                      <option value="Corea del Sud">Corea del Sud</option>
+                      <option value="India">India</option>
+                      <option value="Russia">Russia</option>
+                      <option value="Messico">Messico</option>
+                      <option value="Altro">Altro</option>
+                    </select>
                   </div>
 
                   <div>

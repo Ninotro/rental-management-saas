@@ -28,6 +28,7 @@ export const translations = {
     // Personal Fields
     firstName: 'Nome',
     lastName: 'Cognome',
+    nationality: 'Nazionalità',
     dateOfBirth: 'Data di Nascita',
     birthCity: 'Città di Nascita',
     birthProvince: 'Provincia di Nascita',
@@ -149,6 +150,7 @@ export const translations = {
     // Personal Fields
     firstName: 'First Name',
     lastName: 'Last Name',
+    nationality: 'Nationality',
     dateOfBirth: 'Date of Birth',
     birthCity: 'Birth City',
     birthProvince: 'Birth Province',

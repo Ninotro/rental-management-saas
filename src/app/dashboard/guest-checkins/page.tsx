@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink, CheckCircle2, AlertTriangle, Clock, Edit3, Trash2, ChevronDown, Users, Shield, Mail, Phone } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink, CheckCircle2, AlertTriangle, Clock, Edit3, Trash2, ChevronDown, Users, Shield, Mail, Phone, ShieldOff } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -12,6 +12,7 @@ interface GuestCheckIn {
   phone: string | null
   firstName: string
   lastName: string
+  nationality: string | null
   dateOfBirth: string
   birthCity: string
   birthProvince: string
@@ -72,6 +73,12 @@ export default function GuestCheckInsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
+  // Cleanup GDPR states
+  const [cleanupEligibleCount, setCleanupEligibleCount] = useState(0)
+  const [showCleanupModal, setShowCleanupModal] = useState(false)
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupResult, setCleanupResult] = useState<{success: boolean, message: string} | null>(null)
+
   useEffect(() => {
     fetchCheckIns()
   }, [])
@@ -88,10 +95,46 @@ export default function GuestCheckInsPage() {
         setCheckIns(data)
         setFilteredCheckIns(data)
       }
+      // Fetch cleanup eligible count
+      fetchCleanupCount()
     } catch (error) {
       console.error('Errore nel caricamento check-in:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCleanupCount = async () => {
+    try {
+      const response = await fetch('/api/guest-checkins/cleanup')
+      if (response.ok) {
+        const data = await response.json()
+        setCleanupEligibleCount(data.eligibleCount)
+      }
+    } catch (error) {
+      console.error('Errore nel conteggio cleanup:', error)
+    }
+  }
+
+  const handleCleanup = async () => {
+    setCleanupLoading(true)
+    setCleanupResult(null)
+    try {
+      const response = await fetch('/api/guest-checkins/cleanup', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setCleanupResult({ success: true, message: data.message })
+        // Refresh data
+        fetchCheckIns()
+      } else {
+        setCleanupResult({ success: false, message: data.error || 'Errore durante la pulizia' })
+      }
+    } catch (error) {
+      setCleanupResult({ success: false, message: 'Errore di connessione' })
+    } finally {
+      setCleanupLoading(false)
     }
   }
 
@@ -452,6 +495,19 @@ export default function GuestCheckInsPage() {
             <FileText size={18} />
             <span className="hidden sm:inline">PDF</span>
           </button>
+
+          {/* GDPR Cleanup Button */}
+          {cleanupEligibleCount > 0 && (
+            <button
+              onClick={() => setShowCleanupModal(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-3 rounded-2xl font-medium shadow-lg shadow-amber-500/25 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+              title="Pulizia dati GDPR"
+            >
+              <ShieldOff size={18} />
+              <span className="hidden sm:inline">Pulizia GDPR</span>
+              <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs font-bold">{cleanupEligibleCount}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -681,6 +737,95 @@ export default function GuestCheckInsPage() {
           saving={saving}
         />
       )}
+
+      {/* Modal Pulizia GDPR */}
+      {showCleanupModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 text-white">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <ShieldOff size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Pulizia Dati GDPR</h2>
+                    <p className="text-white/80 text-sm">Rimozione dati sensibili</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowCleanupModal(false); setCleanupResult(null); }}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {cleanupResult ? (
+                <div className={`p-4 rounded-2xl mb-4 ${cleanupResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  <div className="flex items-center gap-2">
+                    {cleanupResult.success ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+                    <p className="font-medium">{cleanupResult.message}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="text-amber-600 mt-0.5" size={20} />
+                      <div>
+                        <p className="font-semibold text-amber-800 mb-1">Attenzione</p>
+                        <p className="text-sm text-amber-700">
+                          Questa operazione rimuoverà permanentemente i dati sensibili (documenti, codice fiscale, indirizzo, ecc.)
+                          di <strong>{cleanupEligibleCount} ospiti</strong> che hanno effettuato il checkout più di 3 giorni fa.
+                        </p>
+                        <p className="text-sm text-amber-700 mt-2">
+                          Verranno mantenuti solo: <strong>nome, cognome e nazionalità</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-slate-600 text-sm mb-4">
+                    I file dei documenti verranno eliminati dal server. Questa operazione è irreversibile.
+                  </p>
+                </>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => { setShowCleanupModal(false); setCleanupResult(null); }}
+                  className="px-5 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                >
+                  {cleanupResult ? 'Chiudi' : 'Annulla'}
+                </button>
+                {!cleanupResult && (
+                  <button
+                    onClick={handleCleanup}
+                    disabled={cleanupLoading}
+                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium shadow-lg disabled:opacity-50 transition-all flex items-center gap-2"
+                  >
+                    {cleanupLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Pulizia in corso...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldOff size={18} />
+                        Esegui Pulizia
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -814,6 +959,57 @@ function EditCheckInModal({
                     onChange={(e) => setCheckIn({ ...checkIn, lastName: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Nazionalità</label>
+                  <select
+                    value={checkIn.nationality || 'Italia'}
+                    onChange={(e) => setCheckIn({ ...checkIn, nationality: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
+                  >
+                    <option value="Italia">Italia</option>
+                    <option value="Germania">Germania</option>
+                    <option value="Francia">Francia</option>
+                    <option value="Spagna">Spagna</option>
+                    <option value="Regno Unito">Regno Unito</option>
+                    <option value="Stati Uniti">Stati Uniti</option>
+                    <option value="Paesi Bassi">Paesi Bassi</option>
+                    <option value="Belgio">Belgio</option>
+                    <option value="Austria">Austria</option>
+                    <option value="Svizzera">Svizzera</option>
+                    <option value="Polonia">Polonia</option>
+                    <option value="Portogallo">Portogallo</option>
+                    <option value="Grecia">Grecia</option>
+                    <option value="Svezia">Svezia</option>
+                    <option value="Norvegia">Norvegia</option>
+                    <option value="Danimarca">Danimarca</option>
+                    <option value="Finlandia">Finlandia</option>
+                    <option value="Irlanda">Irlanda</option>
+                    <option value="Repubblica Ceca">Repubblica Ceca</option>
+                    <option value="Romania">Romania</option>
+                    <option value="Ungheria">Ungheria</option>
+                    <option value="Croazia">Croazia</option>
+                    <option value="Slovenia">Slovenia</option>
+                    <option value="Slovacchia">Slovacchia</option>
+                    <option value="Bulgaria">Bulgaria</option>
+                    <option value="Lituania">Lituania</option>
+                    <option value="Lettonia">Lettonia</option>
+                    <option value="Estonia">Estonia</option>
+                    <option value="Lussemburgo">Lussemburgo</option>
+                    <option value="Malta">Malta</option>
+                    <option value="Cipro">Cipro</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Brasile">Brasile</option>
+                    <option value="Argentina">Argentina</option>
+                    <option value="Giappone">Giappone</option>
+                    <option value="Cina">Cina</option>
+                    <option value="Corea del Sud">Corea del Sud</option>
+                    <option value="India">India</option>
+                    <option value="Russia">Russia</option>
+                    <option value="Messico">Messico</option>
+                    <option value="Altro">Altro</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5">Codice Fiscale</label>
@@ -1155,6 +1351,7 @@ function DetailCheckInModal({
               <div className="p-5">
                 <DataRow label="Nome" value={checkIn.firstName} fieldName="firstName" />
                 <DataRow label="Cognome" value={checkIn.lastName} fieldName="lastName" />
+                {checkIn.nationality && <DataRow label="Nazionalità" value={checkIn.nationality} fieldName="nationality" />}
                 <DataRow label="Data di Nascita" value={formatDate(checkIn.dateOfBirth)} fieldName="dateOfBirth" />
                 <DataRow label="Luogo di Nascita" value={`${checkIn.birthCity} (${checkIn.birthProvince})`} fieldName="birthPlace" />
                 <DataRow label="Codice Fiscale" value={checkIn.fiscalCode} fieldName="fiscalCode" mono />
