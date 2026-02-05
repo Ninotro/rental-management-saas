@@ -10,25 +10,24 @@ export async function POST(request: NextRequest) {
       roomId,
       checkInDate,
       checkOutDate,
-      // Dati contatto
+      // Dati contatto (opzionali)
       email,
       phone,
+      contactPreference, // "whatsapp" o "email"
+      // ID gruppo per raggruppare più ospiti
+      groupId,
       // Dati anagrafici
       firstName,
       lastName,
+      sex, // "M" o "F"
       nationality,
       dateOfBirth,
       birthCity,
       birthProvince,
-      residenceStreet,
-      residencePostalCode,
-      residenceCity,
-      residenceProvince,
-      fiscalCode,
+      fiscalCode, // Opzionale
       documentType,
       documentNumber,
-      documentIssueDate,
-      documentExpiryDate,
+      documentIssuePlace, // Luogo rilascio documento
       documentFrontUrl,
       documentBackUrl,
       isExempt,
@@ -43,18 +42,13 @@ export async function POST(request: NextRequest) {
       checkOutDate: 'Data check-out',
       firstName: 'Nome',
       lastName: 'Cognome',
+      sex: 'Sesso',
       dateOfBirth: 'Data di nascita',
       birthCity: 'Città di nascita',
       birthProvince: 'Provincia di nascita',
-      residenceStreet: 'Indirizzo',
-      residencePostalCode: 'CAP',
-      residenceCity: 'Città di residenza',
-      residenceProvince: 'Provincia di residenza',
-      fiscalCode: 'Codice fiscale',
       documentType: 'Tipo documento',
       documentNumber: 'Numero documento',
-      documentIssueDate: 'Data rilascio documento',
-      documentExpiryDate: 'Data scadenza documento',
+      documentIssuePlace: 'Luogo rilascio documento',
     }
 
     for (const [field, label] of Object.entries(requiredFields)) {
@@ -88,6 +82,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Valida sesso
+    if (!['M', 'F'].includes(sex)) {
+      return NextResponse.json(
+        { error: 'Sesso non valido (M o F)' },
+        { status: 400 }
+      )
+    }
+
     const selectedCheckIn = new Date(checkInDate)
     const selectedCheckOut = new Date(checkOutDate)
 
@@ -97,29 +99,28 @@ export async function POST(request: NextRequest) {
         // Mai collegamento automatico - l'admin decide
         bookingId: null,
         status: 'PENDING',
+        // Group ID per raggruppare più ospiti
+        groupId: groupId || null,
         // Dati selezionati
         selectedRoomId: roomId,
         selectedCheckIn,
         selectedCheckOut,
-        // Dati contatto
+        // Dati contatto (opzionali)
         email: email || null,
         phone: phone || null,
+        contactPreference: contactPreference || null,
         // Dati anagrafici
         firstName,
         lastName,
+        sex,
         nationality: nationality || null,
         dateOfBirth: new Date(dateOfBirth),
         birthCity,
         birthProvince: birthProvince.toUpperCase(),
-        residenceStreet,
-        residencePostalCode,
-        residenceCity,
-        residenceProvince: residenceProvince.toUpperCase(),
-        fiscalCode: fiscalCode.toUpperCase(),
+        fiscalCode: fiscalCode ? fiscalCode.toUpperCase() : null,
         documentType,
         documentNumber,
-        documentIssueDate: new Date(documentIssueDate),
-        documentExpiryDate: new Date(documentExpiryDate),
+        documentIssuePlace: documentIssuePlace || null,
         documentFrontUrl: documentFrontUrl || null,
         documentBackUrl: documentBackUrl || null,
         isExempt: !!isExempt,

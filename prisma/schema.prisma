@@ -170,10 +170,40 @@ model Room {
   staffAssignments StaffAssignment[]
   icalSyncs        ICalSync[]
   guestCheckIns    GuestCheckIn[]
+  messages         RoomMessage[]
 
   @@index([propertyId])
   @@index([active])
   @@index([type])
+}
+
+// Enum per i tipi di messaggio
+enum MessageType {
+  CHECK_IN_INSTRUCTIONS  // Istruzioni per il check-in
+  WELCOME                // Messaggio di benvenuto
+  CHECKOUT               // Istruzioni checkout
+  CUSTOM                 // Messaggio personalizzato
+}
+
+// Modello RoomMessage - Messaggi personalizzabili per stanza
+model RoomMessage {
+  id          String      @id @default(cuid())
+  roomId      String
+  type        MessageType @default(CHECK_IN_INSTRUCTIONS)
+  name        String      // Nome descrittivo del messaggio (es. "Istruzioni Check-in")
+  subject     String?     // Oggetto per email
+  messageText String      @db.Text // Contenuto del messaggio (supporta variabili come {guest_name})
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relazioni
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, type]) // Una stanza può avere un solo messaggio per tipo
+  @@index([roomId])
+  @@index([type])
+  @@index([isActive])
 }
 
 // Modello PropertyImage - Immagini delle proprietà
@@ -445,6 +475,7 @@ enum CheckInStatus {
 // Modello GuestCheckIn - Dati check-in ospiti per la questura
 model GuestCheckIn {
   id                  String        @id @default(cuid())
+  groupId             String?       // ID per raggruppare ospiti dello stesso check-in
   bookingId           String?       // Opzionale - può essere collegato dopo
   status              CheckInStatus @default(PENDING) // Stato del check-in
 
@@ -454,27 +485,26 @@ model GuestCheckIn {
   selectedCheckOut    DateTime?     // Data check-out selezionata
 
   // Dati contatto
-  email               String?      // Email ospite
-  phone               String?      // Telefono ospite
+  email               String?       // Email ospite (opzionale)
+  phone               String?       // Telefono ospite (opzionale)
+  contactPreference   String?       // Preferenza contatto: "whatsapp" o "email"
 
   // Dati anagrafici
-  firstName           String       // Nome
-  lastName            String       // Cognome
-  nationality         String?      // Nazionalità (es. "Italia", "Germania")
-  dateOfBirth         DateTime     // Data di nascita
-  birthCity           String       // Città di nascita
-  birthProvince       String       // Provincia di nascita
-  residenceStreet     String       // Via e numero civico
-  residencePostalCode String       // CAP
-  residenceCity       String       // Città di residenza
-  residenceProvince   String       // Provincia di residenza
-  fiscalCode          String       // Codice fiscale
-  documentType        DocumentType // Tipo documento
-  documentNumber      String       // Numero documento
-  documentIssueDate   DateTime     // Data rilascio
-  documentExpiryDate  DateTime     // Data scadenza
-  documentFrontUrl    String?      // URL foto fronte documento
-  documentBackUrl     String?      // URL foto retro documento
+  firstName           String        // Nome
+  lastName            String        // Cognome
+  sex                 String?       // Sesso: "M" o "F"
+  nationality         String?       // Nazionalità (es. "Italia", "Germania")
+  dateOfBirth         DateTime      // Data di nascita
+  birthCity           String        // Città di nascita
+  birthProvince       String        // Provincia di nascita
+  fiscalCode          String?       // Codice fiscale (opzionale, necessario se richiesta fattura)
+
+  // Documento
+  documentType        DocumentType  // Tipo documento
+  documentNumber      String        // Numero documento
+  documentIssuePlace  String?       // Luogo rilascio documento
+  documentFrontUrl    String?       // URL foto fronte documento
+  documentBackUrl     String?       // URL foto retro documento
 
   // Esenzione Tassa di Soggiorno
   isExempt            Boolean      @default(false)
@@ -495,6 +525,7 @@ model GuestCheckIn {
   booking             Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   selectedRoom        Room?        @relation(fields: [selectedRoomId], references: [id])
 
+  @@index([groupId])
   @@index([bookingId])
   @@index([status])
   @@index([selectedRoomId])

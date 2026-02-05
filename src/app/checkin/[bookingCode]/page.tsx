@@ -39,19 +39,15 @@ interface BookingInfo {
 interface GuestFormData {
   firstName: string
   lastName: string
+  sex: string // "M" o "F"
   nationality: string
   dateOfBirth: string
   birthCity: string
   birthProvince: string
-  residenceStreet: string
-  residencePostalCode: string
-  residenceCity: string
-  residenceProvince: string
-  fiscalCode: string
+  fiscalCode: string // Opzionale
   documentType: string
   documentNumber: string
-  documentIssueDate: string
-  documentExpiryDate: string
+  documentIssuePlace: string // Luogo rilascio documento
   documentFrontFile: File | null
   documentBackFile: File | null
   documentFrontUrl: string | null
@@ -84,19 +80,15 @@ export default function GuestCheckInPage() {
     return {
       firstName: '',
       lastName: '',
+      sex: '',
       nationality: 'Italia',
       dateOfBirth: '',
       birthCity: '',
       birthProvince: '',
-      residenceStreet: '',
-      residencePostalCode: '',
-      residenceCity: '',
-      residenceProvince: '',
       fiscalCode: '',
       documentType: 'CARTA_IDENTITA',
       documentNumber: '',
-      documentIssueDate: '',
-      documentExpiryDate: '',
+      documentIssuePlace: '',
       documentFrontFile: null,
       documentBackFile: null,
       documentFrontUrl: null,
@@ -209,19 +201,15 @@ export default function GuestCheckInPage() {
             bookingCode,
             firstName: guest.firstName,
             lastName: guest.lastName,
+            sex: guest.sex,
             nationality: guest.nationality,
             dateOfBirth: guest.dateOfBirth,
             birthCity: guest.birthCity,
             birthProvince: guest.birthProvince,
-            residenceStreet: guest.residenceStreet,
-            residencePostalCode: guest.residencePostalCode,
-            residenceCity: guest.residenceCity,
-            residenceProvince: guest.residenceProvince,
-            fiscalCode: guest.fiscalCode,
+            fiscalCode: guest.fiscalCode || null,
             documentType: guest.documentType,
             documentNumber: guest.documentNumber,
-            documentIssueDate: guest.documentIssueDate,
-            documentExpiryDate: guest.documentExpiryDate,
+            documentIssuePlace: guest.documentIssuePlace,
             documentFrontUrl: guest.documentFrontUrl,
             documentBackUrl: guest.documentBackUrl,
             isExempt: guest.isExempt,
@@ -457,6 +445,22 @@ export default function GuestCheckInPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {language === 'it' ? 'Sesso' : 'Sex'} *
+                    </label>
+                    <select
+                      required
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
+                      value={guest.sex}
+                      onChange={(e) => updateGuest(index, 'sex', e.target.value)}
+                    >
+                      <option value="">{language === 'it' ? 'Seleziona...' : 'Select...'}</option>
+                      <option value="M">{language === 'it' ? 'Maschio' : 'Male'}</option>
+                      <option value="F">{language === 'it' ? 'Femmina' : 'Female'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       {t.nationality} *
                     </label>
                     <select
@@ -586,75 +590,21 @@ export default function GuestCheckInPage() {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.residenceStreet} *
+                      {t.fiscalCode}
+                      <span className="text-slate-500 text-xs ml-2">
+                        {language === 'it' ? '(necessario se richiesta fattura)' : '(required if invoice needed)'}
+                      </span>
                     </label>
                     <input
                       type="text"
-                      required
-                      placeholder={t.placeholderStreet}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.residenceStreet}
-                      onChange={(e) => updateGuest(index, 'residenceStreet', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.postalCode} *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t.placeholderPostalCode}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.residencePostalCode}
-                      onChange={(e) => updateGuest(index, 'residencePostalCode', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.residenceCity} *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t.placeholderCity}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.residenceCity}
-                      onChange={(e) => updateGuest(index, 'residenceCity', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.residenceProvince} *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={2}
-                      placeholder={t.placeholderProvince}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.residenceProvince}
-                      onChange={(e) => updateGuest(index, 'residenceProvince', e.target.value.toUpperCase())}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.fiscalCode} *
-                    </label>
-                    <input
-                      type="text"
-                      required
                       maxLength={16}
-                      placeholder={t.placeholderFiscalCode}
+                      placeholder="RSSMRA80A01H501U"
                       className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 uppercase focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
                       value={guest.fiscalCode}
                       onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
                     />
                   </div>
+
                 </div>
               </div>
 
@@ -692,29 +642,17 @@ export default function GuestCheckInPage() {
                     />
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.issueDate} *
+                      {language === 'it' ? 'Luogo rilascio documento' : 'Document issue place'} *
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
+                      placeholder={language === 'it' ? 'es. Comune di Roma' : 'e.g. Municipality of Rome'}
                       className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.documentIssueDate}
-                      onChange={(e) => updateGuest(index, 'documentIssueDate', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      {t.expiryDate} *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent transition-all"
-                      value={guest.documentExpiryDate}
-                      onChange={(e) => updateGuest(index, 'documentExpiryDate', e.target.value)}
+                      value={guest.documentIssuePlace}
+                      onChange={(e) => updateGuest(index, 'documentIssuePlace', e.target.value)}
                     />
                   </div>
                 </div>

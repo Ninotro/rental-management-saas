@@ -62,16 +62,16 @@ export async function GET(request: NextRequest) {
       property: checkIn.booking!.property.name,
       propertyAddress: `${checkIn.booking!.property.address}, ${checkIn.booking!.property.city}`,
       room: checkIn.booking!.room?.name || 'N/A',
-      firstName: checkIn.firstName,
       lastName: checkIn.lastName,
+      firstName: checkIn.firstName,
+      sex: checkIn.sex || '',
       dateOfBirth: new Date(checkIn.dateOfBirth).toLocaleDateString('it-IT'),
       placeOfBirth: `${checkIn.birthCity} (${checkIn.birthProvince})`,
-      residenceAddress: `${checkIn.residenceStreet}, ${checkIn.residencePostalCode} ${checkIn.residenceCity} (${checkIn.residenceProvince})`,
-      fiscalCode: checkIn.fiscalCode,
+      nationality: checkIn.nationality || '',
+      fiscalCode: checkIn.fiscalCode || '',
       documentType: checkIn.documentType.replace('_', ' '),
       documentNumber: checkIn.documentNumber,
-      documentIssueDate: new Date(checkIn.documentIssueDate).toLocaleDateString('it-IT'),
-      documentExpiryDate: new Date(checkIn.documentExpiryDate).toLocaleDateString('it-IT'),
+      documentIssuePlace: checkIn.documentIssuePlace || '',
     }))
 
     // Ritorna i dati in JSON che verranno processati lato client

@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Clock,
   Home,
+  MessageSquare,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -88,6 +89,7 @@ export default function DashboardLayout({
     { name: 'Check-in Ospiti', href: '/dashboard/guest-checkins', icon: ClipboardCheck },
     { name: 'Check-in Pending', href: '/dashboard/checkins-pending', icon: Clock, badge: 'pending' },
     { name: 'Strutture', href: '/dashboard/properties', icon: Home },
+    { name: 'Messaggi Stanze', href: '/dashboard/room-messages', icon: MessageSquare },
     { name: 'Dipendenti', href: '/dashboard/staff', icon: UserCheck },
   ]
 

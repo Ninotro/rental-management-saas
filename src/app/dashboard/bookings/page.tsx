@@ -77,6 +77,8 @@ export default function BookingsPage() {
   const [filterProperty, setFilterProperty] = useState('ALL')
   const [filterRoom, setFilterRoom] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
 
   useEffect(() => {
     fetchBookings()
@@ -230,6 +232,27 @@ export default function BookingsPage() {
       result = result.filter(b => b.room?.id === filterRoom)
     }
 
+    // Filtro per data da
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom)
+      fromDate.setHours(0, 0, 0, 0)
+      result = result.filter(b => {
+        const checkIn = new Date(b.checkIn)
+        checkIn.setHours(0, 0, 0, 0)
+        return checkIn >= fromDate
+      })
+    }
+
+    // Filtro per data a
+    if (filterDateTo) {
+      const toDate = new Date(filterDateTo)
+      toDate.setHours(23, 59, 59, 999)
+      result = result.filter(b => {
+        const checkIn = new Date(b.checkIn)
+        return checkIn <= toDate
+      })
+    }
+
     // Filtro per ricerca testuale
     if (searchQuery && searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim()
@@ -246,8 +269,11 @@ export default function BookingsPage() {
       })
     }
 
+    // Ordina per check-in crescente (prima le prenotazioni più vicine)
+    result.sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime())
+
     return result
-  }, [bookings, filterStatus, filterProperty, filterRoom, searchQuery])
+  }, [bookings, filterStatus, filterProperty, filterRoom, filterDateFrom, filterDateTo, searchQuery])
 
   if (loading) {
     return (
@@ -384,14 +410,39 @@ export default function BookingsPage() {
               ))}
             </select>
           </div>
+        </div>
 
-          {(filterProperty !== 'ALL' || filterRoom !== 'ALL') && (
+        {/* Date Filters */}
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-[#3d4a3c]/60 mb-1">Check-in dal</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="w-full px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-[#3d4a3c] focus:ring-2 focus:ring-[#d4cdb0] focus:border-transparent bg-white/80"
+            />
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-[#3d4a3c]/60 mb-1">Check-in al</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="w-full px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-[#3d4a3c] focus:ring-2 focus:ring-[#d4cdb0] focus:border-transparent bg-white/80"
+            />
+          </div>
+
+          {(filterProperty !== 'ALL' || filterRoom !== 'ALL' || filterDateFrom || filterDateTo) && (
             <button
               onClick={() => {
                 setFilterProperty('ALL')
                 setFilterRoom('ALL')
+                setFilterDateFrom('')
+                setFilterDateTo('')
               }}
-              className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-medium transition-colors flex items-center space-x-2"
+              className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl font-medium transition-colors flex items-center space-x-2 self-end"
             >
               <X size={18} />
               <span>Cancella Filtri</span>

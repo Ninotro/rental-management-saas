@@ -10,19 +10,15 @@ export async function POST(request: NextRequest) {
       bookingCode,
       firstName,
       lastName,
+      sex,
       nationality,
       dateOfBirth,
       birthCity,
       birthProvince,
-      residenceStreet,
-      residencePostalCode,
-      residenceCity,
-      residenceProvince,
       fiscalCode,
       documentType,
       documentNumber,
-      documentIssueDate,
-      documentExpiryDate,
+      documentIssuePlace,
       documentFrontUrl,
       documentBackUrl,
       isExempt,
@@ -34,18 +30,13 @@ export async function POST(request: NextRequest) {
       !bookingCode ||
       !firstName ||
       !lastName ||
+      !sex ||
       !dateOfBirth ||
       !birthCity ||
       !birthProvince ||
-      !residenceStreet ||
-      !residencePostalCode ||
-      !residenceCity ||
-      !residenceProvince ||
-      !fiscalCode ||
       !documentType ||
       !documentNumber ||
-      !documentIssueDate ||
-      !documentExpiryDate
+      !documentIssuePlace
     ) {
       return NextResponse.json(
         { error: 'Tutti i campi obbligatori devono essere compilati' },
@@ -82,30 +73,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Valida sesso
+    if (!['M', 'F'].includes(sex)) {
+      return NextResponse.json(
+        { error: 'Sesso non valido (M o F)' },
+        { status: 400 }
+      )
+    }
+
     // Salva i dati del check-in
     const guestCheckIn = await prisma.guestCheckIn.create({
       data: {
         bookingId: booking.id,
+        status: 'APPROVED', // Auto-approved se collegato a booking
         firstName,
         lastName,
+        sex,
         nationality: nationality || null,
         dateOfBirth: new Date(dateOfBirth),
         birthCity,
         birthProvince: birthProvince.toUpperCase(),
-        residenceStreet,
-        residencePostalCode,
-        residenceCity,
-        residenceProvince: residenceProvince.toUpperCase(),
-        fiscalCode: fiscalCode.toUpperCase(),
+        fiscalCode: fiscalCode ? fiscalCode.toUpperCase() : null,
         documentType,
         documentNumber,
-        documentIssueDate: new Date(documentIssueDate),
-        documentExpiryDate: new Date(documentExpiryDate),
-        documentFrontUrl,
-        documentBackUrl,
+        documentIssuePlace: documentIssuePlace || null,
+        documentFrontUrl: documentFrontUrl || null,
+        documentBackUrl: documentBackUrl || null,
         isExempt: !!isExempt,
         exemptionReason: exemptionReason || null,
-      } as any,
+      },
     })
 
     return NextResponse.json(

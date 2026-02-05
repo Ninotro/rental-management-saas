@@ -41,10 +41,18 @@ export const translations = {
     // Document Fields
     documentType: 'Tipo Documento',
     documentNumber: 'Numero Documento',
-    issueDate: 'Data Rilascio',
-    expiryDate: 'Data Scadenza',
+    documentIssuePlace: 'Luogo Rilascio Documento',
     documentFront: 'Fronte Documento',
     documentBack: 'Retro Documento',
+
+    // Sex
+    sex: 'Sesso',
+    male: 'Maschio',
+    female: 'Femmina',
+
+    // Contact Preference
+    contactPreference: 'Preferenza contatto',
+    contactPreferenceQuestion: 'Dove preferisci ricevere le indicazioni per l\'ingresso?',
 
     // Document Types
     idCard: "Carta d'Identità",
@@ -163,10 +171,18 @@ export const translations = {
     // Document Fields
     documentType: 'Document Type',
     documentNumber: 'Document Number',
-    issueDate: 'Issue Date',
-    expiryDate: 'Expiry Date',
+    documentIssuePlace: 'Document Issue Place',
     documentFront: 'Document Front',
     documentBack: 'Document Back',
+
+    // Sex
+    sex: 'Sex',
+    male: 'Male',
+    female: 'Female',
+
+    // Contact Preference
+    contactPreference: 'Contact preference',
+    contactPreferenceQuestion: 'Where do you prefer to receive check-in instructions?',
 
     // Document Types
     idCard: 'ID Card',

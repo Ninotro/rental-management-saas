@@ -31,19 +31,15 @@ interface Room {
 interface GuestFormData {
   firstName: string
   lastName: string
+  sex: string // "M" o "F"
   nationality: string
   dateOfBirth: string
   birthCity: string
   birthProvince: string
-  residenceStreet: string
-  residencePostalCode: string
-  residenceCity: string
-  residenceProvince: string
-  fiscalCode: string
+  fiscalCode: string // Opzionale, necessario se fattura
   documentType: string
   documentNumber: string
-  documentIssueDate: string
-  documentExpiryDate: string
+  documentIssuePlace: string // Luogo rilascio documento
   documentFrontFile: File | null
   documentBackFile: File | null
   documentFrontUrl: string | null
@@ -74,6 +70,7 @@ export default function PublicCheckInPage() {
   const [guests, setGuests] = useState<GuestFormData[]>([createEmptyGuest()])
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [contactPreference, setContactPreference] = useState<'whatsapp' | 'email' | ''>('')
 
   // Payment proof state
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null)
@@ -90,19 +87,15 @@ export default function PublicCheckInPage() {
     return {
       firstName: '',
       lastName: '',
+      sex: '',
       nationality: 'Italia',
       dateOfBirth: '',
       birthCity: '',
       birthProvince: '',
-      residenceStreet: '',
-      residencePostalCode: '',
-      residenceCity: '',
-      residenceProvince: '',
       fiscalCode: '',
       documentType: 'CARTA_IDENTITA',
       documentNumber: '',
-      documentIssueDate: '',
-      documentExpiryDate: '',
+      documentIssuePlace: '',
       documentFrontFile: null,
       documentBackFile: null,
       documentFrontUrl: null,
@@ -112,6 +105,11 @@ export default function PublicCheckInPage() {
       isExempt: false,
       exemptionReason: '',
     }
+  }
+
+  // Genera un ID univoco per raggruppare gli ospiti dello stesso check-in
+  function generateGroupId(): string {
+    return `grp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
   }
 
   useEffect(() => {
@@ -231,37 +229,26 @@ export default function PublicCheckInPage() {
     const fieldLabels: Record<string, string> = language === 'it' ? {
       firstName: 'Nome',
       lastName: 'Cognome',
+      sex: 'Sesso',
       dateOfBirth: 'Data di nascita',
       birthCity: 'Città di nascita',
       birthProvince: 'Provincia di nascita',
-      residenceStreet: 'Indirizzo',
-      residencePostalCode: 'CAP',
-      residenceCity: 'Città di residenza',
-      residenceProvince: 'Provincia di residenza',
-      fiscalCode: 'Codice fiscale',
       documentNumber: 'Numero documento',
-      documentIssueDate: 'Data rilascio documento',
-      documentExpiryDate: 'Data scadenza documento',
+      documentIssuePlace: 'Luogo rilascio documento',
     } : {
       firstName: 'First name',
       lastName: 'Last name',
+      sex: 'Sex',
       dateOfBirth: 'Date of birth',
       birthCity: 'Birth city',
       birthProvince: 'Birth province',
-      residenceStreet: 'Address',
-      residencePostalCode: 'Postal code',
-      residenceCity: 'Residence city',
-      residenceProvince: 'Residence province',
-      fiscalCode: 'Fiscal code',
       documentNumber: 'Document number',
-      documentIssueDate: 'Document issue date',
-      documentExpiryDate: 'Document expiry date',
+      documentIssuePlace: 'Document issue place',
     }
 
     const requiredFields: (keyof GuestFormData)[] = [
-      'firstName', 'lastName', 'dateOfBirth', 'birthCity', 'birthProvince',
-      'residenceStreet', 'residencePostalCode', 'residenceCity', 'residenceProvince',
-      'fiscalCode', 'documentNumber', 'documentIssueDate', 'documentExpiryDate'
+      'firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCity', 'birthProvince',
+      'documentNumber', 'documentIssuePlace'
     ]
 
     for (const field of requiredFields) {
@@ -281,14 +268,18 @@ export default function PublicCheckInPage() {
     setSubmitting(true)
     setError('')
 
-    // Validate contact info
-    if (!email || email.trim() === '') {
-      setError(language === 'it' ? 'Il campo "Email" è obbligatorio' : 'Field "Email" is required')
+    // Validate contact preference
+    if (contactPreference === 'whatsapp' && (!phone || phone.trim() === '')) {
+      setError(language === 'it'
+        ? 'Hai scelto WhatsApp: il campo "Telefono" è obbligatorio'
+        : 'You chose WhatsApp: "Phone" field is required')
       setSubmitting(false)
       return
     }
-    if (!phone || phone.trim() === '') {
-      setError(language === 'it' ? 'Il campo "Telefono" è obbligatorio' : 'Field "Phone" is required')
+    if (contactPreference === 'email' && (!email || email.trim() === '')) {
+      setError(language === 'it'
+        ? 'Hai scelto Email: il campo "Email" è obbligatorio'
+        : 'You chose Email: "Email" field is required')
       setSubmitting(false)
       return
     }
@@ -304,6 +295,9 @@ export default function PublicCheckInPage() {
     }
 
     try {
+      // Genera un groupId unico per tutti gli ospiti di questo check-in
+      const groupId = generateGroupId()
+
       for (let i = 0; i < guests.length; i++) {
         const guest = guests[i]
         const response = await fetch('/api/public/checkin/new', {
@@ -313,23 +307,24 @@ export default function PublicCheckInPage() {
             roomId: selectedRoomId,
             checkInDate: checkInDate,
             checkOutDate: checkOutDate,
-            email: email,
-            phone: phone,
+            // Contatti (opzionali)
+            email: email || null,
+            phone: phone || null,
+            contactPreference: contactPreference || null,
+            // Group ID per raggruppare gli ospiti
+            groupId: groupId,
+            // Dati ospite
             firstName: guest.firstName,
             lastName: guest.lastName,
+            sex: guest.sex,
             nationality: guest.nationality,
             dateOfBirth: guest.dateOfBirth,
             birthCity: guest.birthCity,
             birthProvince: guest.birthProvince,
-            residenceStreet: guest.residenceStreet,
-            residencePostalCode: guest.residencePostalCode,
-            residenceCity: guest.residenceCity,
-            residenceProvince: guest.residenceProvince,
-            fiscalCode: guest.fiscalCode,
+            fiscalCode: guest.fiscalCode || null,
             documentType: guest.documentType,
             documentNumber: guest.documentNumber,
-            documentIssueDate: guest.documentIssueDate,
-            documentExpiryDate: guest.documentExpiryDate,
+            documentIssuePlace: guest.documentIssuePlace,
             documentFrontUrl: guest.documentFrontUrl,
             documentBackUrl: guest.documentBackUrl,
             isExempt: guest.isExempt,
@@ -554,16 +549,55 @@ export default function PublicCheckInPage() {
             {/* Contact */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6">{language === 'it' ? 'Contatti' : 'Contact'}</h2>
+
+              {/* Contact Preference */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {language === 'it'
+                    ? 'Dove preferisci ricevere le indicazioni per l\'ingresso?'
+                    : 'Where do you prefer to receive check-in instructions?'}
+                </label>
+                <select
+                  value={contactPreference}
+                  onChange={(e) => setContactPreference(e.target.value as 'whatsapp' | 'email' | '')}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{language === 'it' ? 'Seleziona preferenza...' : 'Select preference...'}</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="email">Email</option>
+                </select>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Email *</label>
-                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Email {contactPreference === 'email' && '*'}
+                    <span className="text-slate-500 text-xs ml-1">
+                      {language === 'it' ? '(opzionale)' : '(optional)'}
+                    </span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={language === 'it' ? 'esempio@email.com' : 'example@email.com'}
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">{language === 'it' ? 'Telefono' : 'Phone'} *</label>
-                  <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {language === 'it' ? 'Telefono / WhatsApp' : 'Phone / WhatsApp'} {contactPreference === 'whatsapp' && '*'}
+                    <span className="text-slate-500 text-xs ml-1">
+                      {language === 'it' ? '(opzionale)' : '(optional)'}
+                    </span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+39 333 1234567"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
             </div>
@@ -594,13 +628,27 @@ export default function PublicCheckInPage() {
                     <h3 className="font-semibold text-slate-900 mb-4">{t.personalData}</h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.lastName} *</label>
+                        <input type="text" required value={guest.lastName} onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">{t.firstName} *</label>
                         <input type="text" required value={guest.firstName} onChange={(e) => updateGuest(index, 'firstName', e.target.value)}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.lastName} *</label>
-                        <input type="text" required value={guest.lastName} onChange={(e) => updateGuest(index, 'lastName', e.target.value)}
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{language === 'it' ? 'Sesso' : 'Sex'} *</label>
+                        <select required value={guest.sex} onChange={(e) => updateGuest(index, 'sex', e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                          <option value="">{language === 'it' ? 'Seleziona...' : 'Select...'}</option>
+                          <option value="M">{language === 'it' ? 'Maschio' : 'Male'}</option>
+                          <option value="F">{language === 'it' ? 'Femmina' : 'Female'}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.dateOfBirth} *</label>
+                        <input type="date" required value={guest.dateOfBirth} onChange={(e) => updateGuest(index, 'dateOfBirth', e.target.value)}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
                       </div>
                       <div>
@@ -652,43 +700,26 @@ export default function PublicCheckInPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.dateOfBirth} *</label>
-                        <input type="date" required value={guest.dateOfBirth} onChange={(e) => updateGuest(index, 'dateOfBirth', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.fiscalCode} *</label>
-                        <input type="text" required maxLength={16} value={guest.fiscalCode} onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCity} *</label>
                         <input type="text" required value={guest.birthCity} onChange={(e) => updateGuest(index, 'birthCity', e.target.value)}
+                          placeholder={language === 'it' ? 'es. Roma' : 'e.g. Rome'}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthProvince} *</label>
                         <input type="text" required maxLength={2} value={guest.birthProvince} onChange={(e) => updateGuest(index, 'birthProvince', e.target.value.toUpperCase())}
+                          placeholder={language === 'it' ? 'es. RM' : 'e.g. RM'}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceStreet} *</label>
-                        <input type="text" required value={guest.residenceStreet} onChange={(e) => updateGuest(index, 'residenceStreet', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.postalCode} *</label>
-                        <input type="text" required value={guest.residencePostalCode} onChange={(e) => updateGuest(index, 'residencePostalCode', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceCity} *</label>
-                        <input type="text" required value={guest.residenceCity} onChange={(e) => updateGuest(index, 'residenceCity', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceProvince} *</label>
-                        <input type="text" required maxLength={2} value={guest.residenceProvince} onChange={(e) => updateGuest(index, 'residenceProvince', e.target.value.toUpperCase())}
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {t.fiscalCode}
+                          <span className="text-slate-500 text-xs ml-2">
+                            {language === 'it' ? '(necessario se richiesta fattura)' : '(required if invoice needed)'}
+                          </span>
+                        </label>
+                        <input type="text" maxLength={16} value={guest.fiscalCode} onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
+                          placeholder="RSSMRA80A01H501U"
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
                       </div>
                     </div>
@@ -710,16 +741,15 @@ export default function PublicCheckInPage() {
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentNumber} *</label>
                         <input type="text" required value={guest.documentNumber} onChange={(e) => updateGuest(index, 'documentNumber', e.target.value.toUpperCase())}
+                          placeholder={language === 'it' ? 'es. AA1234567' : 'e.g. AA1234567'}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.issueDate} *</label>
-                        <input type="date" required value={guest.documentIssueDate} onChange={(e) => updateGuest(index, 'documentIssueDate', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.expiryDate} *</label>
-                        <input type="date" required value={guest.documentExpiryDate} onChange={(e) => updateGuest(index, 'documentExpiryDate', e.target.value)}
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {language === 'it' ? 'Luogo rilascio documento' : 'Document issue place'} *
+                        </label>
+                        <input type="text" required value={guest.documentIssuePlace} onChange={(e) => updateGuest(index, 'documentIssuePlace', e.target.value)}
+                          placeholder={language === 'it' ? 'es. Comune di Roma' : 'e.g. Municipality of Rome'}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
                       </div>
                     </div>

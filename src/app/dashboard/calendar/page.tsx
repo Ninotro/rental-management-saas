@@ -354,7 +354,7 @@ export default function CalendarPage() {
         selectedDate={selectedDate}
       />
 
-      {/* Selected Date Info */}
+      {/* Selected Date Modal */}
       {selectedDate && (() => {
         const checkDate = new Date(selectedDate)
         checkDate.setHours(0, 0, 0, 0)
@@ -385,150 +385,160 @@ export default function CalendarPage() {
         const hasEvents = checkInsToday.length > 0 || checkOutsToday.length > 0 || otherEvents.length > 0
 
         return (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
-                  <CalendarIcon size={20} className="text-[#3d4a3c]" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white flex-shrink-0">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <CalendarIcon size={20} />
+                    </div>
+                    <h2 className="text-xl font-bold">
+                      {selectedDate.toLocaleDateString('it-IT', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDate(undefined)}
+                    className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-                {selectedDate.toLocaleDateString('it-IT', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </h2>
-              <button
-                onClick={() => setSelectedDate(undefined)}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <X size={20} className="text-slate-400" />
-              </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {hasEvents ? (
+                  <div className="space-y-6">
+                    {/* Check-ins Section */}
+                    {checkInsToday.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                          <div className="p-1.5 bg-emerald-100 rounded-lg">
+                            <CheckCircle size={16} className="text-emerald-600" />
+                          </div>
+                          Check-in ({checkInsToday.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {checkInsToday.map(event => (
+                            <div
+                              key={event.id}
+                              onClick={() => {
+                                setSelectedBookingId(event.id)
+                                setShowBookingDetail(true)
+                              }}
+                              className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-emerald-400 transition-all duration-200"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <p className="font-bold text-slate-900">{event.guestName}</p>
+                                  <p className="text-sm text-emerald-700 font-medium mt-1 flex items-center gap-1">
+                                    <Home size={14} />
+                                    {event.propertyName}
+                                  </p>
+                                  {event.roomName && (
+                                    <p className="text-sm text-emerald-600 flex items-center gap-1">
+                                      <Bed size={14} />
+                                      {event.roomName}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-slate-500 mt-2">
+                                    Check-out: {event.endDate.toLocaleDateString('it-IT')}
+                                  </p>
+                                </div>
+                                <Eye size={18} className="text-emerald-500" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Check-outs Section */}
+                    {checkOutsToday.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-amber-700 mb-3 flex items-center gap-2">
+                          <div className="p-1.5 bg-amber-100 rounded-lg">
+                            <Clock size={16} className="text-amber-600" />
+                          </div>
+                          Check-out ({checkOutsToday.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {checkOutsToday.map(event => (
+                            <div
+                              key={event.id}
+                              onClick={() => {
+                                setSelectedBookingId(event.id)
+                                setShowBookingDetail(true)
+                              }}
+                              className="p-4 bg-amber-50 border border-amber-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-amber-400 transition-all duration-200"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <p className="font-bold text-slate-900">{event.guestName}</p>
+                                  <p className="text-sm text-amber-700 font-medium mt-1 flex items-center gap-1">
+                                    <Home size={14} />
+                                    {event.propertyName}
+                                  </p>
+                                  {event.roomName && (
+                                    <p className="text-sm text-amber-600 flex items-center gap-1">
+                                      <Bed size={14} />
+                                      {event.roomName}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-slate-500 mt-2">
+                                    Check-in: {event.startDate.toLocaleDateString('it-IT')}
+                                  </p>
+                                </div>
+                                <Eye size={18} className="text-amber-500" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Other Events (Blocked/Maintenance) */}
+                    {otherEvents.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center gap-2">
+                          <div className="p-1.5 bg-red-100 rounded-lg">
+                            <AlertCircle size={16} className="text-red-600" />
+                          </div>
+                          Blocchi ({otherEvents.length})
+                        </h3>
+                        <div className="space-y-2">
+                          {otherEvents.map(event => (
+                            <div
+                              key={event.id}
+                              className="p-4 bg-red-50 border border-red-200 rounded-2xl"
+                            >
+                              <p className="font-medium text-slate-900">{event.title}</p>
+                              <p className="text-sm text-slate-600">
+                                {event.startDate.toLocaleDateString('it-IT')} - {event.endDate.toLocaleDateString('it-IT')}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CalendarIcon className="text-slate-400" size={24} />
+                    </div>
+                    <p className="text-slate-500 font-medium">Nessun evento per questa data</p>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {hasEvents ? (
-              <div className="space-y-6">
-                {/* Check-ins Section */}
-                {checkInsToday.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 bg-emerald-100 rounded-lg">
-                        <CheckCircle size={16} className="text-emerald-600" />
-                      </div>
-                      Check-in ({checkInsToday.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {checkInsToday.map(event => (
-                        <div
-                          key={event.id}
-                          onClick={() => {
-                            setSelectedBookingId(event.id)
-                            setShowBookingDetail(true)
-                          }}
-                          className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-emerald-400 transition-all duration-200"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-bold text-slate-900">{event.guestName}</p>
-                              <p className="text-sm text-emerald-700 font-medium mt-1 flex items-center gap-1">
-                                <Home size={14} />
-                                {event.propertyName}
-                              </p>
-                              {event.roomName && (
-                                <p className="text-sm text-emerald-600 flex items-center gap-1">
-                                  <Bed size={14} />
-                                  {event.roomName}
-                                </p>
-                              )}
-                              <p className="text-xs text-slate-500 mt-2">
-                                Check-out: {event.endDate.toLocaleDateString('it-IT')}
-                              </p>
-                            </div>
-                            <Eye size={18} className="text-emerald-500" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Check-outs Section */}
-                {checkOutsToday.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-amber-700 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 bg-amber-100 rounded-lg">
-                        <Clock size={16} className="text-amber-600" />
-                      </div>
-                      Check-out ({checkOutsToday.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {checkOutsToday.map(event => (
-                        <div
-                          key={event.id}
-                          onClick={() => {
-                            setSelectedBookingId(event.id)
-                            setShowBookingDetail(true)
-                          }}
-                          className="p-4 bg-amber-50 border border-amber-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-amber-400 transition-all duration-200"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-bold text-slate-900">{event.guestName}</p>
-                              <p className="text-sm text-amber-700 font-medium mt-1 flex items-center gap-1">
-                                <Home size={14} />
-                                {event.propertyName}
-                              </p>
-                              {event.roomName && (
-                                <p className="text-sm text-amber-600 flex items-center gap-1">
-                                  <Bed size={14} />
-                                  {event.roomName}
-                                </p>
-                              )}
-                              <p className="text-xs text-slate-500 mt-2">
-                                Check-in: {event.startDate.toLocaleDateString('it-IT')}
-                              </p>
-                            </div>
-                            <Eye size={18} className="text-amber-500" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Other Events (Blocked/Maintenance) */}
-                {otherEvents.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-700 mb-3 flex items-center gap-2">
-                      <div className="p-1.5 bg-red-100 rounded-lg">
-                        <AlertCircle size={16} className="text-red-600" />
-                      </div>
-                      Blocchi ({otherEvents.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {otherEvents.map(event => (
-                        <div
-                          key={event.id}
-                          className="p-4 bg-red-50 border border-red-200 rounded-2xl"
-                        >
-                          <p className="font-medium text-slate-900">{event.title}</p>
-                          <p className="text-sm text-slate-600">
-                            {event.startDate.toLocaleDateString('it-IT')} - {event.endDate.toLocaleDateString('it-IT')}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CalendarIcon className="text-slate-400" size={24} />
-                </div>
-                <p className="text-slate-500 font-medium">Nessun evento per questa data</p>
-              </div>
-            )}
           </div>
         )
       })()}
@@ -670,24 +680,6 @@ function BookingDetailModal({
     }
   }
 
-  const updateStatus = async (status: string) => {
-    setUpdating(true)
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      })
-      if (response.ok) {
-        setBooking(prev => prev ? { ...prev, status } : null)
-        onUpdate()
-      }
-    } catch (error) {
-      console.error('Error updating:', error)
-    } finally {
-      setUpdating(false)
-    }
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -806,26 +798,6 @@ function BookingDetailModal({
             <span className="px-3 py-1.5 bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
               {getChannelLabel(booking.channel)}
             </span>
-          </div>
-          <div className="flex gap-2">
-            {booking.status === 'CONFIRMED' && (
-              <button
-                onClick={() => updateStatus('CHECKED_IN')}
-                disabled={updating}
-                className="px-4 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl text-sm font-medium disabled:opacity-50 transition-all"
-              >
-                Registra Check-in
-              </button>
-            )}
-            {booking.status === 'CHECKED_IN' && (
-              <button
-                onClick={() => updateStatus('CHECKED_OUT')}
-                disabled={updating}
-                className="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 transition-all"
-              >
-                Registra Check-out
-              </button>
-            )}
           </div>
         </div>
 
