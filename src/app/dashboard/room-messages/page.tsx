@@ -244,13 +244,24 @@ A presto!`,
         body: JSON.stringify(formData),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        setSuccess(editingMessage ? 'Messaggio aggiornato!' : 'Messaggio creato!')
-        setTimeout(() => setSuccess(''), 3000)
+        // Verifica se c'è stato un errore con Twilio
+        if (data.twilioError) {
+          setError(`Messaggio salvato, ma errore Twilio: ${data.twilioError}`)
+        } else if (data.templateCreated) {
+          setSuccess(editingMessage ? 'Messaggio aggiornato! Template WhatsApp creato.' : 'Messaggio creato! Template WhatsApp inviato per approvazione.')
+        } else {
+          setSuccess(editingMessage ? 'Messaggio aggiornato!' : 'Messaggio creato!')
+        }
+        setTimeout(() => {
+          setSuccess('')
+          setError('')
+        }, 8000)
         closeModal()
         fetchMessages()
       } else {
-        const data = await response.json()
         setError(data.error || 'Errore nel salvataggio')
       }
     } catch (err) {
@@ -372,6 +383,15 @@ A presto!`,
         <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-center animate-in fade-in">
           <CheckCircle size={20} className="mr-3 flex-shrink-0" />
           <span className="font-medium">{success}</span>
+        </div>
+      )}
+      {error && !showModal && (
+        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-start animate-in fade-in">
+          <AlertCircle size={20} className="mr-3 flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="font-medium block">Errore Twilio</span>
+            <span className="text-sm">{error}</span>
+          </div>
         </div>
       )}
 

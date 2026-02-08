@@ -99,6 +99,7 @@ export async function POST(
     let twilioContentSid: string | null = null
     let twilioApprovalStatus: string | null = null
     let twilioVariables: Record<string, number> | null = null
+    let twilioError: string | null = null
 
     const selectedChannel = channel || 'EMAIL'
 
@@ -123,6 +124,9 @@ export async function POST(
         const approvalResult = await submitTemplateForApproval(templateResult.contentSid)
         console.log('Risultato approvazione:', JSON.stringify(approvalResult, null, 2))
         twilioApprovalStatus = approvalResult.success ? 'pending' : 'error'
+        if (!approvalResult.success) {
+          twilioError = approvalResult.error || 'Errore invio approvazione'
+        }
 
         // Salva la mappa delle variabili
         const { variables } = convertVariablesToTwilioFormat(messageText)
@@ -130,8 +134,8 @@ export async function POST(
       } else {
         console.error('=== ERRORE CREAZIONE TEMPLATE TWILIO ===')
         console.error('Errore:', templateResult.error)
-        // Non blocchiamo la creazione, ma segnaliamo l'errore
         twilioApprovalStatus = 'error'
+        twilioError = templateResult.error || 'Errore sconosciuto nella creazione template'
       }
     }
 
@@ -159,7 +163,7 @@ export async function POST(
         message,
         templateCreated: !!twilioContentSid,
         templateStatus: twilioApprovalStatus,
-        twilioError: twilioApprovalStatus === 'error' ? 'Errore nella creazione del template WhatsApp - controlla i log del server' : undefined,
+        twilioError: twilioError,
       },
       { status: 201 }
     )
