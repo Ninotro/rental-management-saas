@@ -138,6 +138,7 @@ export default function PublicCheckInPage() {
 
   const handleProceedToForm = () => {
     if (canProceedToForm) {
+      // Form per tutti gli ospiti
       const guestsArray = Array(numGuests).fill(null).map(() => createEmptyGuest())
       setGuests(guestsArray)
       setStep('form')
@@ -295,52 +296,68 @@ export default function PublicCheckInPage() {
     }
 
     try {
-      // Genera un groupId unico per tutti gli ospiti di questo check-in
-      const groupId = generateGroupId()
+      // Ospite principale (primo)
+      const mainGuest = guests[0]
+      // Ospiti aggiuntivi (dal secondo in poi)
+      const additionalGuests = guests.slice(1).map(g => ({
+        firstName: g.firstName,
+        lastName: g.lastName,
+        sex: g.sex,
+        nationality: g.nationality,
+        dateOfBirth: g.dateOfBirth,
+        birthCity: g.birthCity,
+        birthProvince: g.birthProvince,
+        fiscalCode: g.fiscalCode || null,
+        documentType: g.documentType,
+        documentNumber: g.documentNumber,
+        documentIssuePlace: g.documentIssuePlace,
+        documentFrontUrl: g.documentFrontUrl,
+        documentBackUrl: g.documentBackUrl,
+        isExempt: g.isExempt,
+        exemptionReason: g.exemptionReason,
+      }))
 
-      for (let i = 0; i < guests.length; i++) {
-        const guest = guests[i]
-        const response = await fetch('/api/public/checkin/new', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            roomId: selectedRoomId,
-            checkInDate: checkInDate,
-            checkOutDate: checkOutDate,
-            // Contatti (opzionali)
-            email: email || null,
-            phone: phone || null,
-            contactPreference: contactPreference || null,
-            // Group ID per raggruppare gli ospiti
-            groupId: groupId,
-            // Dati ospite
-            firstName: guest.firstName,
-            lastName: guest.lastName,
-            sex: guest.sex,
-            nationality: guest.nationality,
-            dateOfBirth: guest.dateOfBirth,
-            birthCity: guest.birthCity,
-            birthProvince: guest.birthProvince,
-            fiscalCode: guest.fiscalCode || null,
-            documentType: guest.documentType,
-            documentNumber: guest.documentNumber,
-            documentIssuePlace: guest.documentIssuePlace,
-            documentFrontUrl: guest.documentFrontUrl,
-            documentBackUrl: guest.documentBackUrl,
-            isExempt: guest.isExempt,
-            exemptionReason: guest.exemptionReason,
-            // Solo il primo ospite ha la prova di pagamento
-            touristTaxPaymentProof: i === 0 ? paymentProofUrl : null,
-          }),
-        })
+      const response = await fetch('/api/public/checkin/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: selectedRoomId,
+          checkInDate: checkInDate,
+          checkOutDate: checkOutDate,
+          // Contatti (opzionali)
+          email: email || null,
+          phone: phone || null,
+          contactPreference: contactPreference || null,
+          // Numero totale ospiti e ospiti aggiuntivi
+          numGuests: guests.length,
+          additionalGuests: additionalGuests.length > 0 ? additionalGuests : null,
+          // Dati ospite principale
+          firstName: mainGuest.firstName,
+          lastName: mainGuest.lastName,
+          sex: mainGuest.sex,
+          nationality: mainGuest.nationality,
+          dateOfBirth: mainGuest.dateOfBirth,
+          birthCity: mainGuest.birthCity,
+          birthProvince: mainGuest.birthProvince,
+          fiscalCode: mainGuest.fiscalCode || null,
+          documentType: mainGuest.documentType,
+          documentNumber: mainGuest.documentNumber,
+          documentIssuePlace: mainGuest.documentIssuePlace,
+          documentFrontUrl: mainGuest.documentFrontUrl,
+          documentBackUrl: mainGuest.documentBackUrl,
+          isExempt: mainGuest.isExempt,
+          exemptionReason: mainGuest.exemptionReason,
+          touristTaxPaymentProof: paymentProofUrl,
+        }),
+      })
 
-        if (!response.ok) {
-          const data = await response.json()
-          setError(data.error || t.allFieldsRequired)
-          setSubmitting(false)
-          return
-        }
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || t.allFieldsRequired)
+        setSubmitting(false)
+        return
       }
+
       setSuccess(true)
     } catch (err) {
       setError(t.allFieldsRequired)

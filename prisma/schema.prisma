@@ -486,6 +486,10 @@ model GuestCheckIn {
   selectedCheckIn     DateTime?     // Data check-in selezionata
   selectedCheckOut    DateTime?     // Data check-out selezionata
 
+  // Numero ospiti totali e dati ospiti aggiuntivi
+  numGuests           Int           @default(1)
+  additionalGuests    Json?         // Array JSON con i dati degli altri ospiti
+
   // Dati contatto
   email               String?       // Email ospite (opzionale)
   phone               String?       // Telefono ospite (opzionale)

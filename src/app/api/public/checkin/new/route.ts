@@ -10,13 +10,14 @@ export async function POST(request: NextRequest) {
       roomId,
       checkInDate,
       checkOutDate,
+      // Numero ospiti e ospiti aggiuntivi
+      numGuests,
+      additionalGuests, // Array JSON con dati degli altri ospiti
       // Dati contatto (opzionali)
       email,
       phone,
       contactPreference, // "whatsapp" o "email"
-      // ID gruppo per raggruppare più ospiti
-      groupId,
-      // Dati anagrafici
+      // Dati anagrafici ospite principale
       firstName,
       lastName,
       sex, // "M" o "F"
@@ -99,8 +100,9 @@ export async function POST(request: NextRequest) {
         // Mai collegamento automatico - l'admin decide
         bookingId: null,
         status: 'PENDING',
-        // Group ID per raggruppare più ospiti
-        groupId: groupId || null,
+        // Numero ospiti e ospiti aggiuntivi
+        numGuests: numGuests || 1,
+        additionalGuests: additionalGuests || null,
         // Dati selezionati
         selectedRoomId: roomId,
         selectedCheckIn,
