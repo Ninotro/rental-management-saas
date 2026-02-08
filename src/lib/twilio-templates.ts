@@ -5,6 +5,8 @@
  * tramite la Content API di Twilio.
  */
 
+import { logTwilio } from './logger'
+
 const TWILIO_CONTENT_API = 'https://content.twilio.com/v1';
 
 interface ContentTemplateVariable {
@@ -83,13 +85,30 @@ export async function createWhatsAppTemplate(params: CreateTemplateParams): Prom
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
+  logTwilio('INFO', '=== INIZIO CREAZIONE TEMPLATE ===', {
+    name: params.name,
+    bodyPreview: params.body.substring(0, 100) + '...',
+    hasAccountSid: !!accountSid,
+    hasAuthToken: !!authToken,
+  });
+
   if (!accountSid || !authToken) {
+    logTwilio('ERROR', 'Credenziali Twilio mancanti', {
+      accountSid: accountSid ? 'presente' : 'MANCANTE',
+      authToken: authToken ? 'presente' : 'MANCANTE',
+    });
     return { success: false, error: 'Credenziali Twilio non configurate' };
   }
 
   try {
     // Converti le variabili al formato Twilio
     const { convertedText, variables } = convertVariablesToTwilioFormat(params.body);
+
+    logTwilio('DEBUG', 'Testo convertito per Twilio', {
+      originalBody: params.body,
+      convertedText,
+      variables,
+    });
 
     // Costruisci l'array di variabili con valori di default
     const twilioVariables: Record<string, string> = {};
@@ -109,6 +128,11 @@ export async function createWhatsAppTemplate(params: CreateTemplateParams): Prom
       ...(Object.keys(twilioVariables).length > 0 && { variables: twilioVariables }),
     };
 
+    logTwilio('INFO', 'Invio richiesta a Twilio Content API', {
+      url: `${TWILIO_CONTENT_API}/Content`,
+      templateData,
+    });
+
     const response = await fetch(`${TWILIO_CONTENT_API}/Content`, {
       method: 'POST',
       headers: {
@@ -120,13 +144,27 @@ export async function createWhatsAppTemplate(params: CreateTemplateParams): Prom
 
     const data = await response.json();
 
+    logTwilio('INFO', 'Risposta da Twilio', {
+      status: response.status,
+      statusText: response.statusText,
+      data,
+    });
+
     if (!response.ok) {
-      console.error('Twilio Content API error:', data);
+      logTwilio('ERROR', 'Errore dalla Content API di Twilio', {
+        status: response.status,
+        error: data,
+      });
       return {
         success: false,
-        error: data.message || 'Errore nella creazione del template'
+        error: data.message || `Errore ${response.status}: ${JSON.stringify(data)}`
       };
     }
+
+    logTwilio('INFO', '=== TEMPLATE CREATO CON SUCCESSO ===', {
+      contentSid: data.sid,
+      friendlyName: data.friendly_name,
+    });
 
     return {
       success: true,
@@ -134,7 +172,10 @@ export async function createWhatsAppTemplate(params: CreateTemplateParams): Prom
     };
 
   } catch (error) {
-    console.error('Error creating WhatsApp template:', error);
+    logTwilio('ERROR', 'Eccezione durante creazione template', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Errore sconosciuto'
@@ -153,32 +194,54 @@ export async function submitTemplateForApproval(contentSid: string): Promise<{
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
 
+  logTwilio('INFO', '=== INVIO TEMPLATE PER APPROVAZIONE ===', { contentSid });
+
   if (!accountSid || !authToken) {
+    logTwilio('ERROR', 'Credenziali mancanti per approvazione');
     return { success: false, error: 'Credenziali Twilio non configurate' };
   }
 
   try {
+    const approvalData = {
+      name: contentSid,
+      category: 'UTILITY', // UTILITY per messaggi transazionali
+    };
+
+    logTwilio('INFO', 'Invio richiesta approvazione', {
+      url: `${TWILIO_CONTENT_API}/Content/${contentSid}/ApprovalRequests/whatsapp`,
+      approvalData,
+    });
+
     const response = await fetch(`${TWILIO_CONTENT_API}/Content/${contentSid}/ApprovalRequests/whatsapp`, {
       method: 'POST',
       headers: {
         'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: contentSid,
-        category: 'UTILITY', // UTILITY per messaggi transazionali
-      }),
+      body: JSON.stringify(approvalData),
     });
 
     const data = await response.json();
 
+    logTwilio('INFO', 'Risposta approvazione', {
+      status: response.status,
+      data,
+    });
+
     if (!response.ok) {
-      console.error('Twilio approval error:', data);
+      logTwilio('ERROR', 'Errore approvazione template', {
+        status: response.status,
+        error: data,
+      });
       return {
         success: false,
         error: data.message || 'Errore nell\'invio per approvazione'
       };
     }
+
+    logTwilio('INFO', '=== TEMPLATE INVIATO PER APPROVAZIONE ===', {
+      status: data.status || 'pending',
+    });
 
     return {
       success: true,
@@ -186,7 +249,9 @@ export async function submitTemplateForApproval(contentSid: string): Promise<{
     };
 
   } catch (error) {
-    console.error('Error submitting template for approval:', error);
+    logTwilio('ERROR', 'Eccezione durante invio approvazione', {
+      error: error instanceof Error ? error.message : error,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Errore sconosciuto'

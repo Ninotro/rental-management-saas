@@ -104,23 +104,32 @@ export async function POST(
 
     if (selectedChannel === 'WHATSAPP' || selectedChannel === 'BOTH') {
       // Crea il template su Twilio Content API
+      console.log('=== CREAZIONE TEMPLATE TWILIO ===')
+      console.log('Nome:', name)
+      console.log('Body:', messageText.substring(0, 100) + '...')
+
       const templateResult = await createWhatsAppTemplate({
         name: name,
         body: messageText,
       })
 
+      console.log('Risultato creazione template:', JSON.stringify(templateResult, null, 2))
+
       if (templateResult.success && templateResult.contentSid) {
         twilioContentSid = templateResult.contentSid
+        console.log('Template creato con SID:', twilioContentSid)
 
         // Invia per approvazione WhatsApp
         const approvalResult = await submitTemplateForApproval(templateResult.contentSid)
+        console.log('Risultato approvazione:', JSON.stringify(approvalResult, null, 2))
         twilioApprovalStatus = approvalResult.success ? 'pending' : 'error'
 
         // Salva la mappa delle variabili
         const { variables } = convertVariablesToTwilioFormat(messageText)
         twilioVariables = variables
       } else {
-        console.error('Errore creazione template Twilio:', templateResult.error)
+        console.error('=== ERRORE CREAZIONE TEMPLATE TWILIO ===')
+        console.error('Errore:', templateResult.error)
         // Non blocchiamo la creazione, ma segnaliamo l'errore
         twilioApprovalStatus = 'error'
       }
@@ -150,6 +159,7 @@ export async function POST(
         message,
         templateCreated: !!twilioContentSid,
         templateStatus: twilioApprovalStatus,
+        twilioError: twilioApprovalStatus === 'error' ? 'Errore nella creazione del template WhatsApp - controlla i log del server' : undefined,
       },
       { status: 201 }
     )

@@ -32,6 +32,7 @@ export async function POST(
     }
 
     let totalImported = 0;
+    let totalRemoved = 0;
     const results: any[] = [];
 
     // Sincronizza Airbnb se configurato
@@ -44,6 +45,7 @@ export async function POST(
       );
       results.push({ source: 'AIRBNB', ...airbnbResult });
       totalImported += airbnbResult.imported;
+      totalRemoved += airbnbResult.removed || 0;
     }
 
     // Sincronizza Booking.com se configurato
@@ -56,6 +58,7 @@ export async function POST(
       );
       results.push({ source: 'BOOKING_COM', ...bookingResult });
       totalImported += bookingResult.imported;
+      totalRemoved += bookingResult.removed || 0;
     }
 
     // Aggiorna lastSyncedAt
@@ -67,6 +70,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       totalImported,
+      totalRemoved,
       results,
     });
   } catch (error: any) {
@@ -114,7 +118,9 @@ async function syncIcalFeed(
     const vevents = comp.getAllSubcomponents('vevent');
 
     let imported = 0;
+    let removed = 0;
     const errors: string[] = [];
+    const currentFeedUids: string[] = [];
 
     // Recupera le informazioni della stanza
     const room = await prisma.room.findUnique({
@@ -136,6 +142,9 @@ async function syncIcalFeed(
         const summary = event.summary || 'Prenotazione importata';
         const startDate = event.startDate;
         const endDate = event.endDate;
+
+        // Traccia UID per rimozione prenotazioni non più presenti
+        currentFeedUids.push(uid);
 
         // Valida le date
         if (!startDate || !endDate) {
@@ -229,6 +238,41 @@ async function syncIcalFeed(
       }
     }
 
+    // Rimuovi prenotazioni che non esistono più nel feed iCal
+    // Solo per prenotazioni importate, stesso canale, con checkIn futuro
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const bookingsToRemove = await prisma.booking.findMany({
+      where: {
+        roomId,
+        importedFromIcal: true,
+        channel: source === 'AIRBNB' ? 'AIRBNB' : 'BOOKING_COM',
+        externalCalendarId: {
+          not: null,
+          notIn: currentFeedUids,
+        },
+        checkIn: {
+          gte: today,
+        },
+      },
+      include: {
+        _count: {
+          select: { guestCheckIns: true },
+        },
+      },
+    });
+
+    // Elimina solo le prenotazioni senza check-in associati
+    for (const booking of bookingsToRemove) {
+      if (booking._count.guestCheckIns === 0) {
+        await prisma.booking.delete({
+          where: { id: booking.id },
+        });
+        removed++;
+      }
+    }
+
     // Registra la sincronizzazione
     await prisma.iCalSync.create({
       data: {
@@ -240,7 +284,7 @@ async function syncIcalFeed(
       },
     });
 
-    return { success: true, imported, errors };
+    return { success: true, imported, removed, errors };
   } catch (error: any) {
     // Registra l'errore
     await prisma.iCalSync.create({
@@ -254,6 +298,6 @@ async function syncIcalFeed(
       },
     });
 
-    return { success: false, imported: 0, error: error.message };
+    return { success: false, imported: 0, removed: 0, error: error.message };
   }
 }
