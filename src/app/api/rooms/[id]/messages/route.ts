@@ -61,7 +61,17 @@ export async function POST(
 
     const { id: roomId } = await params
     const body = await request.json()
-    const { type, name, subject, messageText, isActive } = body
+    const {
+      type,
+      name,
+      subject,
+      messageText,
+      isActive,
+      trigger,
+      triggerOffsetHours,
+      channel,
+      sendTime
+    } = body
 
     // Validazione
     if (!name || !messageText) {
@@ -80,23 +90,6 @@ export async function POST(
       return NextResponse.json({ error: 'Stanza non trovata' }, { status: 404 })
     }
 
-    // Verifica se esiste già un messaggio dello stesso tipo per questa stanza
-    const existingMessage = await prisma.roomMessage.findUnique({
-      where: {
-        roomId_type: {
-          roomId,
-          type: type || 'CHECK_IN_INSTRUCTIONS',
-        },
-      },
-    })
-
-    if (existingMessage) {
-      return NextResponse.json(
-        { error: 'Esiste già un messaggio di questo tipo per questa stanza. Modificalo invece di crearne uno nuovo.' },
-        { status: 400 }
-      )
-    }
-
     const message = await prisma.roomMessage.create({
       data: {
         roomId,
@@ -105,6 +98,10 @@ export async function POST(
         subject: subject || null,
         messageText,
         isActive: isActive !== false,
+        trigger: trigger || 'MANUAL',
+        triggerOffsetHours: triggerOffsetHours || 0,
+        channel: channel || 'EMAIL',
+        sendTime: sendTime || null,
       },
     })
 

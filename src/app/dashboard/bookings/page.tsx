@@ -21,6 +21,9 @@ import {
   Copy,
   ExternalLink,
   Trash2,
+  Send,
+  MessageSquare,
+  Loader2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -989,6 +992,22 @@ function CreateBookingModal({
   )
 }
 
+interface RoomMessageTemplate {
+  id: string
+  name: string
+  subject: string | null
+  type: string
+  channel: string
+}
+
+interface SentMessageRecord {
+  id: string
+  status: string
+  sentAt: string | null
+  channel: string
+  message: { name: string }
+}
+
 // Edit Booking Modal Component
 function EditBookingModal({
   booking,
@@ -1002,6 +1021,64 @@ function EditBookingModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  // Stato per messaggi
+  const [availableMessages, setAvailableMessages] = useState<RoomMessageTemplate[]>([])
+  const [sentMessages, setSentMessages] = useState<SentMessageRecord[]>([])
+  const [sendingMessageId, setSendingMessageId] = useState<string | null>(null)
+  const [messageSuccess, setMessageSuccess] = useState('')
+  const [messageError, setMessageError] = useState('')
+
+  // Carica i messaggi disponibili per questa prenotazione
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`/api/bookings/${booking.id}/send-message`)
+        if (response.ok) {
+          const data = await response.json()
+          setAvailableMessages(data.availableMessages || [])
+          setSentMessages(data.sentMessages || [])
+        }
+      } catch (err) {
+        console.error('Errore caricamento messaggi:', err)
+      }
+    }
+    fetchMessages()
+  }, [booking.id])
+
+  // Funzione per inviare un messaggio
+  const handleSendMessage = async (messageId: string) => {
+    setSendingMessageId(messageId)
+    setMessageError('')
+    setMessageSuccess('')
+
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setMessageSuccess(data.message || 'Messaggio inviato!')
+        // Ricarica lo storico
+        const refreshResponse = await fetch(`/api/bookings/${booking.id}/send-message`)
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json()
+          setSentMessages(refreshData.sentMessages || [])
+        }
+        setTimeout(() => setMessageSuccess(''), 4000)
+      } else {
+        setMessageError(data.error || 'Errore nell\'invio')
+      }
+    } catch (err) {
+      setMessageError('Errore di connessione')
+    } finally {
+      setSendingMessageId(null)
+    }
+  }
 
   // Funzione per copiare testo in maiuscolo
   const copyToClipboard = async (text: string, fieldName: string) => {
@@ -1378,6 +1455,135 @@ function EditBookingModal({
                 </label>
               </div>
             </div>
+          </div>
+
+          {/* Sezione Invio Messaggi */}
+          <div className="border-t pt-6 bg-blue-50/50 p-4 rounded-xl">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center space-x-2">
+              <MessageSquare size={20} className="text-blue-600" />
+              <span>Invia Messaggi</span>
+            </h3>
+
+            {messageSuccess && (
+              <div className="bg-green-50 text-green-700 p-3 rounded-xl mb-4 flex items-center border border-green-200">
+                <CheckCircle size={18} className="mr-2" />
+                {messageSuccess}
+              </div>
+            )}
+
+            {messageError && (
+              <div className="bg-red-50 text-red-700 p-3 rounded-xl mb-4 flex items-center border border-red-200">
+                <AlertCircle size={18} className="mr-2" />
+                {messageError}
+              </div>
+            )}
+
+            {!booking.room ? (
+              <p className="text-slate-500 text-sm">
+                Nessuna stanza associata a questa prenotazione. I messaggi sono configurati per stanza.
+              </p>
+            ) : availableMessages.length === 0 ? (
+              <div className="text-center py-4">
+                <MessageSquare size={32} className="mx-auto text-slate-400 mb-2" />
+                <p className="text-slate-500 text-sm">
+                  Nessun messaggio configurato per questa stanza.
+                </p>
+                <a
+                  href="/dashboard/room-messages"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 inline-block"
+                >
+                  Configura messaggi
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">{msg.name}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          msg.channel === 'EMAIL' ? 'bg-blue-100 text-blue-700' :
+                          msg.channel === 'WHATSAPP' ? 'bg-green-100 text-green-700' :
+                          'bg-purple-100 text-purple-700'
+                        }`}>
+                          {msg.channel === 'EMAIL' ? 'Email' : msg.channel === 'WHATSAPP' ? 'WhatsApp' : 'Email + WhatsApp'}
+                        </span>
+                        {msg.subject && (
+                          <span className="text-xs text-slate-500">
+                            Oggetto: {msg.subject}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage(msg.id)}
+                      disabled={sendingMessageId === msg.id || !formData.guestEmail}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {sendingMessageId === msg.id ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Invio...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>Invia</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+
+                {!formData.guestEmail && (
+                  <p className="text-amber-600 text-sm flex items-center">
+                    <AlertCircle size={14} className="mr-1" />
+                    Inserisci l'email dell'ospite per poter inviare messaggi
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Storico messaggi inviati */}
+            {sentMessages.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <h4 className="text-sm font-semibold text-slate-700 mb-2">Storico invii</h4>
+                <div className="space-y-2">
+                  {sentMessages.slice(0, 5).map((sent) => (
+                    <div
+                      key={sent.id}
+                      className="flex items-center justify-between text-sm bg-slate-50 p-2 rounded-lg"
+                    >
+                      <span className="text-slate-700">{sent.message?.name || 'Messaggio'}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          sent.status === 'SENT' ? 'bg-green-100 text-green-700' :
+                          sent.status === 'FAILED' ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {sent.status === 'SENT' ? 'Inviato' : sent.status === 'FAILED' ? 'Fallito' : 'In attesa'}
+                        </span>
+                        {sent.sentAt && (
+                          <span className="text-xs text-slate-500">
+                            {new Date(sent.sentAt).toLocaleString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

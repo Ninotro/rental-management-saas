@@ -187,25 +187,93 @@ enum MessageType {
   CUSTOM                 // Messaggio personalizzato
 }
 
+// Enum per il trigger di invio messaggio
+enum MessageTrigger {
+  ON_CONFIRMATION        // Quando la prenotazione viene confermata
+  BEFORE_CHECKIN         // X ore/giorni prima del check-in
+  ON_CHECKIN_DAY         // Il giorno del check-in
+  AFTER_CHECKIN          // Dopo il check-in (es. follow-up)
+  BEFORE_CHECKOUT        // X ore/giorni prima del check-out
+  ON_CHECKOUT_DAY        // Il giorno del check-out
+  MANUAL                 // Invio manuale
+}
+
+// Enum per il canale di invio
+enum MessageChannel {
+  EMAIL
+  WHATSAPP
+  BOTH
+}
+
+// Enum per lo stato del messaggio inviato
+enum SentMessageStatus {
+  PENDING    // In attesa di invio
+  SENT       // Inviato con successo
+  FAILED     // Invio fallito
+  CANCELLED  // Annullato
+}
+
 // Modello RoomMessage - Messaggi personalizzabili per stanza
 model RoomMessage {
-  id          String      @id @default(cuid())
-  roomId      String
-  type        MessageType @default(CHECK_IN_INSTRUCTIONS)
-  name        String      // Nome descrittivo del messaggio (es. "Istruzioni Check-in")
-  subject     String?     // Oggetto per email
-  messageText String      @db.Text // Contenuto del messaggio (supporta variabili come {guest_name})
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String         @id @default(cuid())
+  roomId          String
+  type            MessageType    @default(CHECK_IN_INSTRUCTIONS)
+  name            String         // Nome descrittivo del messaggio (es. "Istruzioni Check-in")
+  subject         String?        // Oggetto per email
+  messageText     String         @db.Text // Contenuto del messaggio (supporta variabili come {guest_name})
+
+  // Configurazione invio automatico
+  trigger         MessageTrigger @default(MANUAL)     // Quando inviare
+  triggerOffsetHours Int         @default(0)          // Offset in ore (es. -24 = 24h prima, 2 = 2h dopo)
+  channel         MessageChannel @default(EMAIL)      // Canale di invio
+  sendTime        String?        // Ora specifica di invio (es. "09:00") - opzionale
+
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   // Relazioni
-  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room            Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sentMessages    SentMessage[]
 
-  @@unique([roomId, type]) // Una stanza può avere un solo messaggio per tipo
   @@index([roomId])
   @@index([type])
+  @@index([trigger])
   @@index([isActive])
+}
+
+// Modello SentMessage - Tracciamento messaggi inviati
+model SentMessage {
+  id              String            @id @default(cuid())
+  bookingId       String
+  messageId       String            // Riferimento al template RoomMessage
+  channel         MessageChannel    // Canale usato per l'invio
+  status          SentMessageStatus @default(PENDING)
+
+  // Dettagli invio
+  recipientEmail  String?           // Email destinatario
+  recipientPhone  String?           // Telefono destinatario (per WhatsApp)
+  subject         String?           // Oggetto effettivo inviato
+  messageContent  String?           @db.Text // Contenuto effettivo inviato (con variabili sostituite)
+
+  // Tracking
+  scheduledFor    DateTime?         // Quando era programmato l'invio
+  sentAt          DateTime?         // Quando è stato effettivamente inviato
+  errorMessage    String?           // Messaggio di errore se fallito
+  retryCount      Int               @default(0) // Numero di tentativi
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relazioni
+  booking         Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  message         RoomMessage       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([messageId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([channel])
 }
 
 // Modello PropertyImage - Immagini delle proprietà
@@ -329,6 +397,7 @@ model Booking {
   createdBy        User           @relation(fields: [createdById], references: [id])
   transactions     Transaction[]
   guestCheckIns    GuestCheckIn[] // Dati check-in ospiti (questura)
+  sentMessages     SentMessage[]  // Messaggi inviati per questa prenotazione
 
   @@index([propertyId])
   @@index([roomId])

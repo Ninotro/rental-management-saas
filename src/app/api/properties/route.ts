@@ -25,6 +25,16 @@ export async function GET(request: NextRequest) {
           },
           take: 1,
         },
+        rooms: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',

@@ -38,6 +38,10 @@ interface RoomMessage {
   name: string
   subject: string | null
   messageText: string
+  trigger: 'ON_CONFIRMATION' | 'BEFORE_CHECKIN' | 'ON_CHECKIN_DAY' | 'AFTER_CHECKIN' | 'BEFORE_CHECKOUT' | 'ON_CHECKOUT_DAY' | 'MANUAL'
+  triggerOffsetHours: number
+  channel: 'EMAIL' | 'WHATSAPP' | 'BOTH'
+  sendTime: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -48,6 +52,35 @@ const MESSAGE_TYPES = [
   { value: 'WELCOME', label: 'Benvenuto', description: 'Messaggio di benvenuto all\'arrivo' },
   { value: 'CHECKOUT', label: 'Checkout', description: 'Istruzioni per il checkout' },
   { value: 'CUSTOM', label: 'Personalizzato', description: 'Messaggio personalizzato' },
+]
+
+const MESSAGE_TRIGGERS = [
+  { value: 'MANUAL', label: 'Manuale', description: 'Invio manuale tramite tasto' },
+  { value: 'ON_CONFIRMATION', label: 'Alla conferma', description: 'Quando la prenotazione viene confermata' },
+  { value: 'BEFORE_CHECKIN', label: 'Prima del check-in', description: 'X ore/giorni prima del check-in' },
+  { value: 'ON_CHECKIN_DAY', label: 'Giorno check-in', description: 'Il giorno del check-in' },
+  { value: 'AFTER_CHECKIN', label: 'Dopo check-in', description: 'Dopo il check-in effettivo' },
+  { value: 'BEFORE_CHECKOUT', label: 'Prima del check-out', description: 'X ore/giorni prima del check-out' },
+  { value: 'ON_CHECKOUT_DAY', label: 'Giorno check-out', description: 'Il giorno del check-out' },
+]
+
+const MESSAGE_CHANNELS = [
+  { value: 'EMAIL', label: 'Email', icon: 'Mail' },
+  { value: 'WHATSAPP', label: 'WhatsApp', icon: 'Phone' },
+  { value: 'BOTH', label: 'Entrambi', icon: 'MessageSquare' },
+]
+
+const OFFSET_OPTIONS = [
+  { value: -168, label: '1 settimana prima' },
+  { value: -72, label: '3 giorni prima' },
+  { value: -48, label: '2 giorni prima' },
+  { value: -24, label: '1 giorno prima' },
+  { value: -12, label: '12 ore prima' },
+  { value: -6, label: '6 ore prima' },
+  { value: -2, label: '2 ore prima' },
+  { value: 0, label: 'Al momento' },
+  { value: 2, label: '2 ore dopo' },
+  { value: 24, label: '1 giorno dopo' },
 ]
 
 const AVAILABLE_VARIABLES = [
@@ -79,6 +112,10 @@ export default function RoomMessagesPage() {
     name: '',
     subject: '',
     messageText: '',
+    trigger: 'MANUAL' as RoomMessage['trigger'],
+    triggerOffsetHours: 0,
+    channel: 'EMAIL' as RoomMessage['channel'],
+    sendTime: '',
     isActive: true,
   })
 
@@ -155,6 +192,10 @@ Ecco le istruzioni per il tuo arrivo:
 Se hai bisogno di assistenza, non esitare a contattarci.
 
 A presto!`,
+      trigger: 'MANUAL',
+      triggerOffsetHours: 0,
+      channel: 'EMAIL',
+      sendTime: '',
       isActive: true,
     })
     setShowModal(true)
@@ -167,6 +208,10 @@ A presto!`,
       name: message.name,
       subject: message.subject || '',
       messageText: message.messageText,
+      trigger: message.trigger || 'MANUAL',
+      triggerOffsetHours: message.triggerOffsetHours || 0,
+      channel: message.channel || 'EMAIL',
+      sendTime: message.sendTime || '',
       isActive: message.isActive,
     })
     setShowModal(true)
@@ -350,9 +395,26 @@ A presto!`,
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex items-center flex-wrap gap-2 mb-2">
                         <span className="bg-[#3d4a3c]/10 text-[#3d4a3c] text-xs font-medium px-2 py-1 rounded-full">
                           {getMessageTypeLabel(message.type)}
+                        </span>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          message.channel === 'EMAIL' ? 'bg-blue-100 text-blue-700' :
+                          message.channel === 'WHATSAPP' ? 'bg-green-100 text-green-700' :
+                          'bg-purple-100 text-purple-700'
+                        }`}>
+                          {message.channel === 'EMAIL' ? 'Email' : message.channel === 'WHATSAPP' ? 'WhatsApp' : 'Email + WhatsApp'}
+                        </span>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          message.trigger === 'MANUAL' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {MESSAGE_TRIGGERS.find(t => t.value === message.trigger)?.label || 'Manuale'}
+                          {message.trigger !== 'MANUAL' && message.triggerOffsetHours !== 0 && (
+                            <span className="ml-1">
+                              ({OFFSET_OPTIONS.find(o => o.value === message.triggerOffsetHours)?.label || `${message.triggerOffsetHours}h`})
+                            </span>
+                          )}
                         </span>
                         {!message.isActive && (
                           <span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full">
@@ -494,6 +556,78 @@ A presto!`,
                   placeholder="Scrivi il tuo messaggio qui. Puoi usare le variabili come {guest_name}, {property_name}, etc."
                   className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 font-mono text-sm"
                 />
+              </div>
+
+              {/* Sezione Automazione Invio */}
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
+                  <Mail size={18} className="mr-2 text-[#3d4a3c]" />
+                  Configurazione Invio
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Canale di invio</label>
+                    <select
+                      value={formData.channel}
+                      onChange={(e) => setFormData({ ...formData, channel: e.target.value as RoomMessage['channel'] })}
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    >
+                      {MESSAGE_CHANNELS.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Quando inviare</label>
+                    <select
+                      value={formData.trigger}
+                      onChange={(e) => setFormData({ ...formData, trigger: e.target.value as RoomMessage['trigger'] })}
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    >
+                      {MESSAGE_TRIGGERS.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {formData.trigger !== 'MANUAL' && formData.trigger !== 'ON_CONFIRMATION' && (
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Anticipo/Ritardo</label>
+                      <select
+                        value={formData.triggerOffsetHours}
+                        onChange={(e) => setFormData({ ...formData, triggerOffsetHours: parseInt(e.target.value) })}
+                        className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                      >
+                        {OFFSET_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Ora specifica
+                        <span className="text-slate-500 text-xs ml-1">(opzionale)</span>
+                      </label>
+                      <input
+                        type="time"
+                        value={formData.sendTime}
+                        onChange={(e) => setFormData({ ...formData, sendTime: e.target.value })}
+                        className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {formData.trigger === 'MANUAL' && (
+                  <p className="text-sm text-slate-500 mt-3 bg-slate-50 p-3 rounded-lg">
+                    Il messaggio verra inviato manualmente dalla pagina prenotazioni cliccando sul tasto "Invia messaggio".
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center space-x-3">

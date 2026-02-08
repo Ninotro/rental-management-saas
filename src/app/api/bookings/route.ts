@@ -110,21 +110,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Verifica disponibilità (check conflitti sulla stanza specifica) - solo se roomId e date sono forniti
+    // Nota: il giorno del checkout è libero per un nuovo checkin (checkout mattina, checkin pomeriggio)
     if (roomId && checkIn && checkOut) {
       const conflicts = await prisma.booking.findMany({
         where: {
           roomId,
           status: { not: 'CANCELLED' },
-          OR: [
-            {
-              checkIn: {
-                lte: new Date(checkOut),
-              },
-              checkOut: {
-                gte: new Date(checkIn),
-              },
-            },
-          ],
+          // Conflitto esiste se: checkIn esistente < checkOut nuovo AND checkOut esistente > checkIn nuovo
+          checkIn: {
+            lt: new Date(checkOut), // la prenotazione esistente inizia prima del checkout della nuova
+          },
+          checkOut: {
+            gt: new Date(checkIn), // la prenotazione esistente finisce dopo il checkin della nuova
+          },
         },
       })
 

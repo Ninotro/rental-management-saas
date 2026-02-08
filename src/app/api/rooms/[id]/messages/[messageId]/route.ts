@@ -57,7 +57,16 @@ export async function PUT(
 
     const { id: roomId, messageId } = await params
     const body = await request.json()
-    const { name, subject, messageText, isActive } = body
+    const {
+      name,
+      subject,
+      messageText,
+      isActive,
+      trigger,
+      triggerOffsetHours,
+      channel,
+      sendTime
+    } = body
 
     // Verifica che il messaggio esista
     const existingMessage = await prisma.roomMessage.findFirst({
@@ -86,6 +95,10 @@ export async function PUT(
         subject: subject || null,
         messageText,
         isActive: isActive !== false,
+        trigger: trigger || existingMessage.trigger,
+        triggerOffsetHours: triggerOffsetHours !== undefined ? triggerOffsetHours : existingMessage.triggerOffsetHours,
+        channel: channel || existingMessage.channel,
+        sendTime: sendTime !== undefined ? sendTime : existingMessage.sendTime,
       },
     })
 
