@@ -22,12 +22,32 @@ import {
   Users,
 } from 'lucide-react'
 
+interface AdditionalGuest {
+  firstName: string
+  lastName: string
+  sex: string
+  nationality: string
+  dateOfBirth: string
+  birthCity: string
+  birthProvince: string
+  fiscalCode: string | null
+  documentType: string
+  documentNumber: string
+  documentIssuePlace: string
+  documentFrontUrl: string | null
+  documentBackUrl: string | null
+  isExempt: boolean
+  exemptionReason: string | null
+}
+
 interface PendingCheckIn {
   id: string
   email: string | null
   phone: string | null
   firstName: string
   lastName: string
+  sex: string
+  nationality: string
   fiscalCode: string
   dateOfBirth: string
   birthCity: string
@@ -38,6 +58,7 @@ interface PendingCheckIn {
   residenceProvince: string
   documentType: string
   documentNumber: string
+  documentIssuePlace: string
   documentIssueDate: string
   documentExpiryDate: string
   documentFrontUrl: string | null
@@ -48,6 +69,8 @@ interface PendingCheckIn {
   selectedCheckIn: string
   selectedCheckOut: string
   submittedAt: string
+  numGuests: number
+  additionalGuests: AdditionalGuest[] | null
   selectedRoom: {
     id: string
     name: string
@@ -350,6 +373,14 @@ export default function PendingCheckInsPage() {
                       <p className="text-xs text-white/60">→ {formatDate(checkIn.selectedCheckOut)}</p>
                     </div>
                   </div>
+
+                  {/* Guests Count */}
+                  {checkIn.numGuests > 1 && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 rounded-xl">
+                      <Users size={16} className="text-blue-300" />
+                      <span className="text-sm font-medium text-blue-200">{checkIn.numGuests} ospiti</span>
+                    </div>
+                  )}
 
                   {/* Submitted At */}
                   <div className="hidden xl:block text-sm text-white/60">
@@ -788,6 +819,82 @@ function DetailModal({
                 )}
               </div>
             </div>
+
+            {/* Ospiti Aggiuntivi */}
+            {checkIn.additionalGuests && checkIn.additionalGuests.length > 0 && (
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-200">
+                <h3 className="font-semibold text-[#3d4a3c] mb-4 flex items-center gap-2">
+                  <Users size={18} className="text-indigo-600" />
+                  Ospiti Aggiuntivi ({checkIn.additionalGuests.length})
+                </h3>
+                <div className="space-y-4">
+                  {checkIn.additionalGuests.map((guest, index) => (
+                    <div key={index} className="bg-white rounded-xl p-4 border border-indigo-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+                          {guest.firstName.charAt(0)}{guest.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#3d4a3c]">{guest.firstName} {guest.lastName}</p>
+                          <p className="text-xs text-[#3d4a3c]/60">Ospite {index + 2}</p>
+                        </div>
+                        {guest.isExempt && (
+                          <span className="ml-auto px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                            Esente tassa
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Sesso</p>
+                          <p className="font-medium text-[#3d4a3c]">{guest.sex === 'M' ? 'Maschio' : 'Femmina'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Nazionalità</p>
+                          <p className="font-medium text-[#3d4a3c]">{guest.nationality || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Data Nascita</p>
+                          <p className="font-medium text-[#3d4a3c]">{formatDate(guest.dateOfBirth)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Luogo Nascita</p>
+                          <p className="font-medium text-[#3d4a3c]">{guest.birthCity} ({guest.birthProvince})</p>
+                        </div>
+                        {guest.fiscalCode && (
+                          <div className="col-span-2">
+                            <p className="text-[#3d4a3c]/60 text-xs">Codice Fiscale</p>
+                            <p className="font-medium text-[#3d4a3c] font-mono">{guest.fiscalCode}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Documento</p>
+                          <p className="font-medium text-[#3d4a3c]">{getDocumentTypeLabel(guest.documentType)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Numero Doc.</p>
+                          <p className="font-medium text-[#3d4a3c] font-mono">{guest.documentNumber}</p>
+                        </div>
+                      </div>
+                      {(guest.documentFrontUrl || guest.documentBackUrl) && (
+                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-indigo-100">
+                          {guest.documentFrontUrl && (
+                            <a href={guest.documentFrontUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={guest.documentFrontUrl} alt="Fronte" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
+                            </a>
+                          )}
+                          {guest.documentBackUrl && (
+                            <a href={guest.documentBackUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={guest.documentBackUrl} alt="Retro" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Tassa di Soggiorno */}
             <div className={`rounded-2xl p-5 border ${checkIn.isExempt ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>

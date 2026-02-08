@@ -88,6 +88,9 @@ export async function PUT(
       exemptionReason,
       touristTaxPaymentProof,
       submittedToPolice,
+      numGuests,
+      additionalGuests,
+      nationality,
     } = body
 
     // Costruisci oggetto di aggiornamento solo con i campi forniti
@@ -119,6 +122,9 @@ export async function PUT(
       updateData.submittedToPolice = submittedToPolice
       updateData.submittedToPoliceAt = submittedToPolice ? new Date() : null
     }
+    if (numGuests !== undefined) updateData.numGuests = numGuests
+    if (additionalGuests !== undefined) updateData.additionalGuests = additionalGuests
+    if (nationality !== undefined) updateData.nationality = nationality
 
     const checkIn = await prisma.guestCheckIn.update({
       where: { id },

@@ -1,9 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink, CheckCircle2, AlertTriangle, Clock, Edit3, Trash2, ChevronDown, Users, Shield, Mail, Phone, ShieldOff } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, Calendar, User, MapPin, CreditCard, Eye, Search, Filter, Copy, X, ExternalLink, CheckCircle2, AlertTriangle, Clock, Edit3, Trash2, ChevronDown, Users, Shield, Mail, Phone, ShieldOff, Plus, Minus } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+
+interface AdditionalGuest {
+  firstName: string
+  lastName: string
+  sex: string
+  nationality: string
+  dateOfBirth: string
+  birthCity: string
+  birthProvince: string
+  fiscalCode: string | null
+  documentType: string
+  documentNumber: string
+  documentIssuePlace: string
+  documentFrontUrl: string | null
+  documentBackUrl: string | null
+  isExempt: boolean
+  exemptionReason: string | null
+}
 
 interface GuestCheckIn {
   id: string
@@ -33,6 +51,8 @@ interface GuestCheckIn {
   submittedAt: string
   submittedToPolice: boolean
   submittedToPoliceAt: string | null
+  numGuests: number
+  additionalGuests: AdditionalGuest[] | null
   selectedCheckIn: string | null
   selectedCheckOut: string | null
   selectedRoom: {
@@ -1189,6 +1209,264 @@ function EditCheckInModal({
                 </div>
               )}
             </div>
+
+            {/* Ospiti Aggiuntivi */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <Users size={16} className="text-indigo-600" />
+                  Ospiti Aggiuntivi ({checkIn.additionalGuests?.length || 0})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newGuest: AdditionalGuest = {
+                      firstName: '',
+                      lastName: '',
+                      sex: 'M',
+                      nationality: 'Italia',
+                      dateOfBirth: '',
+                      birthCity: '',
+                      birthProvince: '',
+                      fiscalCode: null,
+                      documentType: 'CARTA_IDENTITA',
+                      documentNumber: '',
+                      documentIssuePlace: '',
+                      documentFrontUrl: null,
+                      documentBackUrl: null,
+                      isExempt: false,
+                      exemptionReason: null,
+                    }
+                    setCheckIn({
+                      ...checkIn,
+                      additionalGuests: [...(checkIn.additionalGuests || []), newGuest],
+                      numGuests: (checkIn.numGuests || 1) + 1,
+                    })
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus size={16} />
+                  Aggiungi Ospite
+                </button>
+              </div>
+
+              {checkIn.additionalGuests && checkIn.additionalGuests.length > 0 ? (
+                <div className="space-y-4">
+                  {checkIn.additionalGuests.map((guest, index) => (
+                    <div key={index} className="bg-white rounded-xl p-4 border border-indigo-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-sm">
+                            {index + 2}
+                          </div>
+                          <span className="font-medium text-slate-700">Ospite {index + 2}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = checkIn.additionalGuests!.filter((_, i) => i !== index)
+                            setCheckIn({
+                              ...checkIn,
+                              additionalGuests: updated.length > 0 ? updated : null,
+                              numGuests: Math.max(1, (checkIn.numGuests || 1) - 1),
+                            })
+                          }}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Minus size={16} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Nome</label>
+                          <input
+                            type="text"
+                            value={guest.firstName}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], firstName: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Cognome</label>
+                          <input
+                            type="text"
+                            value={guest.lastName}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], lastName: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Sesso</label>
+                          <select
+                            value={guest.sex}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], sex: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          >
+                            <option value="M">Maschio</option>
+                            <option value="F">Femmina</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Nazionalità</label>
+                          <select
+                            value={guest.nationality || 'Italia'}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], nationality: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          >
+                            <option value="Italia">Italia</option>
+                            <option value="Germania">Germania</option>
+                            <option value="Francia">Francia</option>
+                            <option value="Spagna">Spagna</option>
+                            <option value="Regno Unito">Regno Unito</option>
+                            <option value="Stati Uniti">Stati Uniti</option>
+                            <option value="Altro">Altro</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Data di Nascita</label>
+                          <input
+                            type="date"
+                            value={guest.dateOfBirth?.split('T')[0] || ''}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], dateOfBirth: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Città Nascita</label>
+                          <input
+                            type="text"
+                            value={guest.birthCity}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], birthCity: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Provincia</label>
+                          <input
+                            type="text"
+                            value={guest.birthProvince}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], birthProvince: e.target.value.toUpperCase() }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                            maxLength={2}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Codice Fiscale</label>
+                          <input
+                            type="text"
+                            value={guest.fiscalCode || ''}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], fiscalCode: e.target.value.toUpperCase() || null }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase font-mono focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Tipo Documento</label>
+                          <select
+                            value={guest.documentType}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], documentType: e.target.value }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          >
+                            <option value="CARTA_IDENTITA">Carta d'Identità</option>
+                            <option value="PASSAPORTO">Passaporto</option>
+                            <option value="PATENTE">Patente</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Numero Documento</label>
+                          <input
+                            type="text"
+                            value={guest.documentNumber}
+                            onChange={(e) => {
+                              const updated = [...checkIn.additionalGuests!]
+                              updated[index] = { ...updated[index], documentNumber: e.target.value.toUpperCase() }
+                              setCheckIn({ ...checkIn, additionalGuests: updated })
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase font-mono focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          />
+                        </div>
+
+                        {/* Esenzione ospite */}
+                        <div className="col-span-2 bg-amber-50 rounded-lg p-3 border border-amber-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={guest.isExempt}
+                              onChange={(e) => {
+                                const updated = [...checkIn.additionalGuests!]
+                                updated[index] = { ...updated[index], isExempt: e.target.checked }
+                                setCheckIn({ ...checkIn, additionalGuests: updated })
+                              }}
+                              className="w-4 h-4 rounded border-amber-300 text-amber-500 focus:ring-amber-500"
+                            />
+                            <span className="text-sm font-medium text-amber-800">Esente dalla tassa di soggiorno</span>
+                          </label>
+                          {guest.isExempt && (
+                            <select
+                              value={guest.exemptionReason || ''}
+                              onChange={(e) => {
+                                const updated = [...checkIn.additionalGuests!]
+                                updated[index] = { ...updated[index], exemptionReason: e.target.value || null }
+                                setCheckIn({ ...checkIn, additionalGuests: updated })
+                              }}
+                              className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm text-slate-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                            >
+                              <option value="">Seleziona motivo...</option>
+                              <option value="MINORE_14">Minore di 14 anni</option>
+                              <option value="RESIDENTE">Residente nel Comune</option>
+                              <option value="ACCOMPAGNATORE_PAZIENTE">Accompagnatore paziente</option>
+                              <option value="FORZE_ORDINE">Forze dell'ordine</option>
+                              <option value="DISABILE">Persona con disabilità</option>
+                              <option value="ALTRO">Altro</option>
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 text-center py-4">
+                  Nessun ospite aggiuntivo. Clicca "Aggiungi Ospite" per aggiungerne uno.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1412,6 +1690,84 @@ function DetailCheckInModal({
                 </div>
               )}
             </div>
+
+            {/* Ospiti Aggiuntivi */}
+            {checkIn.additionalGuests && checkIn.additionalGuests.length > 0 && (
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-200">
+                <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <div className="p-1.5 bg-indigo-100 rounded-lg">
+                    <Users size={16} className="text-indigo-600" />
+                  </div>
+                  Ospiti Aggiuntivi ({checkIn.additionalGuests.length})
+                </h3>
+                <div className="space-y-4">
+                  {checkIn.additionalGuests.map((guest, index) => (
+                    <div key={index} className="bg-white rounded-xl p-4 border border-indigo-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+                          {guest.firstName.charAt(0)}{guest.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{guest.firstName} {guest.lastName}</p>
+                          <p className="text-xs text-slate-500">Ospite {index + 2}</p>
+                        </div>
+                        {guest.isExempt && (
+                          <span className="ml-auto px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                            Esente tassa
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-500 text-xs">Sesso</p>
+                          <p className="font-medium text-slate-900">{guest.sex === 'M' ? 'Maschio' : 'Femmina'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs">Nazionalità</p>
+                          <p className="font-medium text-slate-900">{guest.nationality || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs">Data Nascita</p>
+                          <p className="font-medium text-slate-900">{formatDate(guest.dateOfBirth)}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs">Luogo Nascita</p>
+                          <p className="font-medium text-slate-900">{guest.birthCity} ({guest.birthProvince})</p>
+                        </div>
+                        {guest.fiscalCode && (
+                          <div className="col-span-2">
+                            <p className="text-slate-500 text-xs">Codice Fiscale</p>
+                            <p className="font-medium text-slate-900 font-mono">{guest.fiscalCode}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-slate-500 text-xs">Documento</p>
+                          <p className="font-medium text-slate-900">{getDocumentTypeLabel(guest.documentType)}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs">Numero Doc.</p>
+                          <p className="font-medium text-slate-900 font-mono">{guest.documentNumber}</p>
+                        </div>
+                      </div>
+                      {(guest.documentFrontUrl || guest.documentBackUrl) && (
+                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-indigo-100">
+                          {guest.documentFrontUrl && (
+                            <div className="cursor-pointer" onClick={() => window.open(guest.documentFrontUrl!, '_blank')}>
+                              <img src={guest.documentFrontUrl} alt="Fronte" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
+                            </div>
+                          )}
+                          {guest.documentBackUrl && (
+                            <div className="cursor-pointer" onClick={() => window.open(guest.documentBackUrl!, '_blank')}>
+                              <img src={guest.documentBackUrl} alt="Retro" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Tassa di Soggiorno */}
             {(checkIn.isExempt || checkIn.touristTaxPaymentProof || checkIn.booking?.touristTaxPaymentProof) && (
