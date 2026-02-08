@@ -48,8 +48,33 @@ interface Booking {
     id: string
     name: string
   }
+  bookingRooms?: {
+    room: {
+      id: string
+      name: string
+    }
+  }[]
+  sentMessages?: {
+    id: string
+    status: string
+    channel: string
+    sentAt: string | null
+  }[]
   touristTaxTotal: number | null
   touristTaxPaid: boolean
+}
+
+// Helper per ottenere i nomi delle stanze di una prenotazione
+function getRoomNames(booking: Booking): string {
+  // Prima controlla bookingRooms (nuovo sistema multi-stanza)
+  if (booking.bookingRooms && booking.bookingRooms.length > 0) {
+    return booking.bookingRooms.map(br => br.room.name).join(', ')
+  }
+  // Fallback a room singola (legacy)
+  if (booking.room) {
+    return booking.room.name
+  }
+  return ''
 }
 
 interface Property {
@@ -476,7 +501,7 @@ export default function BookingsPage() {
                       <div className="flex items-center text-sm text-white/70">
                         <MapPin size={14} className="mr-1" />
                         {booking.property.name}
-                        {booking.room && ` - ${booking.room.name}`}
+                        {getRoomNames(booking) && ` - ${getRoomNames(booking)}`}
                         {' - '}{booking.property.city}
                       </div>
                     </div>
@@ -523,7 +548,7 @@ export default function BookingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <span
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold border ${getStatusColor(
                         booking.status
@@ -534,6 +559,30 @@ export default function BookingsPage() {
                     <span className="px-3 py-1.5 bg-[#d4cdb0]/30 rounded-xl text-xs font-semibold text-white">
                       {getChannelLabel(booking.channel)}
                     </span>
+                    {/* Indicatore messaggi inviati */}
+                    {booking.sentMessages && booking.sentMessages.length > 0 ? (
+                      <span
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 ${
+                          booking.sentMessages.some(m => m.status === 'SENT')
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : booking.sentMessages.some(m => m.status === 'FAILED')
+                            ? 'bg-red-100 text-red-700 border border-red-200'
+                            : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                        }`}
+                        title={`${booking.sentMessages.filter(m => m.status === 'SENT').length} messaggi inviati`}
+                      >
+                        <Mail size={12} />
+                        <span>{booking.sentMessages.filter(m => m.status === 'SENT').length}</span>
+                      </span>
+                    ) : (
+                      <span
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 bg-slate-100 text-slate-500 border border-slate-200"
+                        title="Nessun messaggio inviato"
+                      >
+                        <Mail size={12} />
+                        <span>0</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -633,7 +682,7 @@ function CreateBookingModal({
   const [successMessage, setSuccessMessage] = useState('')
   const [formData, setFormData] = useState({
     propertyId: '',
-    roomId: '',
+    roomIds: [] as string[],  // Array per selezione multipla stanze
     guestName: '',
     guestEmail: '',
     guestPhone: '',
@@ -703,7 +752,7 @@ function CreateBookingModal({
           // Mantieni i dati del cliente e la proprietà, resetta solo i campi della prenotazione
           setFormData(prev => ({
             ...prev,
-            roomId: '',
+            roomIds: [],
             checkIn: '',
             checkOut: '',
             totalPrice: '',
@@ -727,7 +776,17 @@ function CreateBookingModal({
   }
 
   const selectedProperty = properties.find(p => p.id === formData.propertyId)
-  const selectedRoom = rooms.find(r => r.id === formData.roomId)
+  const selectedRooms = rooms.filter(r => formData.roomIds.includes(r.id))
+
+  // Funzione per toggle selezione stanza
+  const toggleRoom = (roomId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      roomIds: prev.roomIds.includes(roomId)
+        ? prev.roomIds.filter(id => id !== roomId)
+        : [...prev.roomIds, roomId]
+    }))
+  }
 
   return (
     <div
@@ -779,27 +838,42 @@ function CreateBookingModal({
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Stanza
+                Stanze {formData.roomIds.length > 0 && `(${formData.roomIds.length} selezionate)`}
               </label>
-              <select
-                disabled={!formData.propertyId}
-                className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
-                value={formData.roomId}
-                onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
-              >
-                <option value="">
-                  {formData.propertyId ? 'Seleziona stanza' : 'Prima seleziona una struttura'}
-                </option>
-                {rooms.map(room => (
-                  <option key={room.id} value={room.id}>
-                    {room.name} - {room.type} (max {room.maxGuests} ospiti)
-                  </option>
-                ))}
-              </select>
-              {formData.propertyId && rooms.length === 0 && (
-                <p className="text-sm text-orange-600 mt-1">
+              {!formData.propertyId ? (
+                <p className="text-sm text-slate-500 bg-slate-100 rounded-xl px-4 py-3">
+                  Prima seleziona una struttura
+                </p>
+              ) : rooms.length === 0 ? (
+                <p className="text-sm text-orange-600 bg-orange-50 rounded-xl px-4 py-3">
                   Questa struttura non ha stanze. Creane una prima di prenotare.
                 </p>
+              ) : (
+                <div className="border border-[#3d4a3c]/10 rounded-2xl p-3 max-h-48 overflow-y-auto space-y-2">
+                  {rooms.map(room => (
+                    <label
+                      key={room.id}
+                      className={`flex items-center p-3 rounded-xl cursor-pointer transition-colors ${
+                        formData.roomIds.includes(room.id)
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'bg-slate-50 hover:bg-slate-100 border border-transparent'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.roomIds.includes(room.id)}
+                        onChange={() => toggleRoom(room.id)}
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-3"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-slate-900">{room.name}</span>
+                        <span className="text-sm text-slate-500 ml-2">
+                          {room.type} - max {room.maxGuests} ospiti
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -850,11 +924,18 @@ function CreateBookingModal({
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Numero Ospiti
+                  {selectedRooms.length > 0 && (
+                    <span className="text-slate-500 text-xs ml-2">
+                      (max {selectedRooms.reduce((sum, r) => sum + r.maxGuests, 0)} per le stanze selezionate)
+                    </span>
+                  )}
                 </label>
                 <input
                   type="number"
                   min="1"
-                  max={selectedRoom?.maxGuests || selectedProperty?.maxGuests || 10}
+                  max={selectedRooms.length > 0
+                    ? selectedRooms.reduce((sum, r) => sum + r.maxGuests, 0)
+                    : (selectedProperty?.maxGuests || 10)}
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guests}
                   onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) || 1 })}
@@ -1177,11 +1258,11 @@ function EditBookingModal({
               <div className="flex items-center justify-between gap-2">
                 <p className="text-slate-700 flex-1">
                   {booking.property.name}
-                  {booking.room && ` - ${booking.room.name}`}
+                  {getRoomNames(booking) && ` - ${getRoomNames(booking)}`}
                 </p>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(`${booking.property.name}${booking.room ? ` - ${booking.room.name}` : ''}`, 'property')}
+                  onClick={() => copyToClipboard(`${booking.property.name}${getRoomNames(booking) ? ` - ${getRoomNames(booking)}` : ''}`, 'property')}
                   className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-colors text-xs font-medium ${copiedField === 'property'
                     ? 'bg-green-50 border-green-300 text-green-700'
                     : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'

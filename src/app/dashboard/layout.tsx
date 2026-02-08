@@ -22,6 +22,7 @@ import {
   Clock,
   Home,
   MessageSquare,
+  MessagesSquare,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -37,6 +38,7 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [pendingCheckIns, setPendingCheckIns] = useState(0)
   const [pendingApproval, setPendingApproval] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebarCollapsed')
@@ -65,9 +67,23 @@ export default function DashboardLayout({
       }
     }
 
+    const fetchUnreadMessages = async () => {
+      try {
+        const response = await fetch('/api/whatsapp/unread-count')
+        if (response.ok) {
+          const data = await response.json()
+          setUnreadMessages(data.count)
+        }
+      } catch (error) {
+        console.error('Errore nel recupero messaggi non letti:', error)
+      }
+    }
+
     if (session) {
       fetchPendingCount()
+      fetchUnreadMessages()
       const interval = setInterval(fetchPendingCount, 60 * 1000)
+      const messageInterval = setInterval(fetchUnreadMessages, 30 * 1000)
 
       const handleCheckInUpdate = () => {
         fetchPendingCount()
@@ -76,6 +92,7 @@ export default function DashboardLayout({
 
       return () => {
         clearInterval(interval)
+        clearInterval(messageInterval)
         window.removeEventListener('checkInStatusUpdated', handleCheckInUpdate)
       }
     }
@@ -90,6 +107,7 @@ export default function DashboardLayout({
     { name: 'Check-in Pending', href: '/dashboard/checkins-pending', icon: Clock, badge: 'pending' },
     { name: 'Strutture', href: '/dashboard/properties', icon: Home },
     { name: 'Messaggi Stanze', href: '/dashboard/room-messages', icon: MessageSquare },
+    { name: 'Chat WhatsApp', href: '/dashboard/chat', icon: MessagesSquare, badge: 'messages' },
     { name: 'Dipendenti', href: '/dashboard/staff', icon: UserCheck },
   ]
 
@@ -190,8 +208,10 @@ export default function DashboardLayout({
                   const Icon = item.icon
                   const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
                   const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
-                  const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
-                  const hasBadge = showBadge || showPendingBadge
+                  const showMessagesBadge = (item as any).badge === 'messages' && unreadMessages > 0
+                  const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : (showMessagesBadge ? unreadMessages : 0))
+                  const hasBadge = showBadge || showPendingBadge || showMessagesBadge
+                  const badgeColor = showMessagesBadge ? 'bg-green-500' : (showPendingBadge ? 'bg-amber-500' : 'bg-rose-500')
 
                   return (
                     <Link
@@ -211,12 +231,12 @@ export default function DashboardLayout({
                         )}
                       </div>
                       {hasBadge && !sidebarCollapsed && (
-                        <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-lg`}>
+                        <span className={`${badgeColor} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-lg`}>
                           {badgeCount}
                         </span>
                       )}
                       {hasBadge && sidebarCollapsed && (
-                        <span className={`absolute top-2 right-2 w-2.5 h-2.5 ${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} rounded-full animate-pulse ring-2 ring-white`}></span>
+                        <span className={`absolute top-2 right-2 w-2.5 h-2.5 ${badgeColor} rounded-full animate-pulse ring-2 ring-white`}></span>
                       )}
                     </Link>
                   )
@@ -242,8 +262,10 @@ export default function DashboardLayout({
                     const Icon = item.icon
                     const showBadge = item.href === '/dashboard/guest-checkins' && pendingCheckIns > 0
                     const showPendingBadge = (item as any).badge === 'pending' && pendingApproval > 0
-                    const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : 0)
-                    const hasBadge = showBadge || showPendingBadge
+                    const showMessagesBadge = (item as any).badge === 'messages' && unreadMessages > 0
+                    const badgeCount = showBadge ? pendingCheckIns : (showPendingBadge ? pendingApproval : (showMessagesBadge ? unreadMessages : 0))
+                    const hasBadge = showBadge || showPendingBadge || showMessagesBadge
+                    const badgeColor = showMessagesBadge ? 'bg-green-500' : (showPendingBadge ? 'bg-amber-500' : 'bg-rose-500')
 
                     return (
                       <Link
@@ -261,7 +283,7 @@ export default function DashboardLayout({
                           {item.name}
                         </div>
                         {hasBadge && (
-                          <span className={`${showPendingBadge ? 'bg-amber-500' : 'bg-rose-500'} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse`}>
+                          <span className={`${badgeColor} text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse`}>
                             {badgeCount}
                           </span>
                         )}

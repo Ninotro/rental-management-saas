@@ -28,9 +28,30 @@ export async function GET(request: NextRequest) {
             name: true,
           },
         },
+        bookingRooms: {
+          include: {
+            room: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
         createdBy: {
           select: {
             name: true,
+          },
+        },
+        sentMessages: {
+          select: {
+            id: true,
+            status: true,
+            channel: true,
+            sentAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },
@@ -61,7 +82,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       propertyId,
-      roomId,
+      roomId,      // Singola stanza (legacy/retrocompatibilità)
+      roomIds,     // Array di stanze (nuovo sistema multi-stanza)
       guestName,
       guestEmail,
       guestPhone,
@@ -74,6 +96,11 @@ export async function POST(request: NextRequest) {
       channelBookingId,
       notes,
     } = body
+
+    // Normalizza roomIds: usa roomIds se fornito, altrimenti crea array da roomId singolo
+    const selectedRoomIds: string[] = roomIds && roomIds.length > 0
+      ? roomIds
+      : (roomId ? [roomId] : [])
 
     // Validazione minima - solo propertyId è richiesto
     if (!propertyId) {
@@ -109,36 +136,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verifica disponibilità (check conflitti sulla stanza specifica) - solo se roomId e date sono forniti
+    // Verifica disponibilità per tutte le stanze selezionate
     // Nota: il giorno del checkout è libero per un nuovo checkin (checkout mattina, checkin pomeriggio)
-    if (roomId && checkIn && checkOut) {
-      const conflicts = await prisma.booking.findMany({
+    if (selectedRoomIds.length > 0 && checkIn && checkOut) {
+      // Cerca conflitti per prenotazioni con roomId singolo (legacy)
+      const legacyConflicts = await prisma.booking.findMany({
         where: {
-          roomId,
+          roomId: { in: selectedRoomIds },
           status: { not: 'CANCELLED' },
-          // Conflitto esiste se: checkIn esistente < checkOut nuovo AND checkOut esistente > checkIn nuovo
-          checkIn: {
-            lt: new Date(checkOut), // la prenotazione esistente inizia prima del checkout della nuova
+          checkIn: { lt: new Date(checkOut) },
+          checkOut: { gt: new Date(checkIn) },
+        },
+        include: { room: true },
+      })
+
+      // Cerca conflitti nella tabella BookingRoom (nuove prenotazioni multi-stanza)
+      const multiRoomConflicts = await prisma.bookingRoom.findMany({
+        where: {
+          roomId: { in: selectedRoomIds },
+          booking: {
+            status: { not: 'CANCELLED' },
+            checkIn: { lt: new Date(checkOut) },
+            checkOut: { gt: new Date(checkIn) },
           },
-          checkOut: {
-            gt: new Date(checkIn), // la prenotazione esistente finisce dopo il checkin della nuova
-          },
+        },
+        include: {
+          room: true,
+          booking: true,
         },
       })
 
-      if (conflicts.length > 0) {
+      const allConflicts = [
+        ...legacyConflicts.map(b => b.room?.name || 'Stanza'),
+        ...multiRoomConflicts.map(br => br.room?.name || 'Stanza'),
+      ]
+
+      if (allConflicts.length > 0) {
+        const uniqueRooms = [...new Set(allConflicts)]
         return NextResponse.json(
-          { error: 'La stanza non è disponibile per le date selezionate' },
+          { error: `Le seguenti stanze non sono disponibili: ${uniqueRooms.join(', ')}` },
           { status: 400 }
         )
       }
     }
 
+    // Crea la prenotazione con le stanze collegate
     const booking = await prisma.booking.create({
       data: {
         bookingCode,
         propertyId,
-        roomId: roomId || null,
+        roomId: selectedRoomIds.length === 1 ? selectedRoomIds[0] : null, // Retrocompatibilità
         guestName: guestName || 'Ospite',
         guestEmail: guestEmail || '',
         guestPhone: guestPhone || null,
@@ -151,10 +198,17 @@ export async function POST(request: NextRequest) {
         channelBookingId,
         notes,
         createdById: session.user.id,
+        // Crea le relazioni multi-stanza
+        bookingRooms: selectedRoomIds.length > 0 ? {
+          create: selectedRoomIds.map(rId => ({ roomId: rId }))
+        } : undefined,
       },
       include: {
         property: true,
         room: true,
+        bookingRooms: {
+          include: { room: true }
+        },
       },
     })
 

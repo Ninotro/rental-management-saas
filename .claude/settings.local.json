@@ -19,7 +19,11 @@
       "Bash(dir \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\public\")",
       "Bash(npx prisma:*)",
       "Bash(npm install:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(node -e:*)",
+      "Bash(node test-whatsapp.js:*)",
+      "Bash(node check-message.js:*)"
     ]
   }
 }

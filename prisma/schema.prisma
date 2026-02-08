@@ -165,7 +165,8 @@ model Room {
 
   // Relazioni
   property         Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  bookings         Booking[]
+  bookings         Booking[]           // Prenotazioni legacy (singola stanza)
+  bookingRooms     BookingRoom[]       // Prenotazioni multi-stanza
   prices           RoomPrice[]
   images           RoomImage[]
   calendarEvents   RoomCalendarEvent[]
@@ -365,7 +366,7 @@ model Booking {
   id               String         @id @default(cuid())
   bookingCode      String?        @unique // Codice univoco per check-in guest (es: BOOK-ABC123)
   propertyId       String
-  roomId           String?        // Opzionale - se null, prenotazione per intera proprietà
+  roomId           String?        // DEPRECATED: usare bookingRooms per nuove prenotazioni
   guestName        String
   guestEmail       String
   guestPhone       String?
@@ -398,6 +399,8 @@ model Booking {
   transactions     Transaction[]
   guestCheckIns    GuestCheckIn[] // Dati check-in ospiti (questura)
   sentMessages     SentMessage[]  // Messaggi inviati per questa prenotazione
+  bookingRooms     BookingRoom[]  // Stanze prenotate (relazione many-to-many)
+  whatsappConversations WhatsAppConversation[] // Conversazioni WhatsApp collegate
 
   @@index([propertyId])
   @@index([roomId])
@@ -407,6 +410,22 @@ model Booking {
   @@index([bookingCode])
   @@index([importedFromIcal])
   @@index([externalCalendarId])
+}
+
+// Modello BookingRoom - Tabella di join per prenotazioni multi-stanza
+model BookingRoom {
+  id        String   @id @default(cuid())
+  bookingId String
+  roomId    String
+  createdAt DateTime @default(now())
+
+  // Relazioni
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, roomId]) // Una stanza può essere in una prenotazione una sola volta
+  @@index([bookingId])
+  @@index([roomId])
 }
 
 // Modello CalendarEvent - Eventi calendario per proprietà (blocchi manuali, manutenzione, etc.)
@@ -626,4 +645,52 @@ model ICalSync {
   @@index([roomId])
   @@index([source])
   @@index([syncedAt])
+}
+
+// Enum per la direzione del messaggio WhatsApp
+enum MessageDirection {
+  INCOMING  // Messaggio ricevuto dall'ospite
+  OUTGOING  // Messaggio inviato dall'host
+}
+
+// Modello WhatsAppConversation - Conversazioni WhatsApp con gli ospiti
+model WhatsAppConversation {
+  id            String    @id @default(cuid())
+  phoneNumber   String    @unique  // Numero WhatsApp (formato: +393331234567)
+  guestName     String?             // Nome ospite se conosciuto
+  bookingId     String?             // Collegamento opzionale a booking
+  lastMessageAt DateTime  @default(now())
+  unreadCount   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relazioni
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  messages      WhatsAppMessage[]
+
+  @@index([phoneNumber])
+  @@index([bookingId])
+  @@index([lastMessageAt])
+  @@index([unreadCount])
+}
+
+// Modello WhatsAppMessage - Singoli messaggi WhatsApp
+model WhatsAppMessage {
+  id              String            @id @default(cuid())
+  conversationId  String
+  direction       MessageDirection  // INCOMING o OUTGOING
+  body            String            @db.Text
+  mediaUrl        String?           // URL media allegato (immagini, documenti)
+  twilioSid       String?           @unique  // SID Twilio per tracking
+  status          String            @default("SENT")  // QUEUED, SENT, DELIVERED, READ, FAILED
+  sentAt          DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+
+  // Relazioni
+  conversation    WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([sentAt])
+  @@index([twilioSid])
+  @@index([direction])
 }
