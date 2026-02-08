@@ -95,8 +95,6 @@ const AVAILABLE_VARIABLES = [
   { variable: '{room_name}', description: 'Nome della stanza' },
   { variable: '{check_in_date}', description: 'Data di check-in' },
   { variable: '{check_out_date}', description: 'Data di check-out' },
-  { variable: '{booking_code}', description: 'Codice prenotazione' },
-  { variable: '{access_codes}', description: 'Codici di accesso' },
 ]
 
 export default function RoomMessagesPage() {
@@ -192,9 +190,6 @@ Ecco le istruzioni per il tuo arrivo:
 
 **Data check-in:** {check_in_date}
 **Data check-out:** {check_out_date}
-
-**Codici di accesso:**
-{access_codes}
 
 Se hai bisogno di assistenza, non esitare a contattarci.
 

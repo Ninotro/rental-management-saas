@@ -28,7 +28,9 @@
       "Bash(npx next build)",
       "Bash(node test-email.js:*)",
       "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\test-email.js\")",
-      "Bash(timeout 20 npx next build:*)"
+      "Bash(timeout 20 npx next build:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Calendar from '@/components/Calendar'
-import { Calendar as CalendarIcon, Home, Bed, Plus, X, RefreshCw, User, Mail, Phone, CreditCard, CheckCircle, Clock, AlertCircle, Eye, Copy, DollarSign } from 'lucide-react'
+import { Calendar as CalendarIcon, Home, Bed, Plus, X, RefreshCw, User, Mail, Phone, CreditCard, CheckCircle, Clock, AlertCircle, Eye, Copy, DollarSign, Trash2 } from 'lucide-react'
 
 interface Property {
   id: string
@@ -631,6 +631,7 @@ function BookingDetailModal({
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -745,6 +746,33 @@ function BookingDetailModal({
       console.error('Error saving:', error)
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!booking) return
+    if (!confirm(`Sei sicuro di voler eliminare la prenotazione di ${booking.guestName}?\n\nQuesta azione non può essere annullata.`)) {
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        onUpdate()
+        onClose()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Errore durante l\'eliminazione')
+      }
+    } catch (error) {
+      console.error('Error deleting booking:', error)
+      alert('Errore durante l\'eliminazione della prenotazione')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -1224,14 +1252,25 @@ function BookingDetailModal({
 
         {/* Footer */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-between">
-          <div>
+          <div className="flex gap-3">
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl font-medium transition-all"
-              >
-                Modifica
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl font-medium transition-all"
+                >
+                  Modifica
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+                  title="Elimina prenotazione"
+                >
+                  <Trash2 size={18} />
+                  {deleting ? 'Eliminazione...' : 'Elimina'}
+                </button>
+              </>
             )}
           </div>
           <div className="flex gap-3">
