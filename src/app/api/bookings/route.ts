@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
       notes,
     } = body
 
-    // Validazione
-    if (!propertyId || !roomId || !guestName || !guestEmail || !checkIn || !checkOut || !guests || !totalPrice) {
+    // Validazione minima - solo propertyId è richiesto
+    if (!propertyId) {
       return NextResponse.json(
-        { error: 'Tutti i campi obbligatori devono essere compilati (inclusa la stanza)' },
+        { error: 'Seleziona almeno una struttura' },
         { status: 400 }
       )
     }
@@ -109,43 +109,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verifica disponibilità (check conflitti sulla stanza specifica)
-    const conflicts = await prisma.booking.findMany({
-      where: {
-        roomId,
-        status: { not: 'CANCELLED' },
-        OR: [
-          {
-            checkIn: {
-              lte: new Date(checkOut),
+    // Verifica disponibilità (check conflitti sulla stanza specifica) - solo se roomId e date sono forniti
+    if (roomId && checkIn && checkOut) {
+      const conflicts = await prisma.booking.findMany({
+        where: {
+          roomId,
+          status: { not: 'CANCELLED' },
+          OR: [
+            {
+              checkIn: {
+                lte: new Date(checkOut),
+              },
+              checkOut: {
+                gte: new Date(checkIn),
+              },
             },
-            checkOut: {
-              gte: new Date(checkIn),
-            },
-          },
-        ],
-      },
-    })
+          ],
+        },
+      })
 
-    if (conflicts.length > 0) {
-      return NextResponse.json(
-        { error: 'La stanza non è disponibile per le date selezionate' },
-        { status: 400 }
-      )
+      if (conflicts.length > 0) {
+        return NextResponse.json(
+          { error: 'La stanza non è disponibile per le date selezionate' },
+          { status: 400 }
+        )
+      }
     }
 
     const booking = await prisma.booking.create({
       data: {
         bookingCode,
         propertyId,
-        roomId,
-        guestName,
-        guestEmail,
-        guestPhone,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        guests: parseInt(guests),
-        totalPrice: parseFloat(totalPrice),
+        roomId: roomId || null,
+        guestName: guestName || 'Ospite',
+        guestEmail: guestEmail || '',
+        guestPhone: guestPhone || null,
+        checkIn: checkIn ? new Date(checkIn) : new Date(),
+        checkOut: checkOut ? new Date(checkOut) : new Date(),
+        guests: guests ? parseInt(guests) : 1,
+        totalPrice: totalPrice ? parseFloat(totalPrice) : 0,
         status: status || 'PENDING',
         channel: channel || 'DIRECT',
         channelBookingId,

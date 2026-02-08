@@ -627,6 +627,7 @@ function CreateBookingModal({
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [formData, setFormData] = useState({
     propertyId: '',
     roomId: '',
@@ -676,19 +677,12 @@ function CreateBookingModal({
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, createAnother: boolean = false) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      // Validazione minima
-      if (!formData.propertyId || !formData.roomId) {
-        setError('Seleziona struttura e stanza')
-        setLoading(false)
-        return
-      }
-
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -702,7 +696,22 @@ function CreateBookingModal({
       })
 
       if (response.ok) {
-        onSuccess()
+        if (createAnother) {
+          // Mantieni i dati del cliente e la proprietà, resetta solo i campi della prenotazione
+          setFormData(prev => ({
+            ...prev,
+            roomId: '',
+            checkIn: '',
+            checkOut: '',
+            totalPrice: '',
+            notes: '',
+          }))
+          setError('')
+          setSuccessMessage('Prenotazione creata! Puoi crearne un\'altra per lo stesso cliente.')
+          setTimeout(() => setSuccessMessage(''), 4000)
+        } else {
+          onSuccess()
+        }
       } else {
         const data = await response.json()
         setError(data.error || 'Errore nella creazione della prenotazione')
@@ -737,15 +746,21 @@ function CreateBookingModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {successMessage && (
+          <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl mb-6 flex items-center border border-emerald-200">
+            <CheckCircle size={20} className="mr-2" />
+            {successMessage}
+          </div>
+        )}
+
+        <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
           {/* Proprietà e Stanza */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Struttura *
+                Struttura
               </label>
               <select
-                required
                 className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.propertyId}
                 onChange={(e) => setFormData({ ...formData, propertyId: e.target.value, roomId: '' })}
@@ -761,10 +776,9 @@ function CreateBookingModal({
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Stanza *
+                Stanza
               </label>
               <select
-                required
                 disabled={!formData.propertyId}
                 className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
                 value={formData.roomId}
@@ -781,7 +795,7 @@ function CreateBookingModal({
               </select>
               {formData.propertyId && rooms.length === 0 && (
                 <p className="text-sm text-orange-600 mt-1">
-                  ⚠️ Questa struttura non ha stanze. Creane una prima di prenotare.
+                  Questa struttura non ha stanze. Creane una prima di prenotare.
                 </p>
               )}
             </div>
@@ -942,20 +956,31 @@ function CreateBookingModal({
           </div>
 
           {/* Actions */}
-          <div className="flex space-x-3 pt-4 border-t">
+          <div className="flex flex-col space-y-3 pt-4 border-t">
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-colors"
+              >
+                {loading ? 'Creazione...' : 'Crea Prenotazione'}
+              </button>
+            </div>
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
-            >
-              Annulla
-            </button>
-            <button
-              type="submit"
+              onClick={(e) => handleSubmit(e as any, true)}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-colors"
+              className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl hover:from-emerald-700 hover:to-teal-700 font-medium disabled:opacity-50 transition-colors flex items-center justify-center space-x-2"
             >
-              {loading ? 'Creazione...' : 'Crea Prenotazione'}
+              <Plus size={18} />
+              <span>{loading ? 'Creazione...' : 'Salva e crea un\'altra prenotazione'}</span>
             </button>
           </div>
         </form>
