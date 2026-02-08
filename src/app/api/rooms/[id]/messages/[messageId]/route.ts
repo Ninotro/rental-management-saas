@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import {
+  createWhatsAppTemplate,
+  submitTemplateForApproval,
+  deleteWhatsAppTemplate,
+  convertVariablesToTwilioFormat
+} from '@/lib/twilio-templates'
 
 // GET - Ottieni un singolo messaggio
 export async function GET(
@@ -88,6 +94,65 @@ export async function PUT(
       )
     }
 
+    const newChannel = channel || existingMessage.channel
+    const oldChannel = existingMessage.channel
+    const textChanged = messageText !== existingMessage.messageText
+    const nameChanged = name !== existingMessage.name
+
+    // Gestione template Twilio
+    let twilioContentSid = existingMessage.twilioContentSid
+    let twilioApprovalStatus = existingMessage.twilioApprovalStatus
+    let twilioVariables = existingMessage.twilioVariables as Record<string, number> | null
+
+    // Caso 1: Da EMAIL a WHATSAPP/BOTH - Creare nuovo template
+    const needsNewTemplate =
+      (oldChannel === 'EMAIL' && (newChannel === 'WHATSAPP' || newChannel === 'BOTH')) ||
+      // Caso 2: Era già WHATSAPP/BOTH e il testo o nome è cambiato - Ricreare template
+      ((oldChannel === 'WHATSAPP' || oldChannel === 'BOTH') &&
+       (newChannel === 'WHATSAPP' || newChannel === 'BOTH') &&
+       (textChanged || nameChanged))
+
+    // Caso 3: Da WHATSAPP/BOTH a EMAIL - Eliminare template
+    const needsDeleteTemplate =
+      (oldChannel === 'WHATSAPP' || oldChannel === 'BOTH') &&
+      newChannel === 'EMAIL'
+
+    // Elimina vecchio template se necessario
+    if ((needsNewTemplate || needsDeleteTemplate) && existingMessage.twilioContentSid) {
+      console.log('Eliminando vecchio template:', existingMessage.twilioContentSid)
+      await deleteWhatsAppTemplate(existingMessage.twilioContentSid)
+
+      if (needsDeleteTemplate) {
+        twilioContentSid = null
+        twilioApprovalStatus = null
+        twilioVariables = null
+      }
+    }
+
+    // Crea nuovo template se necessario
+    if (needsNewTemplate) {
+      console.log('Creando nuovo template WhatsApp...')
+      const templateResult = await createWhatsAppTemplate({
+        name: name,
+        body: messageText,
+      })
+
+      if (templateResult.success && templateResult.contentSid) {
+        twilioContentSid = templateResult.contentSid
+
+        // Invia per approvazione WhatsApp
+        const approvalResult = await submitTemplateForApproval(templateResult.contentSid)
+        twilioApprovalStatus = approvalResult.success ? 'pending' : 'error'
+
+        // Salva la mappa delle variabili
+        const { variables } = convertVariablesToTwilioFormat(messageText)
+        twilioVariables = variables
+      } else {
+        console.error('Errore creazione template Twilio:', templateResult.error)
+        twilioApprovalStatus = 'error'
+      }
+    }
+
     const message = await prisma.roomMessage.update({
       where: { id: messageId },
       data: {
@@ -97,12 +162,21 @@ export async function PUT(
         isActive: isActive !== false,
         trigger: trigger || existingMessage.trigger,
         triggerOffsetHours: triggerOffsetHours !== undefined ? triggerOffsetHours : existingMessage.triggerOffsetHours,
-        channel: channel || existingMessage.channel,
+        channel: newChannel,
         sendTime: sendTime !== undefined ? sendTime : existingMessage.sendTime,
+        twilioContentSid,
+        twilioApprovalStatus,
+        twilioVariables: twilioVariables ?? undefined,
       },
     })
 
-    return NextResponse.json({ success: true, message })
+    return NextResponse.json({
+      success: true,
+      message,
+      templateCreated: needsNewTemplate && !!twilioContentSid,
+      templateDeleted: needsDeleteTemplate,
+      templateStatus: twilioApprovalStatus,
+    })
   } catch (error) {
     console.error('Errore nell\'aggiornamento messaggio:', error)
     return NextResponse.json(
@@ -135,6 +209,12 @@ export async function DELETE(
 
     if (!existingMessage) {
       return NextResponse.json({ error: 'Messaggio non trovato' }, { status: 404 })
+    }
+
+    // Elimina il template Twilio se esiste
+    if (existingMessage.twilioContentSid) {
+      console.log('Eliminando template Twilio:', existingMessage.twilioContentSid)
+      await deleteWhatsAppTemplate(existingMessage.twilioContentSid)
     }
 
     await prisma.roomMessage.delete({

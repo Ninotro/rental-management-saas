@@ -30,7 +30,7 @@ interface Conversation {
     guestName: string
     checkIn: string
     checkOut: string
-    property: { name: string }
+    property: { id: string; name: string }
   }
   lastMessage?: {
     body: string

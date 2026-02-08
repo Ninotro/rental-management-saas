@@ -15,7 +15,11 @@ import {
   Copy,
   Mail,
   Phone,
-  X
+  X,
+  RefreshCw,
+  Clock,
+  ShieldCheck,
+  ShieldX
 } from 'lucide-react'
 
 interface Property {
@@ -42,6 +46,8 @@ interface RoomMessage {
   triggerOffsetHours: number
   channel: 'EMAIL' | 'WHATSAPP' | 'BOTH'
   sendTime: string | null
+  twilioContentSid: string | null
+  twilioApprovalStatus: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -103,6 +109,7 @@ export default function RoomMessagesPage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [checkingApproval, setCheckingApproval] = useState<string | null>(null)
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
@@ -286,6 +293,60 @@ A presto!`,
     return MESSAGE_TYPES.find(t => t.value === type)?.label || type
   }
 
+  const checkApprovalStatus = async (messageId: string) => {
+    setCheckingApproval(messageId)
+    try {
+      const response = await fetch(`/api/rooms/${selectedRoomId}/messages/${messageId}/check-approval`, {
+        method: 'POST',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSuccess(`Stato template: ${data.status}`)
+        setTimeout(() => setSuccess(''), 3000)
+        fetchMessages() // Ricarica per aggiornare lo stato
+      }
+    } catch (err) {
+      console.error('Error checking approval:', err)
+    } finally {
+      setCheckingApproval(null)
+    }
+  }
+
+  const getApprovalStatusBadge = (status: string | null) => {
+    switch (status) {
+      case 'approved':
+        return (
+          <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <ShieldCheck size={12} className="mr-1" />
+            Approvato
+          </span>
+        )
+      case 'pending':
+        return (
+          <span className="bg-yellow-100 text-yellow-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <Clock size={12} className="mr-1" />
+            In attesa
+          </span>
+        )
+      case 'rejected':
+        return (
+          <span className="bg-red-100 text-red-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <ShieldX size={12} className="mr-1" />
+            Rifiutato
+          </span>
+        )
+      case 'error':
+        return (
+          <span className="bg-red-100 text-red-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <AlertCircle size={12} className="mr-1" />
+            Errore
+          </span>
+        )
+      default:
+        return null
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
@@ -421,6 +482,10 @@ A presto!`,
                             Disattivo
                           </span>
                         )}
+                        {/* Stato template WhatsApp */}
+                        {(message.channel === 'WHATSAPP' || message.channel === 'BOTH') && message.twilioApprovalStatus && (
+                          getApprovalStatusBadge(message.twilioApprovalStatus)
+                        )}
                       </div>
                       <h3 className="font-semibold text-slate-900">{message.name}</h3>
                       {message.subject && (
@@ -434,6 +499,17 @@ A presto!`,
                       </p>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
+                      {/* Pulsante per controllare stato template WhatsApp */}
+                      {(message.channel === 'WHATSAPP' || message.channel === 'BOTH') && message.twilioContentSid && (
+                        <button
+                          onClick={() => checkApprovalStatus(message.id)}
+                          disabled={checkingApproval === message.id}
+                          className="p-2 text-slate-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Controlla stato approvazione"
+                        >
+                          <RefreshCw size={18} className={checkingApproval === message.id ? 'animate-spin' : ''} />
+                        </button>
+                      )}
                       <button
                         onClick={() => openEditModal(message)}
                         className="p-2 text-slate-600 hover:text-[#3d4a3c] hover:bg-slate-100 rounded-lg transition-colors"
@@ -627,6 +703,20 @@ A presto!`,
                   <p className="text-sm text-slate-500 mt-3 bg-slate-50 p-3 rounded-lg">
                     Il messaggio verra inviato manualmente dalla pagina prenotazioni cliccando sul tasto "Invia messaggio".
                   </p>
+                )}
+
+                {(formData.channel === 'WHATSAPP' || formData.channel === 'BOTH') && !editingMessage && (
+                  <div className="mt-4 bg-green-50 border border-green-200 p-4 rounded-xl">
+                    <h4 className="font-medium text-green-800 flex items-center mb-2">
+                      <Phone size={16} className="mr-2" />
+                      Template WhatsApp
+                    </h4>
+                    <p className="text-sm text-green-700">
+                      Quando salvi, il messaggio verrà automaticamente inviato a WhatsApp per l'approvazione come template.
+                      L'approvazione richiede solitamente da 5 minuti a 24 ore.
+                      Una volta approvato, potrai inviare questo messaggio agli ospiti anche se non hanno mai scritto al tuo numero.
+                    </p>
+                  </div>
                 )}
               </div>
 

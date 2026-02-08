@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import {
+  createWhatsAppTemplate,
+  submitTemplateForApproval,
+  convertVariablesToTwilioFormat
+} from '@/lib/twilio-templates'
 
 // GET - Ottieni tutti i messaggi di una stanza
 export async function GET(
@@ -90,6 +95,37 @@ export async function POST(
       return NextResponse.json({ error: 'Stanza non trovata' }, { status: 404 })
     }
 
+    // Se il canale include WhatsApp, crea il template su Twilio
+    let twilioContentSid: string | null = null
+    let twilioApprovalStatus: string | null = null
+    let twilioVariables: Record<string, number> | null = null
+
+    const selectedChannel = channel || 'EMAIL'
+
+    if (selectedChannel === 'WHATSAPP' || selectedChannel === 'BOTH') {
+      // Crea il template su Twilio Content API
+      const templateResult = await createWhatsAppTemplate({
+        name: name,
+        body: messageText,
+      })
+
+      if (templateResult.success && templateResult.contentSid) {
+        twilioContentSid = templateResult.contentSid
+
+        // Invia per approvazione WhatsApp
+        const approvalResult = await submitTemplateForApproval(templateResult.contentSid)
+        twilioApprovalStatus = approvalResult.success ? 'pending' : 'error'
+
+        // Salva la mappa delle variabili
+        const { variables } = convertVariablesToTwilioFormat(messageText)
+        twilioVariables = variables
+      } else {
+        console.error('Errore creazione template Twilio:', templateResult.error)
+        // Non blocchiamo la creazione, ma segnaliamo l'errore
+        twilioApprovalStatus = 'error'
+      }
+    }
+
     const message = await prisma.roomMessage.create({
       data: {
         roomId,
@@ -100,13 +136,21 @@ export async function POST(
         isActive: isActive !== false,
         trigger: trigger || 'MANUAL',
         triggerOffsetHours: triggerOffsetHours || 0,
-        channel: channel || 'EMAIL',
+        channel: selectedChannel,
         sendTime: sendTime || null,
+        twilioContentSid,
+        twilioApprovalStatus,
+        twilioVariables: twilioVariables ?? undefined,
       },
     })
 
     return NextResponse.json(
-      { success: true, message },
+      {
+        success: true,
+        message,
+        templateCreated: !!twilioContentSid,
+        templateStatus: twilioApprovalStatus,
+      },
       { status: 201 }
     )
   } catch (error) {

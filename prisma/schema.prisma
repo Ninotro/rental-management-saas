@@ -229,6 +229,11 @@ model RoomMessage {
   channel         MessageChannel @default(EMAIL)      // Canale di invio
   sendTime        String?        // Ora specifica di invio (es. "09:00") - opzionale
 
+  // Template WhatsApp (Twilio Content API)
+  twilioContentSid     String?   // SID del template su Twilio (es. HXxxxxx)
+  twilioApprovalStatus String?   // Stato approvazione: pending, approved, rejected
+  twilioVariables      Json?     // Mappa variabili per il template
+
   isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

@@ -23,7 +23,12 @@
       "Bash(timeout /t 5 /nobreak)",
       "Bash(node -e:*)",
       "Bash(node test-whatsapp.js:*)",
-      "Bash(node check-message.js:*)"
+      "Bash(node check-message.js:*)",
+      "WebSearch",
+      "Bash(npx next build)",
+      "Bash(node test-email.js:*)",
+      "Bash(del \"C:\\\\MAMP\\\\htdocs\\\\rental-management-saas\\\\test-email.js\")",
+      "Bash(timeout 20 npx next build:*)"
     ]
   }
 }

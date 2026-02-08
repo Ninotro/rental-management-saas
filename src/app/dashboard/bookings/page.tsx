@@ -24,6 +24,7 @@ import {
   Send,
   MessageSquare,
   Loader2,
+  CalendarCheck,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -107,6 +108,7 @@ export default function BookingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
+  const [showCheckinEmailModal, setShowCheckinEmailModal] = useState(false)
 
   useEffect(() => {
     fetchBookings()
@@ -319,13 +321,23 @@ export default function BookingsPage() {
           <h1 className="text-3xl font-bold text-[#3d4a3c] mb-1">Prenotazioni</h1>
           <p className="text-[#3d4a3c]/60">Gestisci le prenotazioni delle tue strutture</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#3d4a3c] text-white px-6 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <Plus size={20} />
-          <span>Nuova Prenotazione</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowCheckinEmailModal(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-5 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+            title="Invia email check-in a chi arriva tra 2 giorni"
+          >
+            <CalendarCheck size={20} />
+            <span>Invia Check-in</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#3d4a3c] text-white px-6 py-3 rounded-2xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <Plus size={20} />
+            <span>Nuova Prenotazione</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -663,6 +675,17 @@ export default function BookingsPage() {
           }}
         />
       )}
+
+      {/* Check-in Email Modal */}
+      {showCheckinEmailModal && (
+        <CheckinEmailModal
+          onClose={() => setShowCheckinEmailModal(false)}
+          onSuccess={() => {
+            fetchBookings()
+            setShowCheckinEmailModal(false)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -825,7 +848,7 @@ function CreateBookingModal({
               <select
                 className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.propertyId}
-                onChange={(e) => setFormData({ ...formData, propertyId: e.target.value, roomId: '' })}
+                onChange={(e) => setFormData({ ...formData, propertyId: e.target.value, roomIds: [] })}
               >
                 <option value="">Seleziona struttura</option>
                 {properties.map(property => (
@@ -1685,6 +1708,341 @@ function EditBookingModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// Check-in Email Modal Component
+interface CheckinPreviewBooking {
+  id: string
+  guestName: string
+  guestEmail: string
+  property: string
+  room: string
+  checkIn: string
+  hasEmail: boolean
+  hasCheckinMessage: boolean
+  alreadySent: boolean
+  willReceive: boolean
+}
+
+interface SendResult {
+  bookingId: string
+  guestName: string
+  guestEmail: string
+  status: 'sent' | 'skipped' | 'failed'
+  reason?: string
+}
+
+function CheckinEmailModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [daysBeforeCheckin, setDaysBeforeCheckin] = useState(2)
+  const [preview, setPreview] = useState<{
+    targetDate: string
+    total: number
+    willReceive: number
+    bookings: CheckinPreviewBooking[]
+  } | null>(null)
+  const [results, setResults] = useState<{
+    summary: { total: number; sent: number; skipped: number; failed: number }
+    results: SendResult[]
+  } | null>(null)
+  const [error, setError] = useState('')
+
+  // Carica l'anteprima
+  const fetchPreview = async (days: number) => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await fetch(`/api/bookings/send-checkin-emails?days=${days}`)
+      if (response.ok) {
+        const data = await response.json()
+        setPreview(data)
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Errore nel caricamento')
+      }
+    } catch (err) {
+      setError('Errore di connessione')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPreview(daysBeforeCheckin)
+  }, [daysBeforeCheckin])
+
+  // Invia le email
+  const handleSendEmails = async () => {
+    setSending(true)
+    setError('')
+    try {
+      const response = await fetch('/api/bookings/send-checkin-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ daysBeforeCheckin }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setResults(data)
+      } else {
+        setError(data.error || 'Errore nell\'invio')
+      }
+    } catch (err) {
+      setError('Errore di connessione')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white/95 backdrop-blur-xl rounded-3xl max-w-2xl w-full p-6 shadow-2xl my-8 border border-white/50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-xl">
+              <CalendarCheck size={24} className="text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[#3d4a3c]">Invia Email Check-in</h2>
+              <p className="text-sm text-[#3d4a3c]/60">
+                Invia le istruzioni di check-in agli ospiti in arrivo
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <X size={20} className="text-slate-500" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl mb-6 flex items-center border border-rose-200">
+            <AlertCircle size={20} className="mr-2" />
+            {error}
+          </div>
+        )}
+
+        {/* Risultati dopo l'invio */}
+        {results ? (
+          <div className="space-y-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+              <h3 className="font-semibold text-emerald-800 mb-2">Invio completato!</h3>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-2xl font-bold text-emerald-600">{results.summary.sent}</p>
+                  <p className="text-xs text-slate-600">Inviate</p>
+                </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-2xl font-bold text-amber-600">{results.summary.skipped}</p>
+                  <p className="text-xs text-slate-600">Saltate</p>
+                </div>
+                <div className="bg-white rounded-xl p-3">
+                  <p className="text-2xl font-bold text-rose-600">{results.summary.failed}</p>
+                  <p className="text-xs text-slate-600">Fallite</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Dettagli */}
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {results.results.map((result) => (
+                <div
+                  key={result.bookingId}
+                  className={`flex items-center justify-between p-3 rounded-xl ${
+                    result.status === 'sent'
+                      ? 'bg-emerald-50 border border-emerald-200'
+                      : result.status === 'failed'
+                      ? 'bg-rose-50 border border-rose-200'
+                      : 'bg-slate-50 border border-slate-200'
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium text-slate-900">{result.guestName}</p>
+                    <p className="text-xs text-slate-500">{result.guestEmail}</p>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        result.status === 'sent'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : result.status === 'failed'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {result.status === 'sent' ? 'Inviata' : result.status === 'failed' ? 'Fallita' : 'Saltata'}
+                    </span>
+                    {result.reason && (
+                      <p className="text-xs text-slate-500 mt-1">{result.reason}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={onSuccess}
+              className="w-full px-4 py-3 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] text-white rounded-2xl font-medium transition-colors"
+            >
+              Chiudi
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Selezione giorni */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Giorni prima del check-in
+              </label>
+              <div className="flex space-x-2">
+                {[1, 2, 3, 5, 7].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => setDaysBeforeCheckin(days)}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                      daysBeforeCheckin === days
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {days} {days === 1 ? 'giorno' : 'giorni'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex flex-col items-center py-8">
+                <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
+                <p className="text-slate-500">Caricamento anteprima...</p>
+              </div>
+            ) : preview ? (
+              <>
+                {/* Riepilogo */}
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-800">
+                        Check-in previsti per il{' '}
+                        <span className="font-bold">
+                          {new Date(preview.targetDate).toLocaleDateString('it-IT', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-blue-700">{preview.willReceive}</p>
+                      <p className="text-xs text-blue-600">email da inviare</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista prenotazioni */}
+                {preview.bookings.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar size={40} className="mx-auto text-slate-300 mb-2" />
+                    <p className="text-slate-500">Nessuna prenotazione per questa data</p>
+                  </div>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
+                    {preview.bookings.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className={`flex items-center justify-between p-3 rounded-xl ${
+                          booking.willReceive
+                            ? 'bg-emerald-50 border border-emerald-200'
+                            : 'bg-slate-50 border border-slate-200'
+                        }`}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900">{booking.guestName}</p>
+                          <p className="text-xs text-slate-500">
+                            {booking.property} {booking.room && `- ${booking.room}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {booking.willReceive ? (
+                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                              Riceverà email
+                            </span>
+                          ) : (
+                            <div>
+                              <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                                Non inviata
+                              </span>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {!booking.hasEmail
+                                  ? 'Nessuna email'
+                                  : !booking.hasCheckinMessage
+                                  ? 'Nessun messaggio configurato'
+                                  : booking.alreadySent
+                                  ? 'Già inviata'
+                                  : ''}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Azioni */}
+                <div className="flex space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-4 py-3 border border-[#3d4a3c]/10 rounded-2xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendEmails}
+                    disabled={sending || preview.willReceive === 0}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {sending ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Invio in corso...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={18} />
+                        <span>Invia {preview.willReceive} Email</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   )
