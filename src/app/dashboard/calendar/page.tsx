@@ -385,8 +385,14 @@ export default function CalendarPage() {
         const hasEvents = checkInsToday.length > 0 || checkOutsToday.length > 0 || otherEvents.length > 0
 
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedDate(undefined)}
+          >
+            <div
+              className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header */}
               <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white flex-shrink-0">
                 <div className="flex justify-between items-center">
@@ -403,12 +409,6 @@ export default function CalendarPage() {
                       })}
                     </h2>
                   </div>
-                  <button
-                    onClick={() => setSelectedDate(undefined)}
-                    className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
                 </div>
               </div>
 
@@ -632,10 +632,44 @@ function BookingDetailModal({
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [formData, setFormData] = useState({
+    guestName: '',
+    guestEmail: '',
+    guestPhone: '',
+    checkIn: '',
+    checkOut: '',
+    guests: 1,
+    totalPrice: '',
+    status: '',
+    channel: '',
+    notes: '',
+    touristTaxTotal: '',
+    touristTaxPaid: false,
+  })
 
   useEffect(() => {
     fetchBookingDetail()
   }, [bookingId])
+
+  useEffect(() => {
+    if (booking) {
+      setFormData({
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        guestPhone: booking.guestPhone || '',
+        checkIn: booking.checkIn.split('T')[0],
+        checkOut: booking.checkOut.split('T')[0],
+        guests: booking.guests,
+        totalPrice: booking.totalPrice.toString(),
+        status: booking.status,
+        channel: booking.channel,
+        notes: booking.notes || '',
+        touristTaxTotal: booking.touristTaxTotal?.toString() || '',
+        touristTaxPaid: booking.touristTaxPaid,
+      })
+    }
+  }, [booking])
 
   const fetchBookingDetail = async () => {
     try {
@@ -680,6 +714,39 @@ function BookingDetailModal({
     }
   }
 
+  const handleSave = async () => {
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: formData.guestName,
+          guestEmail: formData.guestEmail,
+          guestPhone: formData.guestPhone || null,
+          checkIn: formData.checkIn,
+          checkOut: formData.checkOut,
+          guests: parseInt(formData.guests.toString()),
+          totalPrice: parseFloat(formData.totalPrice),
+          status: formData.status,
+          channel: formData.channel,
+          notes: formData.notes || null,
+          touristTaxTotal: formData.touristTaxTotal ? parseFloat(formData.touristTaxTotal) : null,
+          touristTaxPaid: formData.touristTaxPaid,
+        }),
+      })
+      if (response.ok) {
+        const updatedBooking = await response.json()
+        setBooking(updatedBooking)
+        setIsEditing(false)
+        onUpdate()
+      }
+    } catch (error) {
+      console.error('Error saving:', error)
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -738,8 +805,11 @@ function BookingDetailModal({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-3xl p-8">
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        onClick={onClose}
+      >
+        <div className="bg-white rounded-3xl p-8" onClick={(e) => e.stopPropagation()}>
           <div className="w-12 h-12 border-4 border-[#3d4a3c]/20 rounded-full animate-spin border-t-[#3d4a3c]"></div>
         </div>
       </div>
@@ -748,8 +818,11 @@ function BookingDetailModal({
 
   if (!booking) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-3xl p-8 text-center">
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        onClick={onClose}
+      >
+        <div className="bg-white rounded-3xl p-8 text-center" onClick={(e) => e.stopPropagation()}>
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="text-red-500" size={32} />
           </div>
@@ -764,8 +837,14 @@ function BookingDetailModal({
   const allCheckInsComplete = hasCheckIns && booking.guestCheckIns.every(c => c.status === 'APPROVED')
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl my-8 max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl my-8 max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
@@ -778,12 +857,6 @@ function BookingDetailModal({
                 <p className="text-[#d4cdb0]">{booking.property.name} {booking.room && `- ${booking.room.name}`}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={24} />
-            </button>
           </div>
         </div>
 
@@ -792,12 +865,40 @@ function BookingDetailModal({
         {/* Status Bar */}
         <div className="flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-2xl">
           <div className="flex items-center gap-4">
-            <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${getStatusColor(booking.status)}`}>
-              {getStatusLabel(booking.status)}
-            </span>
-            <span className="px-3 py-1.5 bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
-              {getChannelLabel(booking.channel)}
-            </span>
+            {isEditing ? (
+              <>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-300 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                >
+                  <option value="PENDING">In Attesa</option>
+                  <option value="CONFIRMED">Confermata</option>
+                  <option value="CHECKED_IN">Check-in</option>
+                  <option value="CHECKED_OUT">Check-out</option>
+                  <option value="CANCELLED">Annullata</option>
+                </select>
+                <select
+                  value={formData.channel}
+                  onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
+                  className="px-3 py-1.5 bg-white rounded-xl text-sm font-medium text-slate-700 border border-slate-300 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                >
+                  <option value="DIRECT">Diretto</option>
+                  <option value="BOOKING_COM">Booking.com</option>
+                  <option value="AIRBNB">Airbnb</option>
+                  <option value="OTHER">Altro</option>
+                </select>
+              </>
+            ) : (
+              <>
+                <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${getStatusColor(booking.status)}`}>
+                  {getStatusLabel(booking.status)}
+                </span>
+                <span className="px-3 py-1.5 bg-slate-200 rounded-xl text-sm font-medium text-slate-700">
+                  {getChannelLabel(booking.channel)}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -812,20 +913,62 @@ function BookingDetailModal({
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-slate-600">Check-in</p>
-                  <p className="font-bold text-slate-900">{formatDate(booking.checkIn)}</p>
+                  <p className="text-sm text-slate-600 mb-1">Check-in</p>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={formData.checkIn}
+                      onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    />
+                  ) : (
+                    <p className="font-bold text-slate-900">{formatDate(booking.checkIn)}</p>
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Check-out</p>
-                  <p className="font-bold text-slate-900">{formatDate(booking.checkOut)}</p>
+                  <p className="text-sm text-slate-600 mb-1">Check-out</p>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={formData.checkOut}
+                      onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    />
+                  ) : (
+                    <p className="font-bold text-slate-900">{formatDate(booking.checkOut)}</p>
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Ospiti</p>
-                  <p className="font-bold text-slate-900">{booking.guests} {booking.guests === 1 ? 'persona' : 'persone'}</p>
+                  <p className="text-sm text-slate-600 mb-1">Ospiti</p>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.guests}
+                      onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    />
+                  ) : (
+                    <p className="font-bold text-slate-900">{booking.guests} {booking.guests === 1 ? 'persona' : 'persone'}</p>
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Totale</p>
-                  <p className="font-bold text-2xl text-green-600">€{Number(booking.totalPrice).toLocaleString()}</p>
+                  <p className="text-sm text-slate-600 mb-1">Totale</p>
+                  {isEditing ? (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">€</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.totalPrice}
+                        onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
+                        className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                      />
+                    </div>
+                  ) : (
+                    <p className="font-bold text-2xl text-green-600">€{Number(booking.totalPrice).toLocaleString()}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -838,53 +981,115 @@ function BookingDetailModal({
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <User size={16} className="text-slate-400 mr-2" />
-                    <span className="font-medium text-slate-900">{booking.guestName}</span>
-                  </div>
-                  <CopyButton text={booking.guestName} fieldName="guestName" />
+                  {isEditing ? (
+                    <div className="flex items-center flex-1 mr-2">
+                      <User size={16} className="text-slate-400 mr-2 flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={formData.guestName}
+                        onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                        placeholder="Nome ospite"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center">
+                        <User size={16} className="text-slate-400 mr-2" />
+                        <span className="font-medium text-slate-900">{booking.guestName}</span>
+                      </div>
+                      <CopyButton text={booking.guestName} fieldName="guestName" />
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Mail size={16} className="text-slate-400 mr-2" />
-                    <span className="text-slate-700">{booking.guestEmail}</span>
-                  </div>
-                  <CopyButton text={booking.guestEmail} fieldName="guestEmail" />
-                </div>
-                {booking.guestPhone && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Phone size={16} className="text-slate-400 mr-2" />
-                      <span className="text-slate-700">{booking.guestPhone}</span>
+                  {isEditing ? (
+                    <div className="flex items-center flex-1 mr-2">
+                      <Mail size={16} className="text-slate-400 mr-2 flex-shrink-0" />
+                      <input
+                        type="email"
+                        value={formData.guestEmail}
+                        onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                        placeholder="Email ospite"
+                      />
                     </div>
-                    <CopyButton text={booking.guestPhone} fieldName="guestPhone" />
-                  </div>
-                )}
+                  ) : (
+                    <>
+                      <div className="flex items-center">
+                        <Mail size={16} className="text-slate-400 mr-2" />
+                        <span className="text-slate-700">{booking.guestEmail}</span>
+                      </div>
+                      <CopyButton text={booking.guestEmail} fieldName="guestEmail" />
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  {isEditing ? (
+                    <div className="flex items-center flex-1 mr-2">
+                      <Phone size={16} className="text-slate-400 mr-2 flex-shrink-0" />
+                      <input
+                        type="tel"
+                        value={formData.guestPhone}
+                        onChange={(e) => setFormData({ ...formData, guestPhone: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                        placeholder="Telefono ospite"
+                      />
+                    </div>
+                  ) : booking.guestPhone ? (
+                    <>
+                      <div className="flex items-center">
+                        <Phone size={16} className="text-slate-400 mr-2" />
+                        <span className="text-slate-700">{booking.guestPhone}</span>
+                      </div>
+                      <CopyButton text={booking.guestPhone} fieldName="guestPhone" />
+                    </>
+                  ) : null}
+                </div>
               </div>
             </div>
 
             {/* Tassa di Soggiorno */}
-            <div className={`rounded-2xl p-4 border ${booking.touristTaxPaid ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+            <div className={`rounded-2xl p-4 border ${(isEditing ? formData.touristTaxPaid : booking.touristTaxPaid) ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
               <h3 className="font-semibold text-slate-900 mb-3 flex items-center">
-                <DollarSign className={`mr-2 ${booking.touristTaxPaid ? 'text-emerald-600' : 'text-amber-600'}`} size={20} />
+                <DollarSign className={`mr-2 ${(isEditing ? formData.touristTaxPaid : booking.touristTaxPaid) ? 'text-emerald-600' : 'text-amber-600'}`} size={20} />
                 Tassa di Soggiorno
               </h3>
               <div className="flex items-center justify-between">
                 <div>
-                  {booking.touristTaxTotal ? (
+                  {isEditing ? (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">€</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.touristTaxTotal}
+                        onChange={(e) => setFormData({ ...formData, touristTaxTotal: e.target.value })}
+                        className="w-32 pl-8 pr-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  ) : booking.touristTaxTotal ? (
                     <p className="text-lg font-bold text-slate-900">€{Number(booking.touristTaxTotal).toFixed(2)}</p>
                   ) : (
                     <p className="text-slate-600">Non calcolata</p>
                   )}
-                  <p className={`text-sm font-medium ${booking.touristTaxPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {booking.touristTaxPaid ? '✓ Pagata' : '⏳ Da pagare'}
+                  <p className={`text-sm font-medium mt-1 ${(isEditing ? formData.touristTaxPaid : booking.touristTaxPaid) ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {(isEditing ? formData.touristTaxPaid : booking.touristTaxPaid) ? '✓ Pagata' : '⏳ Da pagare'}
                   </p>
                 </div>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={booking.touristTaxPaid}
-                    onChange={(e) => updateTouristTax(e.target.checked)}
+                    checked={isEditing ? formData.touristTaxPaid : booking.touristTaxPaid}
+                    onChange={(e) => {
+                      if (isEditing) {
+                        setFormData({ ...formData, touristTaxPaid: e.target.checked })
+                      } else {
+                        updateTouristTax(e.target.checked)
+                      }
+                    }}
                     disabled={updating}
                     className="w-6 h-6 text-emerald-600 border-slate-300 rounded-lg focus:ring-emerald-500"
                   />
@@ -975,10 +1180,20 @@ function BookingDetailModal({
             </div>
 
             {/* Note */}
-            {booking.notes && (
+            {(isEditing || booking.notes) && (
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
                 <h3 className="font-semibold text-slate-900 mb-2">Note</h3>
-                <p className="text-slate-700 whitespace-pre-wrap">{booking.notes}</p>
+                {isEditing ? (
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30"
+                    placeholder="Aggiungi note..."
+                  />
+                ) : (
+                  <p className="text-slate-700 whitespace-pre-wrap">{booking.notes}</p>
+                )}
               </div>
             )}
 
@@ -1008,13 +1223,61 @@ function BookingDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors border border-slate-200"
-          >
-            Chiudi
-          </button>
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-between">
+          <div>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] hover:from-[#4a5a49] hover:to-[#5a6a59] text-white rounded-xl font-medium transition-all"
+              >
+                Modifica
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditing(false)
+                    if (booking) {
+                      setFormData({
+                        guestName: booking.guestName,
+                        guestEmail: booking.guestEmail,
+                        guestPhone: booking.guestPhone || '',
+                        checkIn: booking.checkIn.split('T')[0],
+                        checkOut: booking.checkOut.split('T')[0],
+                        guests: booking.guests,
+                        totalPrice: booking.totalPrice.toString(),
+                        status: booking.status,
+                        channel: booking.channel,
+                        notes: booking.notes || '',
+                        touristTaxTotal: booking.touristTaxTotal?.toString() || '',
+                        touristTaxPaid: booking.touristTaxPaid,
+                      })
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors border border-slate-200"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={updating}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all disabled:opacity-50"
+                >
+                  {updating ? 'Salvataggio...' : 'Salva'}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors border border-slate-200"
+              >
+                Chiudi
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1074,8 +1337,14 @@ function BlockDateModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -1084,12 +1353,6 @@ function BlockDateModal({
               </div>
               <h2 className="text-xl font-bold">Blocca Date</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={20} />
-            </button>
           </div>
         </div>
 

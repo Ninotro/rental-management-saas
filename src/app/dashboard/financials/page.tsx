@@ -793,8 +793,14 @@ function AddExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -803,12 +809,6 @@ function AddExpenseModal({
               </div>
               <h2 className="text-xl font-bold">Aggiungi Spesa</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={20} />
-            </button>
           </div>
         </div>
 
@@ -987,8 +987,14 @@ function EditExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -997,12 +1003,6 @@ function EditExpenseModal({
               </div>
               <h2 className="text-xl font-bold">Modifica Spesa</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={20} />
-            </button>
           </div>
         </div>
 
@@ -1167,8 +1167,14 @@ function DeleteExpenseModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 text-white">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -1177,12 +1183,6 @@ function DeleteExpenseModal({
               </div>
               <h2 className="text-xl font-bold">Elimina Spesa</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={20} />
-            </button>
           </div>
         </div>
 

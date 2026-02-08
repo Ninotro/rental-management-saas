@@ -188,16 +188,16 @@ async function syncIcalFeed(
           continue;
         }
 
-        // Ignora eventi nel passato (più di 30 giorni fa)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
         // Converti in Date JavaScript
         const checkIn = startDate.toJSDate();
         const checkOut = endDate.toJSDate();
 
-        if (checkOut < thirtyDaysAgo) {
-          continue; // Salta eventi troppo vecchi
+        // Permetti import di prenotazioni fino a 90 giorni fa (circa 3 mesi)
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+        if (checkOut < ninetyDaysAgo) {
+          continue; // Salta eventi troppo vecchi (oltre 3 mesi fa)
         }
 
         // Verifica se la prenotazione esiste già (usando externalCalendarId)

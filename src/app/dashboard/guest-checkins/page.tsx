@@ -745,8 +745,14 @@ export default function GuestCheckInsPage() {
 
       {/* Modal Pulizia GDPR */}
       {showCleanupModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          onClick={() => { setShowCleanupModal(false); setCleanupResult(null); }}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-5 text-white">
               <div className="flex justify-between items-center">
@@ -759,12 +765,6 @@ export default function GuestCheckInsPage() {
                     <p className="text-white/80 text-sm">Rimozione dati sensibili</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => { setShowCleanupModal(false); setCleanupResult(null); }}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X size={22} />
-                </button>
               </div>
             </div>
 
@@ -850,8 +850,14 @@ function EditCheckInModal({
   saving: boolean
 }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
@@ -864,12 +870,6 @@ function EditCheckInModal({
                 <p className="text-[#d4cdb0] text-sm">{checkIn.firstName} {checkIn.lastName}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={24} />
-            </button>
           </div>
         </div>
 
@@ -1291,8 +1291,14 @@ function DetailCheckInModal({
   )
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
@@ -1305,12 +1311,6 @@ function DetailCheckInModal({
                 <p className="text-[#d4cdb0] font-mono">{checkIn.fiscalCode}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={24} />
-            </button>
           </div>
         </div>
 

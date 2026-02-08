@@ -126,7 +126,7 @@ export default function RoomMessagesPage() {
   }
 
   const selectedProperty = properties.find(p => p.id === selectedPropertyId)
-  const selectedRoom = selectedProperty?.rooms.find(r => r.id === selectedRoomId)
+  const selectedRoom = selectedProperty?.rooms?.find(r => r.id === selectedRoomId)
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedPropertyId(propertyId)
@@ -305,7 +305,7 @@ A presto!`,
               className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-[#3d4a3c]/30 focus:border-transparent disabled:bg-slate-100"
             >
               <option value="">Seleziona stanza...</option>
-              {selectedProperty?.rooms.map(r => (
+              {selectedProperty?.rooms?.map(r => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
@@ -422,19 +422,19 @@ A presto!`,
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-slate-900">
                   {editingMessage ? 'Modifica Messaggio' : 'Nuovo Messaggio'}
                 </h2>
-                <button
-                  onClick={closeModal}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={20} />
-                </button>
               </div>
             </div>
 

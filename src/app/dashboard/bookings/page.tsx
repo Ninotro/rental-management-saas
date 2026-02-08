@@ -682,11 +682,9 @@ function CreateBookingModal({
     setError('')
 
     try {
-      // Validazione
-      if (!formData.propertyId || !formData.roomId || !formData.guestName ||
-        !formData.guestEmail || !formData.checkIn || !formData.checkOut ||
-        !formData.totalPrice) {
-        setError('Compila tutti i campi obbligatori')
+      // Validazione minima
+      if (!formData.propertyId || !formData.roomId) {
+        setError('Seleziona struttura e stanza')
         setLoading(false)
         return
       }
@@ -720,16 +718,16 @@ function CreateBookingModal({
   const selectedRoom = rooms.find(r => r.id === formData.roomId)
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white/95 backdrop-blur-xl rounded-3xl max-w-3xl w-full p-6 shadow-2xl my-8 border border-white/50">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white/95 backdrop-blur-xl rounded-3xl max-w-3xl w-full p-6 shadow-2xl my-8 border border-white/50"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[#3d4a3c]">Nuova Prenotazione</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-[#3d4a3c]/5 rounded-xl transition-colors text-[#3d4a3c]/60 hover:text-[#3d4a3c]"
-          >
-            <X size={20} />
-          </button>
         </div>
 
         {error && (
@@ -795,11 +793,10 @@ function CreateBookingModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nome Completo *
+                  Nome Completo
                 </label>
                 <input
                   type="text"
-                  required
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guestName}
                   onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
@@ -809,11 +806,10 @@ function CreateBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
-                  required
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guestEmail}
                   onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
@@ -836,16 +832,15 @@ function CreateBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Numero Ospiti *
+                  Numero Ospiti
                 </label>
                 <input
                   type="number"
-                  required
                   min="1"
                   max={selectedRoom?.maxGuests || selectedProperty?.maxGuests || 10}
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guests}
-                  onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) || 1 })}
                 />
               </div>
             </div>
@@ -857,11 +852,10 @@ function CreateBookingModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Check-in *
+                  Check-in
                 </label>
                 <input
                   type="date"
-                  required
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.checkIn}
                   onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
@@ -870,11 +864,10 @@ function CreateBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Check-out *
+                  Check-out
                 </label>
                 <input
                   type="date"
-                  required
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.checkOut}
                   onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
@@ -883,11 +876,10 @@ function CreateBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Prezzo Totale (€) *
+                  Prezzo Totale (€)
                 </label>
                 <input
                   type="number"
-                  required
                   min="0"
                   step="0.01"
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1051,17 +1043,16 @@ function EditBookingModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-8">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Modifica Prenotazione</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
-            title="Chiudi"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {error && (
@@ -1121,12 +1112,11 @@ function EditBookingModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nome Completo *
+                  Nome Completo
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    required
                     className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.guestName}
                     onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
@@ -1147,12 +1137,11 @@ function EditBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email *
+                  Email
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="email"
-                    required
                     className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.guestEmail}
                     onChange={(e) => setFormData({ ...formData, guestEmail: e.target.value })}
@@ -1200,15 +1189,14 @@ function EditBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Numero Ospiti *
+                  Numero Ospiti
                 </label>
                 <input
                   type="number"
-                  required
                   min="1"
                   className="w-full border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.guests}
-                  onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) || 1 })}
                 />
               </div>
             </div>
@@ -1220,12 +1208,11 @@ function EditBookingModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Check-in *
+                  Check-in
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="date"
-                    required
                     className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.checkIn}
                     onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
@@ -1246,12 +1233,11 @@ function EditBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Check-out *
+                  Check-out
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="date"
-                    required
                     className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={formData.checkOut}
                     onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
@@ -1272,12 +1258,11 @@ function EditBookingModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Prezzo Totale (€) *
+                  Prezzo Totale (€)
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="number"
-                    required
                     min="0"
                     step="0.01"
                     className="flex-1 border border-[#3d4a3c]/10 rounded-2xl px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"

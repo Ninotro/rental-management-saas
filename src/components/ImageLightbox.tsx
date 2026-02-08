@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, Trash2, Star } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trash2, Star } from 'lucide-react'
 
 interface ImageLightboxProps {
   images: Array<{
@@ -53,15 +53,10 @@ export default function ImageLightbox({
   const currentImage = images[currentIndex]
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
-      >
-        <X size={32} />
-      </button>
-
+    <div
+      className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
       {/* Image Counter */}
       <div className="absolute top-4 left-4 text-white text-lg font-medium z-10">
         {currentIndex + 1} / {images.length}
@@ -71,13 +66,13 @@ export default function ImageLightbox({
       {images.length > 1 && (
         <>
           <button
-            onClick={handlePrevious}
+            onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors bg-black/50 hover:bg-black/70 rounded-full p-3"
           >
             <ChevronLeft size={32} />
           </button>
           <button
-            onClick={handleNext}
+            onClick={(e) => { e.stopPropagation(); handleNext(); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors bg-black/50 hover:bg-black/70 rounded-full p-3"
           >
             <ChevronRight size={32} />
@@ -86,7 +81,10 @@ export default function ImageLightbox({
       )}
 
       {/* Main Image */}
-      <div className="max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center p-4">
+      <div
+        className="max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <img
           src={currentImage.url}
           alt={`Image ${currentIndex + 1}`}
@@ -96,7 +94,10 @@ export default function ImageLightbox({
 
       {/* Action Buttons */}
       {showActions && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-3 bg-black/70 backdrop-blur-sm px-6 py-3 rounded-full">
+        <div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-3 bg-black/70 backdrop-blur-sm px-6 py-3 rounded-full"
+          onClick={(e) => e.stopPropagation()}
+        >
           {currentImage.isPrimary ? (
             <span className="flex items-center space-x-2 text-white">
               <Star size={20} className="fill-yellow-400 text-yellow-400" />
@@ -136,7 +137,10 @@ export default function ImageLightbox({
 
       {/* Thumbnail Strip */}
       {images.length > 1 && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-2 overflow-x-auto max-w-xl p-2">
+        <div
+          className="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-2 overflow-x-auto max-w-xl p-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {images.map((image, index) => (
             <button
               key={image.id}

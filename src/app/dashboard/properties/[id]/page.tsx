@@ -65,6 +65,8 @@ interface Property {
   bathrooms: number
   hasRooms: boolean
   active: boolean
+  isPropertyManager: boolean
+  propertyManagerPercentage: number | null
   _count: {
     bookings: number
   }
@@ -898,19 +900,19 @@ function AccessCodesModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-2">
             <Key className="text-blue-600" size={24} />
             <h2 className="text-2xl font-bold text-slate-900">Gestione Codici Accesso</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {error && (
@@ -1009,8 +1011,14 @@ function AlloggiatiCredentialsModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
@@ -1021,12 +1029,6 @@ function AlloggiatiCredentialsModal({
               <p className="text-sm text-slate-500">Portale Polizia di Stato</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {error && (
@@ -1127,6 +1129,8 @@ function PropertyEditModal({
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     active: property.active,
+    isPropertyManager: property.isPropertyManager || false,
+    propertyManagerPercentage: property.propertyManagerPercentage?.toString() || '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -1137,12 +1141,18 @@ function PropertyEditModal({
     setError('')
 
     try {
+      const dataToSend = {
+        ...formData,
+        propertyManagerPercentage: formData.propertyManagerPercentage
+          ? parseFloat(formData.propertyManagerPercentage)
+          : null,
+      }
       const response = await fetch(`/api/properties/${property.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       })
 
       if (response.ok) {
@@ -1159,8 +1169,14 @@ function PropertyEditModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-6">Modifica Struttura</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -1285,6 +1301,40 @@ function PropertyEditModal({
                 <span className="text-sm font-medium text-slate-700">Struttura attiva</span>
               </label>
             </div>
+
+            {/* Property Manager Section */}
+            <div className="col-span-2 border-t pt-4 mt-2">
+              <label className="flex items-center space-x-2 mb-3">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 border-slate-300 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
+                  checked={formData.isPropertyManager}
+                  onChange={(e) => setFormData({ ...formData, isPropertyManager: e.target.checked })}
+                />
+                <span className="text-sm font-medium text-slate-700">Gestita da Property Manager</span>
+              </label>
+
+              {formData.isPropertyManager && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Percentuale Property Manager (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.propertyManagerPercentage}
+                    onChange={(e) => setFormData({ ...formData, propertyManagerPercentage: e.target.value })}
+                    placeholder="Es. 20.00"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Le entrate verranno calcolate in base a questa percentuale
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -1373,8 +1423,14 @@ function RoomFormModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 my-8 shadow-2xl">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-3xl w-full p-6 my-8 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-6">
           {isEdit ? 'Modifica Stanza' : 'Aggiungi Nuova Stanza'}
         </h2>
@@ -1593,8 +1649,14 @@ function DeleteConfirmModal({
   onCancel: () => void
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
             <AlertCircle className="text-red-600" size={24} />
@@ -1697,20 +1759,19 @@ function UploadImageModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Carica Immagini</h2>
             <p className="text-sm text-slate-600">Puoi selezionare più immagini insieme</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors"
-            title="Chiudi"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {error && (

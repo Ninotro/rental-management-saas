@@ -404,8 +404,14 @@ export default function PendingCheckInsPage() {
 
       {/* Modal Approvazione */}
       {showApproveModal && selectedCheckIn && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowApproveModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-5 text-white rounded-t-3xl">
               <div className="flex justify-between items-center">
@@ -420,12 +426,6 @@ export default function PendingCheckInsPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowApproveModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X size={22} />
-                </button>
               </div>
             </div>
 
@@ -598,8 +598,14 @@ function DetailModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#3d4a3c] to-[#4a5a49] px-6 py-5 text-white">
           <div className="flex justify-between items-center">
@@ -612,12 +618,6 @@ function DetailModal({
                 <p className="text-[#d4cdb0]">Inviato il {formatDate(checkIn.submittedAt)}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-            >
-              <X size={24} />
-            </button>
           </div>
         </div>
 
