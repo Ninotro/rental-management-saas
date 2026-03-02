@@ -239,22 +239,52 @@ async function syncIcalFeed(
     }
 
     // Rimuovi prenotazioni che non esistono più nel feed iCal
-    // Solo per prenotazioni importate, stesso canale, con checkIn futuro
+    // Per prenotazioni importate O con email di Booking/Airbnb, stesso canale, con checkIn futuro
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Definisci i pattern email per ogni canale
+    const emailPatterns: Record<string, string> = {
+      AIRBNB: '@guest.airbnb.com',
+      BOOKING_COM: '@guest.booking.com',
+      OTHER: '@placeholder.com',
+    };
+    const channelEmailPattern = emailPatterns[source] || '@placeholder.com';
 
     const bookingsToRemove = await prisma.booking.findMany({
       where: {
         roomId,
-        importedFromIcal: true,
-        channel: source === 'AIRBNB' ? 'AIRBNB' : 'BOOKING_COM',
-        externalCalendarId: {
-          not: null,
-          notIn: currentFeedUids,
-        },
         checkIn: {
           gte: today,
         },
+        OR: [
+          // Prenotazioni importate da iCal con externalCalendarId non più presente
+          {
+            importedFromIcal: true,
+            channel: source === 'AIRBNB' ? 'AIRBNB' : 'BOOKING_COM',
+            externalCalendarId: {
+              not: null,
+              notIn: currentFeedUids,
+            },
+          },
+          // Prenotazioni con email del canale (es. @guest.booking.com) non più presenti nel feed
+          {
+            guestEmail: {
+              contains: channelEmailPattern,
+            },
+            externalCalendarId: {
+              notIn: currentFeedUids,
+            },
+          },
+          // Prenotazioni con email del canale senza externalCalendarId (create prima della feature)
+          // che non corrispondono a nessun evento nel feed (matching per date e nome)
+          {
+            guestEmail: {
+              contains: channelEmailPattern,
+            },
+            externalCalendarId: null,
+          },
+        ],
       },
       include: {
         _count: {
@@ -263,9 +293,47 @@ async function syncIcalFeed(
       },
     });
 
-    // Elimina solo le prenotazioni senza check-in associati
+    // Per le prenotazioni senza externalCalendarId, verifica se esistono nel feed tramite date
+    const feedEvents = vevents.map(vevent => {
+      const event = new ICAL.Event(vevent);
+      return {
+        uid: event.uid,
+        startDate: event.startDate?.toJSDate(),
+        endDate: event.endDate?.toJSDate(),
+        summary: event.summary,
+      };
+    });
+
+    // Elimina solo le prenotazioni senza check-in associati e non più presenti nel feed
     for (const booking of bookingsToRemove) {
       if (booking._count.guestCheckIns === 0) {
+        // Se non ha externalCalendarId, verifica tramite date
+        if (!booking.externalCalendarId) {
+          const matchingEvent = feedEvents.find(event => {
+            if (!event.startDate || !event.endDate) return false;
+            const bookingCheckIn = new Date(booking.checkIn);
+            const bookingCheckOut = new Date(booking.checkOut);
+            // Confronta le date (stesso giorno)
+            return (
+              bookingCheckIn.toDateString() === event.startDate.toDateString() &&
+              bookingCheckOut.toDateString() === event.endDate.toDateString()
+            );
+          });
+
+          // Se trova un evento corrispondente, non eliminare (aggiorna invece externalCalendarId)
+          if (matchingEvent && matchingEvent.uid) {
+            await prisma.booking.update({
+              where: { id: booking.id },
+              data: {
+                externalCalendarId: matchingEvent.uid,
+                importedFromIcal: true,
+              },
+            });
+            continue;
+          }
+        }
+
+        // Elimina la prenotazione non più presente nel feed
         await prisma.booking.delete({
           where: { id: booking.id },
         });
