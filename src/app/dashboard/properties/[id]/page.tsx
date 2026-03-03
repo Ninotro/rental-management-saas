@@ -73,6 +73,14 @@ interface Property {
   images?: PropertyImage[]
   accessCodes?: Record<string, string> | null
   alloggiatiCredentials?: { username: string; password: string } | null
+  // Campi chatbot
+  checkInTime?: string | null
+  checkOutTime?: string | null
+  wifiName?: string | null
+  wifiPassword?: string | null
+  parkingInfo?: string | null
+  arrivalInstructions?: string | null
+  nearbyTransport?: string | null
 }
 export default function PropertyDetailPage() {
   const params = useParams()
@@ -1131,6 +1139,14 @@ function PropertyEditModal({
     active: property.active,
     isPropertyManager: property.isPropertyManager || false,
     propertyManagerPercentage: property.propertyManagerPercentage?.toString() || '',
+    // Campi chatbot
+    checkInTime: property.checkInTime || '',
+    checkOutTime: property.checkOutTime || '',
+    wifiName: property.wifiName || '',
+    wifiPassword: property.wifiPassword || '',
+    parkingInfo: property.parkingInfo || '',
+    arrivalInstructions: property.arrivalInstructions || '',
+    nearbyTransport: property.nearbyTransport || '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -1334,6 +1350,112 @@ function PropertyEditModal({
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Sezione Chatbot FAQ */}
+            <div className="col-span-2 border-t pt-4 mt-2">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </span>
+                Informazioni Chatbot
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                Questi dati vengono usati dal chatbot WhatsApp per rispondere automaticamente agli ospiti.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Orario Check-in
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.checkInTime}
+                    onChange={(e) => setFormData({ ...formData, checkInTime: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Orario Check-out
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.checkOutTime}
+                    onChange={(e) => setFormData({ ...formData, checkOutTime: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Nome Rete WiFi
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Es: Casa_WiFi"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.wifiName}
+                    onChange={(e) => setFormData({ ...formData, wifiName: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Password WiFi
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Es: password123"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.wifiPassword}
+                    onChange={(e) => setFormData({ ...formData, wifiPassword: e.target.value })}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Info Parcheggio
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Es: Parcheggio gratuito disponibile nel cortile interno..."
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.parkingInfo}
+                    onChange={(e) => setFormData({ ...formData, parkingInfo: e.target.value })}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Istruzioni di Arrivo
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Es: Dall'aeroporto prendi il bus 101 fino a Piazza Centrale..."
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.arrivalInstructions}
+                    onChange={(e) => setFormData({ ...formData, arrivalInstructions: e.target.value })}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Trasporti Pubblici Vicini
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Es: Fermata bus a 50m, Metro linea A a 200m..."
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.nearbyTransport}
+                    onChange={(e) => setFormData({ ...formData, nearbyTransport: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

@@ -62,7 +62,12 @@ export async function PATCH(
     const {
       name, address, city, country, description,
       maxGuests, bedrooms, bathrooms, active, accessCodes, alloggiatiCredentials,
-      touristTaxRate, touristTaxMaxNights, touristTaxExemptAge, paypalEmail
+      touristTaxRate, touristTaxMaxNights, touristTaxExemptAge, paypalEmail,
+      // Campi chatbot
+      checkInTime, checkOutTime, wifiName, wifiPassword,
+      parkingInfo, arrivalInstructions, nearbyTransport,
+      // Property manager
+      isPropertyManager, propertyManagerPercentage
     } = body
 
     const updateData: any = {}
@@ -82,6 +87,19 @@ export async function PATCH(
     if (touristTaxMaxNights !== undefined) updateData.touristTaxMaxNights = touristTaxMaxNights !== null ? parseInt(touristTaxMaxNights.toString()) : null
     if (touristTaxExemptAge !== undefined) updateData.touristTaxExemptAge = touristTaxExemptAge !== null ? parseInt(touristTaxExemptAge.toString()) : null
     if (paypalEmail !== undefined) updateData.paypalEmail = paypalEmail
+
+    // Campi chatbot
+    if (checkInTime !== undefined) updateData.checkInTime = checkInTime || null
+    if (checkOutTime !== undefined) updateData.checkOutTime = checkOutTime || null
+    if (wifiName !== undefined) updateData.wifiName = wifiName || null
+    if (wifiPassword !== undefined) updateData.wifiPassword = wifiPassword || null
+    if (parkingInfo !== undefined) updateData.parkingInfo = parkingInfo || null
+    if (arrivalInstructions !== undefined) updateData.arrivalInstructions = arrivalInstructions || null
+    if (nearbyTransport !== undefined) updateData.nearbyTransport = nearbyTransport || null
+
+    // Property manager
+    if (isPropertyManager !== undefined) updateData.isPropertyManager = isPropertyManager
+    if (propertyManagerPercentage !== undefined) updateData.propertyManagerPercentage = propertyManagerPercentage !== null ? parseFloat(propertyManagerPercentage.toString()) : null
 
     const property = await prisma.property.update({
       where: { id },

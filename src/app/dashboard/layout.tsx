@@ -23,6 +23,7 @@ import {
   Home,
   MessageSquare,
   MessagesSquare,
+  Bot,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -108,6 +109,7 @@ export default function DashboardLayout({
     { name: 'Strutture', href: '/dashboard/properties', icon: Home },
     { name: 'Messaggi Stanze', href: '/dashboard/room-messages', icon: MessageSquare },
     { name: 'Chat WhatsApp', href: '/dashboard/chat', icon: MessagesSquare, badge: 'messages' },
+    { name: 'Chatbot FAQ', href: '/dashboard/chatbot-faq', icon: Bot },
     { name: 'Dipendenti', href: '/dashboard/staff', icon: UserCheck },
   ]
 

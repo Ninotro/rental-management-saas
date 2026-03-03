@@ -107,11 +107,22 @@ model Property {
   isPropertyManager Boolean @default(false) // Se true, gestita da property manager
   propertyManagerPercentage Decimal? @db.Decimal(5, 2) // Percentuale property manager (es. 20.00)
 
+  // Informazioni per chatbot FAQ
+  checkInTime          String?       // Orario check-in (es. "15:00")
+  checkOutTime         String?       // Orario check-out (es. "11:00")
+  wifiName             String?       // Nome rete WiFi
+  wifiPassword         String?       // Password WiFi
+  parkingInfo          String?       // Info parcheggio
+  arrivalInstructions  String?   @db.Text  // Istruzioni per arrivare
+  nearbyTransport      String?   @db.Text  // Info trasporti pubblici vicini
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   // Relazioni
   rooms            Room[]
+  chatbotSessions  ChatbotSession[]
+  chatbotFAQs      ChatbotFAQ[]
   bookings         Booking[]
   calendarEvents   CalendarEvent[]
   prices           PropertyPrice[]
@@ -174,6 +185,8 @@ model Room {
   icalSyncs        ICalSync[]
   guestCheckIns    GuestCheckIn[]
   messages         RoomMessage[]
+  chatbotSessions  ChatbotSession[]
+  chatbotFAQs      ChatbotFAQ[]
 
   @@index([propertyId])
   @@index([active])
@@ -406,6 +419,7 @@ model Booking {
   sentMessages     SentMessage[]  // Messaggi inviati per questa prenotazione
   bookingRooms     BookingRoom[]  // Stanze prenotate (relazione many-to-many)
   whatsappConversations WhatsAppConversation[] // Conversazioni WhatsApp collegate
+  chatbotSessions  ChatbotSession[]
 
   @@index([propertyId])
   @@index([roomId])
@@ -658,6 +672,15 @@ enum MessageDirection {
   OUTGOING  // Messaggio inviato dall'host
 }
 
+// Enum per lo stato del chatbot
+enum ChatbotState {
+  IDLE                  // In attesa di interazione
+  AWAITING_PROPERTY     // Aspetta selezione struttura
+  AWAITING_ROOM         // Aspetta selezione stanza
+  READY                 // Pronto a rispondere alle FAQ
+  HANDOFF_TO_OPERATOR   // Passato a operatore umano
+}
+
 // Modello WhatsAppConversation - Conversazioni WhatsApp con gli ospiti
 model WhatsAppConversation {
   id            String    @id @default(cuid())
@@ -670,8 +693,9 @@ model WhatsAppConversation {
   updatedAt     DateTime  @updatedAt
 
   // Relazioni
-  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  messages      WhatsAppMessage[]
+  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  messages        WhatsAppMessage[]
+  chatbotSession  ChatbotSession?
 
   @@index([phoneNumber])
   @@index([bookingId])
@@ -698,4 +722,53 @@ model WhatsAppMessage {
   @@index([sentAt])
   @@index([twilioSid])
   @@index([direction])
+}
+
+// Modello ChatbotSession - Stato della sessione chatbot per conversazione
+model ChatbotSession {
+  id                  String        @id @default(cuid())
+  conversationId      String        @unique
+  state               ChatbotState  @default(IDLE)
+  selectedPropertyId  String?       // Proprietà selezionata dall'utente
+  selectedRoomId      String?       // Stanza selezionata dall'utente
+  bookingId           String?       // Booking collegato (se trovato)
+  fallbackCount       Int           @default(0)  // Contatore domande non capite
+  isHandedOff         Boolean       @default(false)  // Se passato a operatore
+  lastInteraction     DateTime      @default(now())
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relazioni
+  conversation        WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  selectedProperty    Property?     @relation(fields: [selectedPropertyId], references: [id], onDelete: SetNull)
+  selectedRoom        Room?         @relation(fields: [selectedRoomId], references: [id], onDelete: SetNull)
+  booking             Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([state])
+  @@index([bookingId])
+}
+
+// Modello ChatbotFAQ - Domande frequenti per il chatbot
+model ChatbotFAQ {
+  id          String    @id @default(cuid())
+  propertyId  String?   // Se null, è una FAQ globale
+  roomId      String?   // Se null, vale per tutta la proprietà
+  category    String    // CHECK_IN, WIFI, SERVICES, LOCATION
+  keywords    String[]  // Parole chiave per matching (es. ["wifi", "password", "internet"])
+  question    String    // Domanda esempio (es. "Qual è la password del WiFi?")
+  answer      String    @db.Text  // Risposta (supporta variabili come {wifiPassword})
+  priority    Int       @default(0)  // Priorità di matching (più alto = priorità maggiore)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relazioni
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  room        Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([roomId])
+  @@index([category])
+  @@index([isActive])
 }

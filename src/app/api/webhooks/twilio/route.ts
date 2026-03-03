@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { processChatbotMessage } from '@/lib/chatbot'
+import { sendWhatsAppMessage } from '@/lib/twilio'
 import crypto from 'crypto'
 
 // Verifica firma Twilio per sicurezza
@@ -165,6 +167,49 @@ export async function POST(request: NextRequest) {
       })
 
       console.log(`[Twilio Webhook] Message saved to conversation ${conversation.id}`)
+
+      // Processa il messaggio con il chatbot
+      try {
+        const chatbotResponse = await processChatbotMessage(
+          conversation.id,
+          Body,
+          phoneNumber
+        )
+
+        // Se il chatbot ha una risposta, inviala
+        if (chatbotResponse.message) {
+          const result = await sendWhatsAppMessage({
+            to: phoneNumber,
+            body: chatbotResponse.message
+          })
+
+          // Salva la risposta come messaggio outgoing
+          await prisma.whatsAppMessage.create({
+            data: {
+              conversationId: conversation.id,
+              direction: 'OUTGOING',
+              body: chatbotResponse.message,
+              twilioSid: result.sid,
+              status: 'SENT',
+              sentAt: new Date(),
+            }
+          })
+
+          console.log(`[Chatbot] Auto-response sent: ${result.sid}`)
+        }
+
+        // Se il chatbot ha passato a operatore, incrementa unread
+        if (chatbotResponse.handedOff) {
+          await prisma.whatsAppConversation.update({
+            where: { id: conversation.id },
+            data: { unreadCount: { increment: 1 } }
+          })
+          console.log(`[Chatbot] Conversation handed off to operator`)
+        }
+      } catch (chatbotError) {
+        console.error('[Chatbot] Error processing message:', chatbotError)
+        // Non bloccare il webhook se il chatbot fallisce
+      }
     }
 
     // Twilio si aspetta una risposta 200 OK
