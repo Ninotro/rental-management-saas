@@ -421,6 +421,11 @@ Scrivi la tua domanda!`,
 
 /**
  * Cerca una FAQ corrispondente al messaggio
+ * Algoritmo migliorato che considera:
+ * - Lunghezza delle keyword (piu' specifiche = piu' peso)
+ * - Match di parole intere vs parziali
+ * - Priorita' della FAQ
+ * - Specificita' del contesto (room > property > global)
  */
 async function matchFAQ(
   message: string,
@@ -447,26 +452,67 @@ async function matchFAQ(
   })
 
   const normalizedMessage = message.toLowerCase()
+  const messageWords = normalizedMessage.split(/\s+/)
 
   // Cerca la FAQ con il miglior match
-  let bestMatch: { answer: string; score: number } | null = null
+  let bestMatch: { answer: string; score: number; debug?: string } | null = null
 
   for (const faq of faqs) {
     const keywords = faq.keywords as string[]
-    let matchCount = 0
+    let score = 0
+    let matchedKeywords: string[] = []
 
     for (const keyword of keywords) {
-      if (normalizedMessage.includes(keyword.toLowerCase())) {
-        matchCount++
+      const normalizedKeyword = keyword.toLowerCase()
+
+      if (normalizedMessage.includes(normalizedKeyword)) {
+        matchedKeywords.push(keyword)
+
+        // Peso base: lunghezza della keyword (keyword piu' lunghe = piu' specifiche)
+        let keywordScore = normalizedKeyword.length
+
+        // Bonus per match di parola intera (non parziale)
+        const keywordWords = normalizedKeyword.split(/\s+/)
+        const isWholeWordMatch = keywordWords.every(kw =>
+          messageWords.some(mw => mw === kw || mw.startsWith(kw) || mw.endsWith(kw))
+        )
+        if (isWholeWordMatch) {
+          keywordScore *= 1.5
+        }
+
+        // Bonus per keyword multi-parola (es. "check-out" vs "ora")
+        if (keywordWords.length > 1 || normalizedKeyword.includes('-')) {
+          keywordScore *= 1.3
+        }
+
+        score += keywordScore
       }
     }
 
-    if (matchCount > 0) {
-      const score = matchCount + faq.priority
+    if (score > 0) {
+      // Aggiungi la priorita' della FAQ (scalata)
+      score += faq.priority * 2
+
+      // Bonus per specificita' del contesto
+      if (faq.roomId) {
+        score += 20 // FAQ specifiche per stanza
+      } else if (faq.propertyId) {
+        score += 10 // FAQ specifiche per proprieta'
+      }
+
       if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { answer: faq.answer, score }
+        bestMatch = {
+          answer: faq.answer,
+          score,
+          debug: `FAQ: ${faq.question} | Matched: [${matchedKeywords.join(', ')}] | Score: ${score}`
+        }
       }
     }
+  }
+
+  // Log per debug (rimuovere in produzione)
+  if (bestMatch?.debug) {
+    console.log('[Chatbot Match]', bestMatch.debug)
   }
 
   return bestMatch ? { answer: bestMatch.answer } : null
