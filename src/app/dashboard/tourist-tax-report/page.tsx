@@ -171,7 +171,7 @@ export default function TouristTaxReportPage() {
       ) : report ? (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -216,6 +216,17 @@ export default function TouristTaxReportPage() {
                 </div>
               </div>
             </div>
+            <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl shadow-sm p-4 text-white">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Euro className="text-white" size={20} />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Netto (-10%)</p>
+                  <p className="text-2xl font-bold">{formatCurrency(report.totals.totalTax * 0.9)}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Report Table */}
@@ -257,6 +268,13 @@ export default function TouristTaxReportPage() {
                       <span className="text-xs text-slate-500 font-normal">(x 4)</span>
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Euro size={16} />
+                        <span>Netto</span>
+                      </div>
+                      <span className="text-xs text-slate-500 font-normal">(-10%)</span>
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
                       Esenti
                     </th>
                   </tr>
@@ -264,7 +282,7 @@ export default function TouristTaxReportPage() {
                 <tbody>
                   {report.properties.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                         <FileText className="mx-auto mb-3 text-slate-400" size={48} />
                         <p>Nessun dato disponibile per questo mese</p>
                       </td>
@@ -291,6 +309,11 @@ export default function TouristTaxReportPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
+                            <span className="text-emerald-600 font-bold text-lg">
+                              {formatCurrency(property.totalTax * 0.9)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
                             <span className="text-slate-500">{property.exemptGuests}</span>
                           </td>
                         </tr>
@@ -312,6 +335,11 @@ export default function TouristTaxReportPage() {
                         <td className="px-6 py-4 text-center">
                           <span className="font-bold text-amber-600 text-xl">
                             {formatCurrency(report.totals.totalTax)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="font-bold text-emerald-600 text-xl">
+                            {formatCurrency(report.totals.totalTax * 0.9)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
