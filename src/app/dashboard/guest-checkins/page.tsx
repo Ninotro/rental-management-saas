@@ -210,6 +210,10 @@ export default function GuestCheckInsPage() {
   const getCheckOutDate = (c: GuestCheckIn) =>
     c.booking?.checkOut || c.selectedCheckOut || c.submittedAt
 
+  const getCheckInsForProperty = (propertyName: string) => {
+    return filteredCheckIns.filter(c => getPropertyName(c) === propertyName)
+  }
+
   const filterCheckIns = () => {
     let filtered = [...checkIns]
 
@@ -497,131 +501,6 @@ export default function GuestCheckInsPage() {
         </div>
       </div>
 
-      {/* Sezione Strutture e Credenziali Alloggiati Web */}
-      {properties.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl">
-                <Building2 className="text-white" size={20} />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">Strutture - Credenziali Alloggiati Web</h2>
-                <p className="text-blue-100 text-sm">Clicca su una struttura per visualizzare le credenziali di accesso al portale Questura</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {properties.map((property) => (
-              <div key={property.id} className="hover:bg-slate-50 transition-colors">
-                <button
-                  onClick={() => toggleCredentials(property.id)}
-                  className="w-full px-6 py-4 flex items-center justify-between text-left"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
-                      <Building2 className="text-[#3d4a3c]" size={18} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{property.name}</p>
-                      <p className="text-sm text-slate-500">{property.address}, {property.city}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {property.alloggiatiCredentials?.username ? (
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
-                        Credenziali configurate
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
-                        Credenziali mancanti
-                      </span>
-                    )}
-                    <ChevronRight
-                      size={20}
-                      className={`text-slate-400 transition-transform duration-200 ${showCredentials[property.id] ? 'rotate-90' : ''}`}
-                    />
-                  </div>
-                </button>
-
-                {showCredentials[property.id] && (
-                  <div className="px-6 pb-4 animate-in slide-in-from-top-2 duration-200">
-                    {property.alloggiatiCredentials?.username ? (
-                      <div className="bg-slate-50 rounded-xl p-4 ml-14 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <User size={16} className="text-slate-500" />
-                            <span className="text-sm text-slate-600">Username:</span>
-                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
-                              {property.alloggiatiCredentials.username}
-                            </code>
-                          </div>
-                          <button
-                            onClick={() => copyToClipboard(property.alloggiatiCredentials?.username || '')}
-                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
-                            title="Copia username"
-                          >
-                            <Copy size={16} />
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Key size={16} className="text-slate-500" />
-                            <span className="text-sm text-slate-600">Password:</span>
-                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
-                              {property.alloggiatiCredentials.password || '••••••••'}
-                            </code>
-                          </div>
-                          <button
-                            onClick={() => copyToClipboard(property.alloggiatiCredentials?.password || '')}
-                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
-                            title="Copia password"
-                          >
-                            <Copy size={16} />
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          <a
-                            href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            <Shield size={14} />
-                            Vai al portale Alloggiati Web
-                            <ExternalLink size={12} />
-                          </a>
-                          <a
-                            href="https://osservatorioturistico.regione.sicilia.it/login/account/signin?ReturnUrl=%2flogin%2fissue%2fwsfed%3fwa%3dwsignin1.0%26wtrealm%3dhttps%253a%252f%252fregione.sicilia.turistat%252fapp%26wctx%3drm%253d0%2526id%253dpassive%2526ru%253d%25252fHome%26wct%3d2026-04-01T16%253a37%253a06Z%26wreply%3dhttps%253a%252f%252fosservatorioturistico.regione.sicilia.it%252fHome%252f&wa=wsignin1.0&wtrealm=https%3a%2f%2fregione.sicilia.turistat%2fapp&wctx=rm%3d0%26id%3dpassive%26ru%3d%252fHome&wct=2026-04-01T16%3a37%3a06Z&wreply=https%3a%2f%2fosservatorioturistico.regione.sicilia.it%2fHome%2f#/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
-                          >
-                            <Shield size={14} />
-                            Osservatorio Turistico Sicilia
-                            <ExternalLink size={12} />
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-amber-50 rounded-xl p-4 ml-14 border border-amber-200">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle size={18} className="text-amber-600" />
-                          <p className="text-sm text-amber-800">
-                            Credenziali non configurate. Vai nelle impostazioni della struttura per aggiungerle.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Action Bar */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         {/* Search */}
@@ -651,17 +530,6 @@ export default function GuestCheckInsPage() {
             <ChevronDown size={16} className={`transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
           </button>
 
-          <a
-            href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white text-[#3d4a3c] border border-[#3d4a3c]/20 hover:bg-[#d4cdb0]/20 px-4 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <Shield size={18} />
-            <span className="hidden sm:inline">Alloggiati Web</span>
-            <ExternalLink size={14} />
-          </a>
-
           <button
             onClick={exportToCSV}
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-4 py-3 rounded-2xl font-medium shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
@@ -678,7 +546,7 @@ export default function GuestCheckInsPage() {
             <span className="hidden sm:inline">PDF</span>
           </button>
 
-          {/* GDPR Cleanup Button - Sempre visibile */}
+          {/* GDPR Cleanup Button */}
           <button
             onClick={() => setShowCleanupModal(true)}
             disabled={cleanupEligibleCount === 0}
@@ -752,151 +620,263 @@ export default function GuestCheckInsPage() {
         </div>
       </div>
 
-      {/* Check-in Cards Grid */}
-      {filteredCheckIns.length === 0 ? (
-        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-12 text-center">
-          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users className="text-slate-400" size={32} />
+      {/* Sezione Strutture e Check-in */}
+      {properties.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Building2 className="text-white" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Strutture e Check-in</h2>
+                <p className="text-blue-100 text-sm">Clicca su una struttura per visualizzare credenziali e check-in</p>
+              </div>
+            </div>
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">Nessun check-in trovato</h3>
-          <p className="text-slate-500">Prova a modificare i filtri di ricerca</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {filteredCheckIns.map((checkIn, index) => {
-            const statusConfig = getStatusConfig(checkIn.status)
-            const StatusIcon = statusConfig.icon
-            const overdueStatus = isOverdue(checkIn)
 
-            return (
-              <div
-                key={checkIn.id}
-                className={`group bg-white rounded-2xl shadow-sm border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                  overdueStatus
-                    ? 'border-l-4 border-l-red-500 border-red-100'
-                    : 'border-slate-100 hover:border-[#3d4a3c]/20'
-                }`}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="p-5">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Avatar & Main Info */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className={`relative flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg ${
-                        overdueStatus
-                          ? 'bg-gradient-to-br from-red-500 to-rose-600'
-                          : 'bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49]'
-                      }`}>
-                        {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
-                        {checkIn.submittedToPolice && (
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
-                            <CheckCircle2 size={12} className="text-white" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-slate-900 text-lg truncate">
-                            {checkIn.firstName} {checkIn.lastName}
-                          </h3>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}>
-                            <StatusIcon size={12} className={statusConfig.iconColor} />
-                            {statusConfig.label}
-                          </span>
-                          {overdueStatus && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse">
-                              <AlertTriangle size={12} />
-                              SCADUTO
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-500 font-mono">{checkIn.fiscalCode}</p>
-                      </div>
+          <div className="divide-y divide-slate-100">
+            {properties.map((property) => (
+              <div key={property.id} className="hover:bg-slate-50 transition-colors">
+                <button
+                  onClick={() => toggleCredentials(property.id)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                      <Building2 className="text-[#3d4a3c]" size={18} />
                     </div>
-
-                    {/* Property Info */}
-                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl">
-                      <MapPin size={18} className="text-slate-400 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{getPropertyName(checkIn)}</p>
-                        <p className="text-xs text-slate-500">{getRoomName(checkIn)} - {getPropertyCity(checkIn)}</p>
-                      </div>
-                    </div>
-
-                    {/* Date Info */}
-                    <div className="flex items-center gap-3 px-4 py-2 bg-[#d4cdb0]/20 rounded-xl">
-                      <Calendar size={18} className="text-[#3d4a3c] flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-slate-900">{formatDate(getCheckInDate(checkIn))}</p>
-                        <p className="text-xs text-slate-500">Check-in</p>
-                      </div>
-                    </div>
-
-                    {/* Document Info */}
-                    <div className="hidden xl:flex items-center gap-3 px-4 py-2 bg-amber-50 rounded-xl">
-                      <CreditCard size={18} className="text-amber-500 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-slate-900 text-sm">{getDocumentTypeLabel(checkIn.documentType)}</p>
-                        <p className="text-xs text-slate-500 font-mono">{checkIn.documentNumber}</p>
-                      </div>
-                    </div>
-
-                    {/* Police Status Toggle */}
-                    <div className="flex items-center">
-                      <button
-                        onClick={() => togglePoliceSubmission(checkIn.id, checkIn.submittedToPolice)}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                          checkIn.submittedToPolice
-                            ? 'bg-emerald-500 focus:ring-emerald-500'
-                            : 'bg-slate-300 focus:ring-slate-400'
-                        }`}
-                      >
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-                          checkIn.submittedToPolice ? 'translate-x-8' : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedCheckIn(checkIn)
-                          setShowDetailModal(true)
-                        }}
-                        className="p-2.5 text-slate-400 hover:text-[#3d4a3c] hover:bg-[#d4cdb0]/20 rounded-xl transition-all duration-200"
-                        title="Visualizza dettagli"
-                      >
-                        <Eye size={20} />
-                      </button>
-                      <button
-                        onClick={() => openEditModal(checkIn)}
-                        className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all duration-200"
-                        title="Modifica"
-                      >
-                        <Edit3 size={20} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(checkIn)}
-                        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
-                        title="Elimina"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                    <div>
+                      <p className="font-semibold text-slate-900">{property.name}</p>
+                      <p className="text-sm text-slate-500">{property.address}, {property.city}</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+                  <div className="flex items-center gap-3">
+                    {getCheckInsForProperty(property.name).length > 0 && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                        {getCheckInsForProperty(property.name).length} check-in
+                      </span>
+                    )}
+                    {property.alloggiatiCredentials?.username ? (
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                        Credenziali OK
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                        No credenziali
+                      </span>
+                    )}
+                    <ChevronRight
+                      size={20}
+                      className={`text-slate-400 transition-transform duration-200 ${showCredentials[property.id] ? 'rotate-90' : ''}`}
+                    />
+                  </div>
+                </button>
 
-      {/* Results count */}
-      {filteredCheckIns.length > 0 && (
-        <div className="text-center text-sm text-slate-500">
-          Visualizzati <span className="font-semibold text-slate-700">{filteredCheckIns.length}</span> di <span className="font-semibold text-slate-700">{checkIns.length}</span> check-in
+                {showCredentials[property.id] && (
+                  <div className="px-6 pb-4 animate-in slide-in-from-top-2 duration-200">
+                    {/* Credenziali */}
+                    {property.alloggiatiCredentials?.username ? (
+                      <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <User size={16} className="text-slate-500" />
+                            <span className="text-sm text-slate-600">Username:</span>
+                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
+                              {property.alloggiatiCredentials.username}
+                            </code>
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(property.alloggiatiCredentials?.username || '')}
+                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
+                            title="Copia username"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Key size={16} className="text-slate-500" />
+                            <span className="text-sm text-slate-600">Password:</span>
+                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
+                              {property.alloggiatiCredentials.password || '••••••••'}
+                            </code>
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(property.alloggiatiCredentials?.password || '')}
+                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
+                            title="Copia password"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <a
+                            href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            <Shield size={14} />
+                            Vai al portale Alloggiati Web
+                            <ExternalLink size={12} />
+                          </a>
+                          <a
+                            href="https://osservatorioturistico.regione.sicilia.it/login/account/signin?ReturnUrl=%2flogin%2fissue%2fwsfed%3fwa%3dwsignin1.0%26wtrealm%3dhttps%253a%252f%252fregione.sicilia.turistat%252fapp%26wctx%3drm%253d0%2526id%253dpassive%2526ru%253d%25252fHome%26wct%3d2026-04-01T16%253a37%253a06Z%26wreply%3dhttps%253a%252f%252fosservatorioturistico.regione.sicilia.it%252fHome%252f&wa=wsignin1.0&wtrealm=https%3a%2f%2fregione.sicilia.turistat%2fapp&wctx=rm%3d0%26id%3dpassive%26ru%3d%252fHome&wct=2026-04-01T16%3a37%3a06Z&wreply=https%3a%2f%2fosservatorioturistico.regione.sicilia.it%2fHome%2f#/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                          >
+                            <Shield size={14} />
+                            Osservatorio Turistico Sicilia
+                            <ExternalLink size={12} />
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 mb-4">
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle size={18} className="text-amber-600" />
+                          <p className="text-sm text-amber-800">
+                            Credenziali non configurate. Vai nelle impostazioni della struttura per aggiungerle.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Check-in di questa struttura */}
+                    {(() => {
+                      const propertyCheckIns = getCheckInsForProperty(property.name)
+                      if (propertyCheckIns.length === 0) {
+                        return (
+                          <div className="bg-slate-50 rounded-xl p-4 text-center">
+                            <Users className="mx-auto text-slate-300 mb-2" size={24} />
+                            <p className="text-sm text-slate-500">Nessun check-in per questa struttura</p>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                            <Users size={16} />
+                            <span>Check-in ({propertyCheckIns.length})</span>
+                          </div>
+                          <div className="grid gap-3">
+                            {propertyCheckIns.map((checkIn) => {
+                              const statusConfig = getStatusConfig(checkIn.status)
+                              const StatusIcon = statusConfig.icon
+                              const overdueStatus = isOverdue(checkIn)
+
+                              return (
+                                <div
+                                  key={checkIn.id}
+                                  className={`bg-white rounded-xl border p-4 transition-all hover:shadow-md ${
+                                    overdueStatus
+                                      ? 'border-l-4 border-l-red-500 border-red-100'
+                                      : 'border-slate-200'
+                                  }`}
+                                >
+                                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                                    {/* Avatar & Main Info */}
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      <div className={`relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow ${
+                                        overdueStatus
+                                          ? 'bg-gradient-to-br from-red-500 to-rose-600'
+                                          : 'bg-gradient-to-br from-[#3d4a3c] to-[#4a5a49]'
+                                      }`}>
+                                        {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+                                        {checkIn.submittedToPolice && (
+                                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+                                            <CheckCircle2 size={10} className="text-white" />
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <h3 className="font-semibold text-slate-900 truncate">
+                                            {checkIn.firstName} {checkIn.lastName}
+                                          </h3>
+                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}>
+                                            <StatusIcon size={10} className={statusConfig.iconColor} />
+                                            {statusConfig.label}
+                                          </span>
+                                          {overdueStatus && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse">
+                                              <AlertTriangle size={10} />
+                                              SCADUTO
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-slate-500 font-mono">{checkIn.fiscalCode}</p>
+                                      </div>
+                                    </div>
+
+                                    {/* Date Info */}
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#d4cdb0]/20 rounded-lg">
+                                      <Calendar size={14} className="text-[#3d4a3c] flex-shrink-0" />
+                                      <div>
+                                        <p className="font-medium text-slate-900 text-sm">{formatDate(getCheckInDate(checkIn))}</p>
+                                        <p className="text-xs text-slate-500">Check-in</p>
+                                      </div>
+                                    </div>
+
+                                    {/* Police Status Toggle */}
+                                    <div className="flex items-center">
+                                      <button
+                                        onClick={() => togglePoliceSubmission(checkIn.id, checkIn.submittedToPolice)}
+                                        className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                          checkIn.submittedToPolice
+                                            ? 'bg-emerald-500 focus:ring-emerald-500'
+                                            : 'bg-slate-300 focus:ring-slate-400'
+                                        }`}
+                                      >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                                          checkIn.submittedToPolice ? 'translate-x-7' : 'translate-x-1'
+                                        }`} />
+                                      </button>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedCheckIn(checkIn)
+                                          setShowDetailModal(true)
+                                        }}
+                                        className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-[#d4cdb0]/20 rounded-lg transition-all"
+                                        title="Visualizza dettagli"
+                                      >
+                                        <Eye size={18} />
+                                      </button>
+                                      <button
+                                        onClick={() => openEditModal(checkIn)}
+                                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                        title="Modifica"
+                                      >
+                                        <Edit3 size={18} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDelete(checkIn)}
+                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                        title="Elimina"
+                                      >
+                                        <Trash2 size={18} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
