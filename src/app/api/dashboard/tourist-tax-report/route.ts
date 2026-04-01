@@ -48,58 +48,34 @@ export async function GET(request: NextRequest) {
         })
         const roomIds = rooms.map(r => r.id)
 
-        // Ottieni tutti i check-in approvati per questa proprietà nel mese
-        // Considera sia booking collegati che check-in diretti
-        const checkIns = await prisma.guestCheckIn.findMany({
+        // Ottieni tutte le prenotazioni (non cancellate) per questa proprietà nel mese
+        const bookings = await prisma.booking.findMany({
           where: {
-            status: 'APPROVED',
-            isExempt: false, // Solo ospiti non esenti
-            OR: [
-              // Check-in collegati a booking della proprietà
-              {
-                booking: {
-                  roomId: { in: roomIds },
-                  checkIn: { lte: endDate },
-                  checkOut: { gte: startDate },
-                },
-              },
-              // Check-in diretti (senza booking) per stanze della proprietà
-              {
-                bookingId: null,
-                selectedRoomId: { in: roomIds },
-                selectedCheckIn: { lte: endDate },
-                selectedCheckOut: { gte: startDate },
-              },
-            ],
+            status: { not: 'CANCELLED' },
+            roomId: { in: roomIds },
+            checkIn: { lte: endDate },
+            checkOut: { gte: startDate },
           },
-          include: {
-            booking: {
-              select: {
-                checkIn: true,
-                checkOut: true,
-              },
-            },
+          select: {
+            id: true,
+            guests: true,
+            checkIn: true,
+            checkOut: true,
           },
         })
+
+        console.log(`✅ DEBUG - Prenotazioni (non cancellate) per ${property.name}:`, bookings.length)
+        if (bookings.length > 0) {
+          console.log('Prenotazione sample:', bookings[0])
+        }
 
         let totalGuests = 0
         let totalNights = 0
         let totalTaxableNights = 0 // Notti x Ospiti (max 4 notti per ospite)
 
-        for (const checkIn of checkIns) {
-          // Determina le date del soggiorno
-          let checkInDate: Date
-          let checkOutDate: Date
-
-          if (checkIn.booking) {
-            checkInDate = new Date(checkIn.booking.checkIn)
-            checkOutDate = new Date(checkIn.booking.checkOut)
-          } else if (checkIn.selectedCheckIn && checkIn.selectedCheckOut) {
-            checkInDate = new Date(checkIn.selectedCheckIn)
-            checkOutDate = new Date(checkIn.selectedCheckOut)
-          } else {
-            continue // Skip se non ci sono date valide
-          }
+        for (const booking of bookings) {
+          const checkInDate = new Date(booking.checkIn)
+          const checkOutDate = new Date(booking.checkOut)
 
           // Calcola le notti che cadono nel mese selezionato
           const effectiveStart = checkInDate > startDate ? checkInDate : startDate
@@ -110,8 +86,8 @@ export async function GET(request: NextRequest) {
           )
 
           if (nightsInMonth > 0) {
-            // Numero di ospiti per questo check-in (ospite principale + aggiuntivi)
-            const guestsCount = checkIn.numGuests || 1
+            // Numero di ospiti dalla prenotazione
+            const guestsCount = booking.guests
 
             totalGuests += guestsCount
             totalNights += nightsInMonth
@@ -122,30 +98,9 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Conta anche gli ospiti esenti separatamente per report completo
-        const exemptCheckIns = await prisma.guestCheckIn.findMany({
-          where: {
-            status: 'APPROVED',
-            isExempt: true,
-            OR: [
-              {
-                booking: {
-                  roomId: { in: roomIds },
-                  checkIn: { lte: endDate },
-                  checkOut: { gte: startDate },
-                },
-              },
-              {
-                bookingId: null,
-                selectedRoomId: { in: roomIds },
-                selectedCheckIn: { lte: endDate },
-                selectedCheckOut: { gte: startDate },
-              },
-            ],
-          },
-        })
-
-        const exemptGuests = exemptCheckIns.reduce((sum, c) => sum + (c.numGuests || 1), 0)
+        // Per gli ospiti esenti, non li contiamo più perché non sono nelle prenotazioni
+        // ma nei check-in individuali (per la questura)
+        const exemptGuests = 0
 
         // Calcola il totale tassa (tariffa fissa 4€)
         const totalTax = totalTaxableNights * taxRate
