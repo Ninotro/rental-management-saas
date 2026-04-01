@@ -20,7 +20,23 @@ import {
   Home,
   FileText,
   Users,
+  Building2,
+  Key,
+  ChevronRight,
+  ExternalLink,
+  Shield,
 } from 'lucide-react'
+
+interface PropertyWithCredentials {
+  id: string
+  name: string
+  city: string
+  address: string
+  alloggiatiCredentials: {
+    username?: string
+    password?: string
+  } | null
+}
 
 interface AdditionalGuest {
   firstName: string
@@ -112,6 +128,8 @@ interface SuggestionResponse {
 
 export default function PendingCheckInsPage() {
   const router = useRouter()
+  const [properties, setProperties] = useState<PropertyWithCredentials[]>([])
+  const [showCredentials, setShowCredentials] = useState<Record<string, boolean>>({})
   const [pendingCheckIns, setPendingCheckIns] = useState<PendingCheckIn[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -126,8 +144,32 @@ export default function PendingCheckInsPage() {
   const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
+    fetchProperties()
     fetchPendingCheckIns()
   }, [])
+
+  const fetchProperties = async () => {
+    try {
+      const response = await fetch('/api/properties')
+      if (response.ok) {
+        const data = await response.json()
+        setProperties(data)
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento proprietà:', error)
+    }
+  }
+
+  const toggleCredentials = (propertyId: string) => {
+    setShowCredentials(prev => ({
+      ...prev,
+      [propertyId]: !prev[propertyId]
+    }))
+  }
+
+  const copyCredentialToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
 
   const fetchPendingCheckIns = async () => {
     try {
@@ -292,6 +334,119 @@ export default function PendingCheckInsPage() {
           </div>
         </div>
       </div>
+
+      {/* Sezione Strutture e Credenziali Alloggiati Web */}
+      {properties.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Building2 className="text-white" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Strutture - Credenziali Alloggiati Web</h2>
+                <p className="text-blue-100 text-sm">Clicca su una struttura per visualizzare le credenziali di accesso al portale Questura</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {properties.map((property) => (
+              <div key={property.id} className="hover:bg-slate-50 transition-colors">
+                <button
+                  onClick={() => toggleCredentials(property.id)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-[#d4cdb0]/30 rounded-xl">
+                      <Building2 className="text-[#3d4a3c]" size={18} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">{property.name}</p>
+                      <p className="text-sm text-slate-500">{property.address}, {property.city}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {property.alloggiatiCredentials?.username ? (
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
+                        Credenziali configurate
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                        Credenziali mancanti
+                      </span>
+                    )}
+                    <ChevronRight
+                      size={20}
+                      className={`text-slate-400 transition-transform duration-200 ${showCredentials[property.id] ? 'rotate-90' : ''}`}
+                    />
+                  </div>
+                </button>
+
+                {showCredentials[property.id] && (
+                  <div className="px-6 pb-4 animate-in slide-in-from-top-2 duration-200">
+                    {property.alloggiatiCredentials?.username ? (
+                      <div className="bg-slate-50 rounded-xl p-4 ml-14 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <User size={16} className="text-slate-500" />
+                            <span className="text-sm text-slate-600">Username:</span>
+                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
+                              {property.alloggiatiCredentials.username}
+                            </code>
+                          </div>
+                          <button
+                            onClick={() => copyCredentialToClipboard(property.alloggiatiCredentials?.username || '')}
+                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
+                            title="Copia username"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Key size={16} className="text-slate-500" />
+                            <span className="text-sm text-slate-600">Password:</span>
+                            <code className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-mono text-sm text-slate-900">
+                              {property.alloggiatiCredentials.password || '••••••••'}
+                            </code>
+                          </div>
+                          <button
+                            onClick={() => copyCredentialToClipboard(property.alloggiatiCredentials?.password || '')}
+                            className="p-2 text-slate-400 hover:text-[#3d4a3c] hover:bg-white rounded-lg transition-colors"
+                            title="Copia password"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
+                        <a
+                          href="https://alloggiatiweb.poliziadistato.it/AlloggiatiWeb/Default.aspx"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          <Shield size={14} />
+                          Vai al portale Alloggiati Web
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 rounded-xl p-4 ml-14 border border-amber-200">
+                        <div className="flex items-center gap-3">
+                          <AlertCircle size={18} className="text-amber-600" />
+                          <p className="text-sm text-amber-800">
+                            Credenziali non configurate. Vai nelle impostazioni della struttura per aggiungerle.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 px-5 py-4 rounded-2xl flex items-center gap-3">

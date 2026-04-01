@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import { ChatbotState } from '@prisma/client'
 
+// Tipo per le lingue supportate
+export type Language = 'IT' | 'EN'
+
 // Interfaccia per la risposta del chatbot
 export interface ChatbotResponse {
   message: string | null
@@ -23,6 +26,182 @@ interface TemplateVariables {
   accessCodes?: string
   address?: string
   city?: string
+}
+
+// Messaggi di sistema in entrambe le lingue
+const MESSAGES = {
+  IT: {
+    welcome: (guestName: string, propertyName: string) => `Ciao ${guestName}! Sono l'assistente automatico di ${propertyName}.
+
+Posso aiutarti con informazioni su:
+- Orari check-in/check-out
+- Codici accesso e WiFi
+- Servizi disponibili
+- Come arrivare
+
+Scrivi la tua domanda!`,
+    noProperties: `Ciao! Al momento non ci sono strutture disponibili. Un operatore ti rispondera' al piu' presto.`,
+    selectProperty: (propertyList: string) => `Ciao! Sono l'assistente automatico.
+Per aiutarti, seleziona la struttura della tua prenotazione:
+
+${propertyList}
+
+Rispondi con il numero corrispondente.`,
+    invalidPropertySelection: (max: number) => `Per favore, rispondi con un numero da 1 a ${max}.`,
+    propertySelected: (name: string) => `Perfetto! Ho selezionato ${name}.
+
+Posso aiutarti con informazioni su:
+- Orari check-in/check-out
+- Codici accesso e WiFi
+- Servizi disponibili
+- Come arrivare
+
+Scrivi la tua domanda!`,
+    selectRoom: (roomList: string) => `Perfetto! Ora seleziona la tua stanza:
+
+${roomList}
+
+Rispondi con il numero.`,
+    invalidRoomSelection: (max: number) => `Per favore, rispondi con un numero da 1 a ${max}.`,
+    roomSelected: (name: string) => `Ottimo! Ho selezionato ${name}.
+
+Posso aiutarti con informazioni su:
+- Orari check-in/check-out
+- Codici accesso e WiFi
+- Servizi disponibili
+- Come arrivare
+
+Scrivi la tua domanda!`,
+    howCanIHelp: `Perfetto! Come posso aiutarti?`,
+    handoffToOperator: `Ti metto in contatto con un operatore.
+Riceverai risposta al piu' presto!`,
+    notUnderstood: `Non ho trovato informazioni su questo argomento.
+Prova a riformulare la domanda oppure scrivi "operatore" per parlare con una persona.`,
+    offerOperator: `Non ho capito la tua richiesta.
+Vuoi che ti metta in contatto con un operatore?
+
+Rispondi SI per parlare con una persona.`,
+    error: `Si e' verificato un errore. Ricominciamo.`,
+  },
+  EN: {
+    welcome: (guestName: string, propertyName: string) => `Hi ${guestName}! I'm the automated assistant for ${propertyName}.
+
+I can help you with information about:
+- Check-in/check-out times
+- Access codes and WiFi
+- Available services
+- How to get here
+
+Write your question!`,
+    noProperties: `Hello! There are no properties available at the moment. An operator will respond as soon as possible.`,
+    selectProperty: (propertyList: string) => `Hello! I'm the automated assistant.
+To help you, please select your booking's property:
+
+${propertyList}
+
+Reply with the corresponding number.`,
+    invalidPropertySelection: (max: number) => `Please reply with a number from 1 to ${max}.`,
+    propertySelected: (name: string) => `Perfect! I've selected ${name}.
+
+I can help you with information about:
+- Check-in/check-out times
+- Access codes and WiFi
+- Available services
+- How to get here
+
+Write your question!`,
+    selectRoom: (roomList: string) => `Perfect! Now select your room:
+
+${roomList}
+
+Reply with the number.`,
+    invalidRoomSelection: (max: number) => `Please reply with a number from 1 to ${max}.`,
+    roomSelected: (name: string) => `Great! I've selected ${name}.
+
+I can help you with information about:
+- Check-in/check-out times
+- Access codes and WiFi
+- Available services
+- How to get here
+
+Write your question!`,
+    howCanIHelp: `Perfect! How can I help you?`,
+    handoffToOperator: `I'm connecting you with an operator.
+You'll receive a response as soon as possible!`,
+    notUnderstood: `I couldn't find information on this topic.
+Try rephrasing your question or write "operator" to speak with a person.`,
+    offerOperator: `I didn't understand your request.
+Would you like me to connect you with an operator?
+
+Reply YES to speak with a person.`,
+    error: `An error occurred. Let's start over.`,
+  }
+}
+
+// Parole chiave per rilevamento lingua inglese
+const ENGLISH_INDICATORS = [
+  'hello', 'hi', 'hey', 'good morning', 'good evening', 'good afternoon',
+  'what', 'when', 'where', 'how', 'why', 'who',
+  'the', 'is', 'are', 'can', 'could', 'would', 'will',
+  'please', 'thanks', 'thank you', 'sorry',
+  'check-in', 'check-out', 'checkout', 'checkin',
+  'wifi', 'password', 'code', 'access',
+  'time', 'address', 'directions', 'parking',
+  'help', 'need', 'want', 'looking for',
+  'room', 'booking', 'reservation',
+  'yes', 'no', 'ok', 'okay',
+  'i am', "i'm", 'my name', 'arriving'
+]
+
+// Parole chiave per rilevamento lingua italiana
+const ITALIAN_INDICATORS = [
+  'ciao', 'salve', 'buongiorno', 'buonasera', 'buon pomeriggio',
+  'qual', 'quale', 'quando', 'dove', 'come', 'perche', 'chi',
+  'il', 'la', 'gli', 'le', 'un', 'una', 'dei', 'delle',
+  'posso', 'potrei', 'vorrei', 'voglio',
+  'per favore', 'grazie', 'scusa', 'scusate',
+  'orario', 'indirizzo', 'indicazioni', 'parcheggio',
+  'aiuto', 'bisogno', 'cerco', 'stanza', 'camera',
+  'prenotazione', 'arrivo', 'partenza',
+  'si', 'no', 'va bene',
+  'sono', 'mi chiamo', 'arrivo'
+]
+
+/**
+ * Rileva la lingua del messaggio
+ */
+function detectLanguage(message: string): Language {
+  const normalizedMessage = message.toLowerCase()
+
+  let englishScore = 0
+  let italianScore = 0
+
+  for (const word of ENGLISH_INDICATORS) {
+    if (normalizedMessage.includes(word)) {
+      englishScore++
+    }
+  }
+
+  for (const word of ITALIAN_INDICATORS) {
+    if (normalizedMessage.includes(word)) {
+      italianScore++
+    }
+  }
+
+  // Se l'inglese ha piu' match, usa inglese
+  // Altrimenti default italiano
+  return englishScore > italianScore ? 'EN' : 'IT'
+}
+
+/**
+ * Verifica se l'utente sta richiedendo un operatore
+ */
+function isRequestingOperator(message: string, language: Language): boolean {
+  const keywords = language === 'EN'
+    ? ['operator', 'person', 'human', 'assistance', 'talk to someone', 'human help', 'yes', 'speak']
+    : ['operatore', 'persona', 'umano', 'assistenza', 'parlare con qualcuno', 'aiuto umano', 'si']
+
+  return keywords.some(keyword => message.includes(keyword))
 }
 
 /**
@@ -69,12 +248,16 @@ export async function processChatbotMessage(
     }
   }
 
-  // Se la sessione non esiste, creala
+  // Rileva la lingua dal messaggio
+  const detectedLanguage = detectLanguage(incomingMessage)
+
+  // Se la sessione non esiste, creala con la lingua rilevata
   if (!session) {
     session = await prisma.chatbotSession.create({
       data: {
         conversationId,
         state: ChatbotState.IDLE,
+        language: detectedLanguage,
         bookingId: conversation.bookingId,
       },
       include: {
@@ -88,7 +271,30 @@ export async function processChatbotMessage(
         }
       }
     })
+  } else {
+    // Aggiorna la lingua se cambia significativamente
+    // (solo se il messaggio ha indicatori chiari)
+    const messageWords = incomingMessage.toLowerCase().split(/\s+/)
+    const hasStrongEnglishIndicator = ENGLISH_INDICATORS.some(w => messageWords.includes(w))
+    const hasStrongItalianIndicator = ITALIAN_INDICATORS.some(w => messageWords.includes(w))
+
+    if (hasStrongEnglishIndicator && !hasStrongItalianIndicator && session.language !== 'EN') {
+      await prisma.chatbotSession.update({
+        where: { id: session.id },
+        data: { language: 'EN' }
+      })
+      session = { ...session, language: 'EN' }
+    } else if (hasStrongItalianIndicator && !hasStrongEnglishIndicator && session.language !== 'IT') {
+      await prisma.chatbotSession.update({
+        where: { id: session.id },
+        data: { language: 'IT' }
+      })
+      session = { ...session, language: 'IT' }
+    }
   }
+
+  const lang = (session.language || 'IT') as Language
+  const msgs = MESSAGES[lang]
 
   // Se la conversazione e' gia' stata passata a un operatore, non rispondere
   if (session.isHandedOff) {
@@ -111,15 +317,7 @@ export async function processChatbotMessage(
       if (conversation.booking) {
         // Booking trovato, vai direttamente a READY
         const guestName = conversation.booking.guestName.split(' ')[0]
-        response = `Ciao ${guestName}! Sono l'assistente automatico di ${conversation.booking.property.name}.
-
-Posso aiutarti con informazioni su:
-- Orari check-in/check-out
-- Codici accesso e WiFi
-- Servizi disponibili
-- Come arrivare
-
-Scrivi la tua domanda!`
+        response = msgs.welcome(guestName, conversation.booking.property.name)
         newState = ChatbotState.READY
 
         // Aggiorna la sessione con i dati del booking
@@ -133,7 +331,7 @@ Scrivi la tua domanda!`
         })
       } else {
         // Nessun booking, chiedi di selezionare la struttura
-        const result = await getPropertySelectionMessage()
+        const result = await getPropertySelectionMessage(lang)
         response = result.message
         newState = result.properties.length > 0 ? ChatbotState.AWAITING_PROPERTY : ChatbotState.IDLE
       }
@@ -141,14 +339,14 @@ Scrivi la tua domanda!`
 
     case ChatbotState.AWAITING_PROPERTY:
       // L'utente deve selezionare una struttura
-      const propertyResult = await handlePropertySelection(normalizedMessage, session.id)
+      const propertyResult = await handlePropertySelection(normalizedMessage, session.id, lang)
       response = propertyResult.message
       newState = propertyResult.newState
       break
 
     case ChatbotState.AWAITING_ROOM:
       // L'utente deve selezionare una stanza
-      const roomResult = await handleRoomSelection(normalizedMessage, session.id)
+      const roomResult = await handleRoomSelection(normalizedMessage, session.id, lang)
       response = roomResult.message
       newState = roomResult.newState
       break
@@ -157,9 +355,8 @@ Scrivi la tua domanda!`
       // Pronto a rispondere alle FAQ
 
       // Controlla se l'utente vuole parlare con un operatore
-      if (isRequestingOperator(normalizedMessage)) {
-        response = `Ti metto in contatto con un operatore.
-Riceverai risposta al piu' presto!`
+      if (isRequestingOperator(normalizedMessage, lang)) {
+        response = msgs.handoffToOperator
         newState = ChatbotState.HANDOFF_TO_OPERATOR
         handedOff = true
 
@@ -173,6 +370,7 @@ Riceverai risposta al piu' presto!`
       // Cerca una FAQ corrispondente
       const faqResult = await matchFAQ(
         normalizedMessage,
+        lang,
         session.selectedPropertyId || undefined,
         session.selectedRoomId || undefined
       )
@@ -197,13 +395,9 @@ Riceverai risposta al piu' presto!`
 
         if (newFallbackCount >= 2) {
           // Dopo 2 fallback, offri di passare a operatore
-          response = `Non ho capito la tua richiesta.
-Vuoi che ti metta in contatto con un operatore?
-
-Rispondi SI per parlare con una persona.`
+          response = msgs.offerOperator
         } else {
-          response = `Non ho trovato informazioni su questo argomento.
-Prova a riformulare la domanda oppure scrivi "operatore" per parlare con una persona.`
+          response = msgs.notUnderstood
         }
 
         await prisma.chatbotSession.update({
@@ -248,7 +442,8 @@ Prova a riformulare la domanda oppure scrivi "operatore" per parlare con una per
 /**
  * Genera il messaggio di selezione proprieta'
  */
-async function getPropertySelectionMessage(): Promise<{ message: string; properties: { id: string; name: string }[] }> {
+async function getPropertySelectionMessage(lang: Language): Promise<{ message: string; properties: { id: string; name: string }[] }> {
+  const msgs = MESSAGES[lang]
   const properties = await prisma.property.findMany({
     where: { active: true },
     select: { id: true, name: true },
@@ -257,7 +452,7 @@ async function getPropertySelectionMessage(): Promise<{ message: string; propert
 
   if (properties.length === 0) {
     return {
-      message: `Ciao! Al momento non ci sono strutture disponibili. Un operatore ti rispondera' al piu' presto.`,
+      message: msgs.noProperties,
       properties: []
     }
   }
@@ -267,12 +462,7 @@ async function getPropertySelectionMessage(): Promise<{ message: string; propert
     .join('\n')
 
   return {
-    message: `Ciao! Sono l'assistente automatico.
-Per aiutarti, seleziona la struttura della tua prenotazione:
-
-${propertyList}
-
-Rispondi con il numero corrispondente.`,
+    message: msgs.selectProperty(propertyList),
     properties
   }
 }
@@ -282,8 +472,10 @@ Rispondi con il numero corrispondente.`,
  */
 async function handlePropertySelection(
   message: string,
-  sessionId: string
+  sessionId: string,
+  lang: Language
 ): Promise<{ message: string; newState: ChatbotState }> {
+  const msgs = MESSAGES[lang]
   const properties = await prisma.property.findMany({
     where: { active: true },
     select: { id: true, name: true, hasRooms: true },
@@ -295,7 +487,7 @@ async function handlePropertySelection(
 
   if (isNaN(selection) || selection < 1 || selection > properties.length) {
     return {
-      message: `Per favore, rispondi con un numero da 1 a ${properties.length}.`,
+      message: msgs.invalidPropertySelection(properties.length),
       newState: ChatbotState.AWAITING_PROPERTY
     }
   }
@@ -310,7 +502,7 @@ async function handlePropertySelection(
 
   // Se la proprieta' ha stanze, chiedi di selezionare
   if (selectedProperty.hasRooms) {
-    const roomsResult = await getRoomSelectionMessage(selectedProperty.id)
+    const roomsResult = await getRoomSelectionMessage(selectedProperty.id, lang)
     return {
       message: roomsResult.message,
       newState: roomsResult.rooms.length > 0 ? ChatbotState.AWAITING_ROOM : ChatbotState.READY
@@ -319,15 +511,7 @@ async function handlePropertySelection(
 
   // Altrimenti vai direttamente a READY
   return {
-    message: `Perfetto! Ho selezionato ${selectedProperty.name}.
-
-Posso aiutarti con informazioni su:
-- Orari check-in/check-out
-- Codici accesso e WiFi
-- Servizi disponibili
-- Come arrivare
-
-Scrivi la tua domanda!`,
+    message: msgs.propertySelected(selectedProperty.name),
     newState: ChatbotState.READY
   }
 }
@@ -335,7 +519,8 @@ Scrivi la tua domanda!`,
 /**
  * Genera il messaggio di selezione stanza
  */
-async function getRoomSelectionMessage(propertyId: string): Promise<{ message: string; rooms: { id: string; name: string }[] }> {
+async function getRoomSelectionMessage(propertyId: string, lang: Language): Promise<{ message: string; rooms: { id: string; name: string }[] }> {
+  const msgs = MESSAGES[lang]
   const rooms = await prisma.room.findMany({
     where: { propertyId, active: true },
     select: { id: true, name: true, type: true },
@@ -344,7 +529,7 @@ async function getRoomSelectionMessage(propertyId: string): Promise<{ message: s
 
   if (rooms.length === 0) {
     return {
-      message: `Perfetto! Come posso aiutarti?`,
+      message: msgs.howCanIHelp,
       rooms: []
     }
   }
@@ -354,11 +539,7 @@ async function getRoomSelectionMessage(propertyId: string): Promise<{ message: s
     .join('\n')
 
   return {
-    message: `Perfetto! Ora seleziona la tua stanza:
-
-${roomList}
-
-Rispondi con il numero.`,
+    message: msgs.selectRoom(roomList),
     rooms
   }
 }
@@ -368,8 +549,10 @@ Rispondi con il numero.`,
  */
 async function handleRoomSelection(
   message: string,
-  sessionId: string
+  sessionId: string,
+  lang: Language
 ): Promise<{ message: string; newState: ChatbotState }> {
+  const msgs = MESSAGES[lang]
   const session = await prisma.chatbotSession.findUnique({
     where: { id: sessionId },
     select: { selectedPropertyId: true }
@@ -377,7 +560,7 @@ async function handleRoomSelection(
 
   if (!session?.selectedPropertyId) {
     return {
-      message: `Si e' verificato un errore. Ricominciamo.`,
+      message: msgs.error,
       newState: ChatbotState.IDLE
     }
   }
@@ -392,7 +575,7 @@ async function handleRoomSelection(
 
   if (isNaN(selection) || selection < 1 || selection > rooms.length) {
     return {
-      message: `Per favore, rispondi con un numero da 1 a ${rooms.length}.`,
+      message: msgs.invalidRoomSelection(rooms.length),
       newState: ChatbotState.AWAITING_ROOM
     }
   }
@@ -406,15 +589,7 @@ async function handleRoomSelection(
   })
 
   return {
-    message: `Ottimo! Ho selezionato ${selectedRoom.name}.
-
-Posso aiutarti con informazioni su:
-- Orari check-in/check-out
-- Codici accesso e WiFi
-- Servizi disponibili
-- Come arrivare
-
-Scrivi la tua domanda!`,
+    message: msgs.roomSelected(selectedRoom.name),
     newState: ChatbotState.READY
   }
 }
@@ -422,6 +597,7 @@ Scrivi la tua domanda!`,
 /**
  * Cerca una FAQ corrispondente al messaggio
  * Algoritmo migliorato che considera:
+ * - Lingua della FAQ
  * - Lunghezza delle keyword (piu' specifiche = piu' peso)
  * - Match di parole intere vs parziali
  * - Priorita' della FAQ
@@ -429,13 +605,15 @@ Scrivi la tua domanda!`,
  */
 async function matchFAQ(
   message: string,
+  language: Language,
   propertyId?: string,
   roomId?: string
 ): Promise<{ answer: string } | null> {
-  // Costruisci la query per trovare FAQ pertinenti
+  // Costruisci la query per trovare FAQ pertinenti nella lingua corretta
   const faqs = await prisma.chatbotFAQ.findMany({
     where: {
       isActive: true,
+      language: language,
       OR: [
         { propertyId: null, roomId: null }, // FAQ globali
         { propertyId, roomId: null }, // FAQ della proprieta'
@@ -504,13 +682,13 @@ async function matchFAQ(
         bestMatch = {
           answer: faq.answer,
           score,
-          debug: `FAQ: ${faq.question} | Matched: [${matchedKeywords.join(', ')}] | Score: ${score}`
+          debug: `FAQ [${language}]: ${faq.question} | Matched: [${matchedKeywords.join(', ')}] | Score: ${score}`
         }
       }
     }
   }
 
-  // Log per debug (rimuovere in produzione)
+  // Log per debug
   if (bestMatch?.debug) {
     console.log('[Chatbot Match]', bestMatch.debug)
   }
@@ -622,24 +800,6 @@ function replaceTemplateVariables(template: string, variables: TemplateVariables
   }
 
   return result
-}
-
-/**
- * Verifica se l'utente sta richiedendo un operatore
- */
-function isRequestingOperator(message: string): boolean {
-  const operatorKeywords = [
-    'operatore',
-    'persona',
-    'umano',
-    'assistenza',
-    'parlare con qualcuno',
-    'aiuto umano',
-    'si', // Risposta al fallback
-    'yes',
-  ]
-
-  return operatorKeywords.some(keyword => message.includes(keyword))
 }
 
 /**

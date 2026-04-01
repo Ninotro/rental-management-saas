@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Upload, Plus, Trash2, ChevronRight, Home, Bed, DollarSign, CreditCard, Building2 } from 'lucide-react'
+import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Upload, Plus, Trash2, ChevronRight, Home, Bed, DollarSign, CreditCard, Building2, FileText } from 'lucide-react'
 import { translations, Language } from '@/lib/translations'
 
 interface Property {
@@ -42,10 +42,13 @@ interface GuestFormData {
   documentIssuePlace: string // Luogo rilascio documento
   documentFrontFile: File | null
   documentBackFile: File | null
+  selfieFile: File | null
   documentFrontUrl: string | null
   documentBackUrl: string | null
+  selfieUrl: string | null
   uploadingFront: boolean
   uploadingBack: boolean
+  uploadingSelfie: boolean
   isExempt: boolean
   exemptionReason: string
 }
@@ -77,6 +80,18 @@ export default function PublicCheckInPage() {
   const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
   const [uploadingProof, setUploadingProof] = useState(false)
 
+  // Billing/Invoice state (sempre richiesto)
+  const [invoiceType, setInvoiceType] = useState<'PRIVATE' | 'COMPANY'>('PRIVATE')
+  const [companyName, setCompanyName] = useState('')
+  const [vatNumber, setVatNumber] = useState('')
+  const [sdiCode, setSdiCode] = useState('')
+  const [pecEmail, setPecEmail] = useState('')
+  const [billingAddress, setBillingAddress] = useState('')
+  const [billingCity, setBillingCity] = useState('')
+  const [billingProvince, setBillingProvince] = useState('')
+  const [billingPostalCode, setBillingPostalCode] = useState('')
+  const [billingCountry, setBillingCountry] = useState('Italia')
+
   // UI state
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -98,10 +113,13 @@ export default function PublicCheckInPage() {
       documentIssuePlace: '',
       documentFrontFile: null,
       documentBackFile: null,
+      selfieFile: null,
       documentFrontUrl: null,
       documentBackUrl: null,
+      selfieUrl: null,
       uploadingFront: false,
       uploadingBack: false,
+      uploadingSelfie: false,
       isExempt: false,
       exemptionReason: '',
     }
@@ -170,14 +188,15 @@ export default function PublicCheckInPage() {
     }
   }
 
-  const handleFileUpload = async (file: File, guestIndex: number, type: 'front' | 'back') => {
+  const handleFileUpload = async (file: File, guestIndex: number, type: 'front' | 'back' | 'selfie') => {
     const formData = new FormData()
     formData.append('file', file)
 
     try {
       const newGuests = [...guests]
       if (type === 'front') newGuests[guestIndex].uploadingFront = true
-      else newGuests[guestIndex].uploadingBack = true
+      else if (type === 'back') newGuests[guestIndex].uploadingBack = true
+      else newGuests[guestIndex].uploadingSelfie = true
       setGuests(newGuests)
 
       const response = await fetch('/api/public/upload-document', {
@@ -191,9 +210,12 @@ export default function PublicCheckInPage() {
         if (type === 'front') {
           updatedGuests[guestIndex].documentFrontUrl = data.url
           updatedGuests[guestIndex].documentFrontFile = file
-        } else {
+        } else if (type === 'back') {
           updatedGuests[guestIndex].documentBackUrl = data.url
           updatedGuests[guestIndex].documentBackFile = file
+        } else {
+          updatedGuests[guestIndex].selfieUrl = data.url
+          updatedGuests[guestIndex].selfieFile = file
         }
         setGuests(updatedGuests)
       } else {
@@ -204,7 +226,8 @@ export default function PublicCheckInPage() {
     } finally {
       const newGuests = [...guests]
       if (type === 'front') newGuests[guestIndex].uploadingFront = false
-      else newGuests[guestIndex].uploadingBack = false
+      else if (type === 'back') newGuests[guestIndex].uploadingBack = false
+      else newGuests[guestIndex].uploadingSelfie = false
       setGuests(newGuests)
     }
   }
@@ -293,6 +316,67 @@ export default function PublicCheckInPage() {
         setSubmitting(false)
         return
       }
+      // Validate required photos
+      const guestNum = i + 1
+      if (!guests[i].documentFrontUrl) {
+        setError(language === 'it'
+          ? `Ospite ${guestNum}: ${t.documentFrontRequired}`
+          : `Guest ${guestNum}: ${t.documentFrontRequired}`)
+        setSubmitting(false)
+        return
+      }
+      if (!guests[i].documentBackUrl) {
+        setError(language === 'it'
+          ? `Ospite ${guestNum}: ${t.documentBackRequired}`
+          : `Guest ${guestNum}: ${t.documentBackRequired}`)
+        setSubmitting(false)
+        return
+      }
+      if (!guests[i].selfieUrl) {
+        setError(language === 'it'
+          ? `Ospite ${guestNum}: ${t.selfieRequired}`
+          : `Guest ${guestNum}: ${t.selfieRequired}`)
+        setSubmitting(false)
+        return
+      }
+    }
+
+    // Validate billing data (sempre obbligatorio)
+    if (invoiceType === 'PRIVATE') {
+      // For private individuals, fiscal code is required
+      if (!guests[0].fiscalCode || guests[0].fiscalCode.trim() === '') {
+        setError(t.fiscalCodeRequired)
+        setSubmitting(false)
+        return
+      }
+    } else {
+      // For companies, VAT number is required
+      if (!vatNumber || vatNumber.trim() === '') {
+        setError(t.vatNumberRequired)
+        setSubmitting(false)
+        return
+      }
+      if (!companyName || companyName.trim() === '') {
+        setError(language === 'it' ? 'La ragione sociale è obbligatoria' : 'Company name is required')
+        setSubmitting(false)
+        return
+      }
+    }
+    // Billing address is required for both
+    if (!billingAddress || billingAddress.trim() === '') {
+      setError(language === 'it' ? 'L\'indirizzo di fatturazione è obbligatorio' : 'Billing address is required')
+      setSubmitting(false)
+      return
+    }
+    if (!billingCity || billingCity.trim() === '') {
+      setError(language === 'it' ? 'La città di fatturazione è obbligatoria' : 'Billing city is required')
+      setSubmitting(false)
+      return
+    }
+    if (!billingPostalCode || billingPostalCode.trim() === '') {
+      setError(language === 'it' ? 'Il CAP è obbligatorio' : 'Postal code is required')
+      setSubmitting(false)
+      return
     }
 
     try {
@@ -313,6 +397,7 @@ export default function PublicCheckInPage() {
         documentIssuePlace: g.documentIssuePlace,
         documentFrontUrl: g.documentFrontUrl,
         documentBackUrl: g.documentBackUrl,
+        selfieUrl: g.selfieUrl,
         isExempt: g.isExempt,
         exemptionReason: g.exemptionReason,
       }))
@@ -345,9 +430,22 @@ export default function PublicCheckInPage() {
           documentIssuePlace: mainGuest.documentIssuePlace,
           documentFrontUrl: mainGuest.documentFrontUrl,
           documentBackUrl: mainGuest.documentBackUrl,
+          selfieUrl: mainGuest.selfieUrl,
           isExempt: mainGuest.isExempt,
           exemptionReason: mainGuest.exemptionReason,
           touristTaxPaymentProof: paymentProofUrl,
+          // Billing/Invoice data (sempre richiesto)
+          wantsInvoice: true,
+          invoiceType: invoiceType,
+          companyName: invoiceType === 'COMPANY' ? companyName : null,
+          vatNumber: invoiceType === 'COMPANY' ? vatNumber : null,
+          sdiCode: sdiCode || null,
+          pecEmail: pecEmail || null,
+          billingAddress: billingAddress,
+          billingCity: billingCity,
+          billingProvince: billingProvince || null,
+          billingPostalCode: billingPostalCode,
+          billingCountry: billingCountry,
         }),
       })
 
@@ -619,9 +717,187 @@ export default function PublicCheckInPage() {
               </div>
             </div>
 
+            {/* Billing/Invoice Section */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <div className="flex items-start space-x-3 mb-6">
+                <FileText className="text-blue-600 mt-1" size={24} />
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{t.billingTitle}</h2>
+                  <p className="text-sm text-slate-600">{language === 'it' ? 'Dati necessari per l\'emissione della fattura' : 'Information required for invoice issuance'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                  {/* Invoice Type Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">{t.invoiceType} *</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceType('PRIVATE')}
+                        className={`p-4 rounded-lg border-2 text-center transition-all ${
+                          invoiceType === 'PRIVATE'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="font-medium">{t.invoiceTypePrivate}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceType('COMPANY')}
+                        className={`p-4 rounded-lg border-2 text-center transition-all ${
+                          invoiceType === 'COMPANY'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="font-medium">{t.invoiceTypeCompany}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Company Fields (only for COMPANY type) */}
+                  {invoiceType === 'COMPANY' && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.companyName} *</label>
+                        <input
+                          type="text"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder={language === 'it' ? 'es. Rossi S.r.l.' : 'e.g. Smith Ltd.'}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.vatNumber} *</label>
+                        <input
+                          type="text"
+                          value={vatNumber}
+                          onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
+                          placeholder={language === 'it' ? 'es. IT12345678901' : 'e.g. IT12345678901'}
+                          maxLength={13}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {t.sdiCode}
+                          <span className="text-slate-500 text-xs ml-2">{t.sdiCodeDesc}</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={sdiCode}
+                          onChange={(e) => setSdiCode(e.target.value.toUpperCase())}
+                          placeholder="0000000"
+                          maxLength={7}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {t.pecEmail}
+                          <span className="text-slate-500 text-xs ml-2">{t.pecEmailDesc}</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={pecEmail}
+                          onChange={(e) => setPecEmail(e.target.value.toLowerCase())}
+                          placeholder={language === 'it' ? 'esempio@pec.it' : 'example@pec.it'}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Private Individual Note */}
+                  {invoiceType === 'PRIVATE' && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        {language === 'it'
+                          ? 'Per la fatturazione a persona fisica, assicurati di compilare il Codice Fiscale nella sezione "Dati Ospite" qui sotto.'
+                          : 'For private individual invoicing, please make sure to fill in the Tax ID in the "Guest Data" section below.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Billing Address */}
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-4">
+                      {language === 'it' ? 'Indirizzo di Fatturazione' : 'Billing Address'}
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.billingAddress} *</label>
+                        <input
+                          type="text"
+                          value={billingAddress}
+                          onChange={(e) => setBillingAddress(e.target.value)}
+                          placeholder={language === 'it' ? 'Via Roma, 123' : '123 Main Street'}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.billingCity} *</label>
+                        <input
+                          type="text"
+                          value={billingCity}
+                          onChange={(e) => setBillingCity(e.target.value)}
+                          placeholder={language === 'it' ? 'Roma' : 'Rome'}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.billingProvince}</label>
+                        <input
+                          type="text"
+                          value={billingProvince}
+                          onChange={(e) => setBillingProvince(e.target.value.toUpperCase())}
+                          placeholder={language === 'it' ? 'RM' : 'RM'}
+                          maxLength={2}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.billingPostalCode} *</label>
+                        <input
+                          type="text"
+                          value={billingPostalCode}
+                          onChange={(e) => setBillingPostalCode(e.target.value)}
+                          placeholder="00100"
+                          maxLength={5}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.billingCountry}</label>
+                        <select
+                          value={billingCountry}
+                          onChange={(e) => setBillingCountry(e.target.value)}
+                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Italia">Italia</option>
+                          <option value="Germania">Germania</option>
+                          <option value="Francia">Francia</option>
+                          <option value="Spagna">Spagna</option>
+                          <option value="Regno Unito">Regno Unito</option>
+                          <option value="Stati Uniti">Stati Uniti</option>
+                          <option value="Svizzera">Svizzera</option>
+                          <option value="Austria">Austria</option>
+                          <option value="Belgio">Belgio</option>
+                          <option value="Paesi Bassi">Paesi Bassi</option>
+                          <option value="Altro">Altro</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-center shadow-lg">
+              <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-center shadow-lg mb-6">
                 <AlertCircle size={20} className="mr-3 flex-shrink-0" />
                 <span className="font-medium">{error}</span>
               </div>
@@ -774,15 +1050,15 @@ export default function PublicCheckInPage() {
 
                   {/* Upload */}
                   <div className="border-t pt-6">
-                    <h3 className="font-semibold text-slate-900 mb-2">{t.uploadDocument}</h3>
-                    <p className="text-sm text-slate-600 mb-4">{t.uploadDocumentDesc}</p>
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <h3 className="font-semibold text-slate-900 mb-2">{t.uploadDocumentRequired}</h3>
+                    <p className="text-sm text-slate-600 mb-4">{t.uploadDocumentRequiredDesc}</p>
+                    <div className="grid md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentFront}</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentFront} *</label>
                         <input type="file" id={`front-${index}`} accept="image/*,application/pdf" className="hidden"
                           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, index, 'front') }} />
                         <label htmlFor={`front-${index}`}
-                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentFrontFile ? 'border-green-500 bg-green-50' : 'border-slate-300'}`}>
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentFrontFile ? 'border-green-500 bg-green-50' : 'border-red-300'}`}>
                           {guest.uploadingFront ? (
                             <div className="flex flex-col items-center">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
@@ -795,18 +1071,18 @@ export default function PublicCheckInPage() {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center">
-                              <Upload className="text-slate-400 mb-2" size={32} />
-                              <p className="text-sm text-slate-600">{t.clickToUpload}</p>
+                              <Upload className="text-red-400 mb-2" size={32} />
+                              <p className="text-sm text-red-600">{t.clickToUpload}</p>
                             </div>
                           )}
                         </label>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentBack}</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentBack} *</label>
                         <input type="file" id={`back-${index}`} accept="image/*,application/pdf" className="hidden"
                           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, index, 'back') }} />
                         <label htmlFor={`back-${index}`}
-                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentBackFile ? 'border-green-500 bg-green-50' : 'border-slate-300'}`}>
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.documentBackFile ? 'border-green-500 bg-green-50' : 'border-red-300'}`}>
                           {guest.uploadingBack ? (
                             <div className="flex flex-col items-center">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
@@ -819,11 +1095,36 @@ export default function PublicCheckInPage() {
                             </div>
                           ) : (
                             <div className="flex flex-col items-center">
-                              <Upload className="text-slate-400 mb-2" size={32} />
-                              <p className="text-sm text-slate-600">{t.clickToUpload}</p>
+                              <Upload className="text-red-400 mb-2" size={32} />
+                              <p className="text-sm text-red-600">{t.clickToUpload}</p>
                             </div>
                           )}
                         </label>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.selfie} *</label>
+                        <input type="file" id={`selfie-${index}`} accept="image/*" className="hidden"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, index, 'selfie') }} />
+                        <label htmlFor={`selfie-${index}`}
+                          className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 ${guest.selfieFile ? 'border-green-500 bg-green-50' : 'border-red-300'}`}>
+                          {guest.uploadingSelfie ? (
+                            <div className="flex flex-col items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                              <p className="text-sm text-slate-600">{t.uploadingFile}</p>
+                            </div>
+                          ) : guest.selfieFile ? (
+                            <div className="flex flex-col items-center">
+                              <CheckCircle className="text-green-600 mb-2" size={32} />
+                              <p className="text-sm text-green-700 font-medium">{guest.selfieFile.name}</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <Upload className="text-red-400 mb-2" size={32} />
+                              <p className="text-sm text-red-600">{t.clickToUpload}</p>
+                            </div>
+                          )}
+                        </label>
+                        <p className="text-xs text-slate-500 mt-1">{t.selfieDesc}</p>
                       </div>
                     </div>
                   </div>

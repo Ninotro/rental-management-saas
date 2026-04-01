@@ -31,9 +31,22 @@ export async function POST(request: NextRequest) {
       documentIssuePlace, // Luogo rilascio documento
       documentFrontUrl,
       documentBackUrl,
+      selfieUrl,
       isExempt,
       exemptionReason,
       touristTaxPaymentProof,
+      // Dati fatturazione
+      wantsInvoice,
+      invoiceType,
+      companyName,
+      vatNumber,
+      sdiCode,
+      pecEmail,
+      billingAddress,
+      billingCity,
+      billingProvince,
+      billingPostalCode,
+      billingCountry,
     } = body
 
     // Validazione campi obbligatori con messaggio specifico
@@ -91,6 +104,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validazione foto obbligatorie
+    if (!documentFrontUrl) {
+      return NextResponse.json(
+        { error: 'La foto del fronte del documento è obbligatoria' },
+        { status: 400 }
+      )
+    }
+    if (!documentBackUrl) {
+      return NextResponse.json(
+        { error: 'La foto del retro del documento è obbligatoria' },
+        { status: 400 }
+      )
+    }
+    if (!selfieUrl) {
+      return NextResponse.json(
+        { error: 'Il selfie con documento è obbligatorio' },
+        { status: 400 }
+      )
+    }
+
     const selectedCheckIn = new Date(checkInDate)
     const selectedCheckOut = new Date(checkOutDate)
 
@@ -123,11 +156,24 @@ export async function POST(request: NextRequest) {
         documentType,
         documentNumber,
         documentIssuePlace: documentIssuePlace || null,
-        documentFrontUrl: documentFrontUrl || null,
-        documentBackUrl: documentBackUrl || null,
+        documentFrontUrl: documentFrontUrl,
+        documentBackUrl: documentBackUrl,
+        selfieUrl: selfieUrl,
         isExempt: !!isExempt,
         exemptionReason: exemptionReason || null,
         touristTaxPaymentProof: touristTaxPaymentProof || null,
+        // Dati fatturazione
+        wantsInvoice: !!wantsInvoice,
+        invoiceType: wantsInvoice ? invoiceType : null,
+        companyName: wantsInvoice && invoiceType === 'COMPANY' ? companyName : null,
+        vatNumber: wantsInvoice && invoiceType === 'COMPANY' ? (vatNumber ? vatNumber.toUpperCase() : null) : null,
+        sdiCode: wantsInvoice ? (sdiCode ? sdiCode.toUpperCase() : null) : null,
+        pecEmail: wantsInvoice ? (pecEmail ? pecEmail.toLowerCase() : null) : null,
+        billingAddress: wantsInvoice ? billingAddress : null,
+        billingCity: wantsInvoice ? billingCity : null,
+        billingProvince: wantsInvoice ? (billingProvince ? billingProvince.toUpperCase() : null) : null,
+        billingPostalCode: wantsInvoice ? billingPostalCode : null,
+        billingCountry: wantsInvoice ? (billingCountry || 'Italia') : null,
       },
     })
 

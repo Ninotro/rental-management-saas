@@ -618,6 +618,7 @@ model GuestCheckIn {
   documentIssuePlace  String?       // Luogo rilascio documento
   documentFrontUrl    String?       // URL foto fronte documento
   documentBackUrl     String?       // URL foto retro documento
+  selfieUrl           String?       // URL selfie con documento
 
   // Esenzione Tassa di Soggiorno
   isExempt            Boolean      @default(false)
@@ -625,6 +626,19 @@ model GuestCheckIn {
 
   // Tassa di soggiorno - prova pagamento
   touristTaxPaymentProof String?   // URL screenshot pagamento tassa di soggiorno
+
+  // Dati Fatturazione
+  wantsInvoice        Boolean      @default(false)  // Se l'ospite richiede fattura
+  invoiceType         String?      // "PRIVATE" (persona fisica) o "COMPANY" (azienda/P.IVA)
+  companyName         String?      // Ragione sociale (se azienda)
+  vatNumber           String?      // Partita IVA (se azienda)
+  sdiCode             String?      // Codice SDI per fatturazione elettronica (7 caratteri)
+  pecEmail            String?      // PEC per fatturazione elettronica
+  billingAddress      String?      // Indirizzo di fatturazione
+  billingCity         String?      // Città di fatturazione
+  billingProvince     String?      // Provincia di fatturazione
+  billingPostalCode   String?      // CAP
+  billingCountry      String?      @default("Italia") // Paese di fatturazione
 
   submittedAt         DateTime     @default(now()) // Quando il guest ha compilato il form
   submittedToPolice   Boolean      @default(false) // Se comunicato alla Questura
@@ -643,6 +657,7 @@ model GuestCheckIn {
   @@index([status])
   @@index([selectedRoomId])
   @@index([fiscalCode])
+  @@index([vatNumber])
   @@index([submittedAt])
   @@index([submittedToPolice])
 }
@@ -729,6 +744,7 @@ model ChatbotSession {
   id                  String        @id @default(cuid())
   conversationId      String        @unique
   state               ChatbotState  @default(IDLE)
+  language            String        @default("IT")  // Lingua rilevata/scelta (IT, EN)
   selectedPropertyId  String?       // Proprietà selezionata dall'utente
   selectedRoomId      String?       // Stanza selezionata dall'utente
   bookingId           String?       // Booking collegato (se trovato)
@@ -747,6 +763,7 @@ model ChatbotSession {
   @@index([conversationId])
   @@index([state])
   @@index([bookingId])
+  @@index([language])
 }
 
 // Modello ChatbotFAQ - Domande frequenti per il chatbot
@@ -754,6 +771,7 @@ model ChatbotFAQ {
   id          String    @id @default(cuid())
   propertyId  String?   // Se null, è una FAQ globale
   roomId      String?   // Se null, vale per tutta la proprietà
+  language    String    @default("IT")  // Lingua della FAQ (IT, EN)
   category    String    // CHECK_IN, WIFI, SERVICES, LOCATION
   keywords    String[]  // Parole chiave per matching (es. ["wifi", "password", "internet"])
   question    String    // Domanda esempio (es. "Qual è la password del WiFi?")
@@ -771,4 +789,5 @@ model ChatbotFAQ {
   @@index([roomId])
   @@index([category])
   @@index([isActive])
+  @@index([language])
 }

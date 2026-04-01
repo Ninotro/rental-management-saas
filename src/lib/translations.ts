@@ -65,6 +65,15 @@ export const translations = {
     changeFile: 'Clicca per cambiare',
     maxSize: 'max 10MB',
 
+    // Document Upload Required
+    uploadDocumentRequired: 'Carica Documento (Obbligatorio)',
+    uploadDocumentRequiredDesc: 'Carica foto del fronte e retro del documento e un selfie',
+    selfie: 'Selfie con Documento',
+    selfieDesc: 'Scatta un selfie tenendo il documento accanto al viso',
+    documentFrontRequired: 'La foto del fronte del documento è obbligatoria',
+    documentBackRequired: 'La foto del retro del documento è obbligatoria',
+    selfieRequired: 'Il selfie con documento è obbligatorio',
+
     // Privacy
     privacyNotice: 'I dati forniti saranno utilizzati esclusivamente per adempiere agli obblighi di legge relativi alla registrazione degli ospiti presso le autorità competenti (Questura). I tuoi dati personali saranno trattati nel rispetto del GDPR.',
 
@@ -109,6 +118,28 @@ export const translations = {
     touristTaxExemptAssistant: 'Accompagnatore malati (max 2)',
     touristTaxExemptStudent: 'Studente universitario/Scolaresca',
     touristTaxExemptSelect: 'Seleziona motivo...',
+
+    // Billing / Invoice
+    billingTitle: 'Dati di Fatturazione',
+    billingDesc: 'Compila questa sezione se hai bisogno di fattura',
+    wantsInvoice: 'Richiedo fattura',
+    invoiceType: 'Tipo intestatario',
+    invoiceTypePrivate: 'Persona fisica',
+    invoiceTypeCompany: 'Azienda / Partita IVA',
+    companyName: 'Ragione Sociale',
+    vatNumber: 'Partita IVA',
+    sdiCode: 'Codice SDI',
+    sdiCodeDesc: 'Codice destinatario per fatturazione elettronica (7 caratteri)',
+    pecEmail: 'PEC',
+    pecEmailDesc: 'In alternativa al codice SDI',
+    billingAddress: 'Indirizzo di fatturazione',
+    billingCity: 'Città',
+    billingProvince: 'Provincia',
+    billingPostalCode: 'CAP',
+    billingCountry: 'Paese',
+    billingFieldsRequired: 'Se richiedi fattura, compila tutti i campi obbligatori',
+    fiscalCodeRequired: 'Il codice fiscale è obbligatorio per la fatturazione',
+    vatNumberRequired: 'La partita IVA è obbligatoria per le aziende',
   },
 
   en: {
@@ -195,6 +226,15 @@ export const translations = {
     changeFile: 'Click to change',
     maxSize: 'max 10MB',
 
+    // Document Upload Required
+    uploadDocumentRequired: 'Upload Document (Required)',
+    uploadDocumentRequiredDesc: 'Upload front and back photos of your document and a selfie',
+    selfie: 'Selfie with Document',
+    selfieDesc: 'Take a selfie holding your document next to your face',
+    documentFrontRequired: 'Front photo of document is required',
+    documentBackRequired: 'Back photo of document is required',
+    selfieRequired: 'Selfie with document is required',
+
     // Privacy
     privacyNotice: 'The data provided will be used exclusively to comply with legal obligations related to guest registration with the competent authorities (Police). Your personal data will be processed in accordance with GDPR.',
 
@@ -222,6 +262,28 @@ export const translations = {
     placeholderProvince: 'NY',
     placeholderFiscalCode: 'ABC123456789',
     placeholderDocNumber: 'AB1234567',
+
+    // Billing / Invoice
+    billingTitle: 'Billing Information',
+    billingDesc: 'Fill this section if you need an invoice',
+    wantsInvoice: 'I need an invoice',
+    invoiceType: 'Billing type',
+    invoiceTypePrivate: 'Private individual',
+    invoiceTypeCompany: 'Company / VAT registered',
+    companyName: 'Company Name',
+    vatNumber: 'VAT Number',
+    sdiCode: 'SDI Code',
+    sdiCodeDesc: 'Italian e-invoicing recipient code (7 characters)',
+    pecEmail: 'PEC Email',
+    pecEmailDesc: 'Alternative to SDI code',
+    billingAddress: 'Billing Address',
+    billingCity: 'City',
+    billingProvince: 'Province/State',
+    billingPostalCode: 'Postal Code',
+    billingCountry: 'Country',
+    billingFieldsRequired: 'If you request an invoice, please fill all required fields',
+    fiscalCodeRequired: 'Tax ID is required for invoicing',
+    vatNumberRequired: 'VAT number is required for companies',
   },
 }
 

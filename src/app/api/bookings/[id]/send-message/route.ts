@@ -170,6 +170,50 @@ export async function POST(
         success: whatsappResult.success,
         error: whatsappResult.error,
       }
+
+      // Se l'invio WhatsApp e' riuscito, pre-configura la conversazione per il chatbot
+      if (whatsappResult.success) {
+        const phoneNumber = booking.guestPhone!.startsWith('+')
+          ? booking.guestPhone!
+          : `+${booking.guestPhone!.replace(/\D/g, '')}`
+
+        // Crea o aggiorna la conversazione WhatsApp con il booking collegato
+        const conversation = await prisma.whatsAppConversation.upsert({
+          where: { phoneNumber },
+          create: {
+            phoneNumber,
+            guestName: booking.guestName,
+            bookingId: booking.id,
+          },
+          update: {
+            guestName: booking.guestName,
+            bookingId: booking.id,
+          },
+        })
+
+        // Crea o aggiorna la sessione chatbot con property e room gia' selezionate
+        await prisma.chatbotSession.upsert({
+          where: { conversationId: conversation.id },
+          create: {
+            conversationId: conversation.id,
+            state: 'READY', // Salta la selezione, vai direttamente a READY
+            selectedPropertyId: booking.propertyId,
+            selectedRoomId: booking.roomId,
+            bookingId: booking.id,
+            isHandedOff: false,
+          },
+          update: {
+            state: 'READY',
+            selectedPropertyId: booking.propertyId,
+            selectedRoomId: booking.roomId,
+            bookingId: booking.id,
+            isHandedOff: false,
+            fallbackCount: 0,
+          },
+        })
+
+        console.log(`[Chatbot] Pre-configurata sessione per ${phoneNumber} - Property: ${booking.property.name}, Room: ${booking.room?.name || 'N/A'}`)
+      }
     } else {
       // Invia via Email
       result = await sendEmail({
