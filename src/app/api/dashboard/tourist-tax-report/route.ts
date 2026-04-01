@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0, 23, 59, 59) // Ultimo giorno del mese
 
+    console.log('🔍 DEBUG - Parametri:', { year, month, startDate, endDate, userId: session.user.id })
+
     // Valori fissi per la tassa di soggiorno (4€ per notte/ospite, max 4 notti)
     const taxRate = 4
     const maxNights = 4
@@ -37,6 +39,8 @@ export async function GET(request: NextRequest) {
         name: true,
       },
     })
+
+    console.log('🏠 DEBUG - Proprietà trovate:', properties.length, properties.map(p => ({ id: p.id, name: p.name })))
 
     // Per ogni proprietà, calcola i dati del report
     const reportData = await Promise.all(
@@ -57,6 +61,23 @@ export async function GET(request: NextRequest) {
             checkOut: true,
           },
         })
+
+        console.log(`📋 DEBUG - Prenotazioni per ${property.name} (${property.id}):`, bookings.length, bookings.map(b => ({ id: b.id, checkIn: b.checkIn, checkOut: b.checkOut, guests: b.guests })))
+
+        // Verifica anche tutte le prenotazioni di questa proprietà senza filtro date
+        const allBookings = await prisma.booking.findMany({
+          where: {
+            propertyId: property.id,
+            status: { not: 'CANCELLED' },
+          },
+          select: {
+            id: true,
+            checkIn: true,
+            checkOut: true,
+            guests: true,
+          },
+        })
+        console.log(`📋 DEBUG - TUTTE le prenotazioni per ${property.name}:`, allBookings.length, allBookings.map(b => ({ id: b.id, checkIn: b.checkIn, checkOut: b.checkOut })))
 
         let totalGuests = 0
         let totalNights = 0
