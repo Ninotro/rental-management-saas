@@ -66,6 +66,20 @@ interface GuestCheckIn {
   additionalGuests: AdditionalGuest[] | null
   selectedCheckIn: string | null
   selectedCheckOut: string | null
+  // Dati Fatturazione
+  wantsInvoice: boolean
+  invoiceType: string | null
+  companyName: string | null
+  vatNumber: string | null
+  sdiCode: string | null
+  pecEmail: string | null
+  billingAddress: string | null
+  billingCity: string | null
+  billingProvince: string | null
+  billingPostalCode: string | null
+  billingCountry: string | null
+  invoiceIssued: boolean
+  invoiceIssuedAt: string | null
   selectedRoom: {
     name: string
     property: {
@@ -105,6 +119,11 @@ export default function GuestCheckInsPage() {
   const [saving, setSaving] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  // Filtri per sezione completa check-in
+  const [allCheckInsStartDate, setAllCheckInsStartDate] = useState('')
+  const [allCheckInsEndDate, setAllCheckInsEndDate] = useState('')
+  const [allCheckInsPropertyFilter, setAllCheckInsPropertyFilter] = useState<string>('all')
 
   // Cleanup GDPR states
   const [cleanupEligibleCount, setCleanupEligibleCount] = useState(0)
@@ -211,7 +230,33 @@ export default function GuestCheckInsPage() {
     c.booking?.checkOut || c.selectedCheckOut || c.submittedAt
 
   const getCheckInsForProperty = (propertyName: string) => {
-    return filteredCheckIns.filter(c => getPropertyName(c) === propertyName)
+    // Mostra solo i check-in NON confermati nella sezione strutture
+    return filteredCheckIns.filter(c =>
+      getPropertyName(c) === propertyName && c.status !== 'APPROVED'
+    )
+  }
+
+  // Filtra tutti i check-in per la sezione completa
+  const getAllFilteredCheckIns = () => {
+    let filtered = [...checkIns]
+
+    if (allCheckInsStartDate) {
+      filtered = filtered.filter(
+        (c) => new Date(c.submittedAt) >= new Date(allCheckInsStartDate)
+      )
+    }
+    if (allCheckInsEndDate) {
+      filtered = filtered.filter(
+        (c) => new Date(c.submittedAt) <= new Date(allCheckInsEndDate)
+      )
+    }
+    if (allCheckInsPropertyFilter !== 'all') {
+      filtered = filtered.filter(
+        (c) => getPropertyName(c) === allCheckInsPropertyFilter
+      )
+    }
+
+    return filtered
   }
 
   const filterCheckIns = () => {
@@ -360,6 +405,26 @@ export default function GuestCheckInsPage() {
       }
     } catch (error) {
       console.error('Errore nell\'aggiornamento:', error)
+    }
+  }
+
+  const toggleInvoiceIssued = async (checkInId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/guest-checkins/${checkInId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceIssued: !currentStatus }),
+      })
+
+      if (response.ok) {
+        setCheckIns(checkIns.map(c =>
+          c.id === checkInId
+            ? { ...c, invoiceIssued: !currentStatus, invoiceIssuedAt: !currentStatus ? new Date().toISOString() : null }
+            : c
+        ))
+      }
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento fattura:', error)
     }
   }
 
@@ -801,6 +866,12 @@ export default function GuestCheckInsPage() {
                                             <StatusIcon size={10} className={statusConfig.iconColor} />
                                             {statusConfig.label}
                                           </span>
+                                          {checkIn.wantsInvoice && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                                              <FileText size={10} />
+                                              Fattura
+                                            </span>
+                                          )}
                                           {overdueStatus && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 animate-pulse">
                                               <AlertTriangle size={10} />
@@ -879,6 +950,144 @@ export default function GuestCheckInsPage() {
           </div>
         </div>
       )}
+
+      {/* Sezione Elenco Completo Check-in */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden mt-6">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl">
+              <Users className="text-white" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Tutti i Check-in</h2>
+              <p className="text-indigo-100 text-sm">Elenco completo con gestione fatturazione</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtri */}
+        <div className="p-6 border-b border-slate-100 bg-slate-50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Inizio</label>
+              <input
+                type="date"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
+                value={allCheckInsStartDate}
+                onChange={(e) => setAllCheckInsStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Fine</label>
+              <input
+                type="date"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
+                value={allCheckInsEndDate}
+                onChange={(e) => setAllCheckInsEndDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Struttura</label>
+              <select
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent transition-all"
+                value={allCheckInsPropertyFilter}
+                onChange={(e) => setAllCheckInsPropertyFilter(e.target.value)}
+              >
+                <option value="all">Tutte le strutture</option>
+                {properties.map(p => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabella Check-in */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Ospite</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Struttura</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Check-in</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Check-out</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Richiesta Fattura</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Fattura Emessa</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Azioni</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {getAllFilteredCheckIns().map((checkIn) => (
+                <tr key={checkIn.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
+                        {checkIn.firstName.charAt(0)}{checkIn.lastName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{checkIn.firstName} {checkIn.lastName}</p>
+                        <p className="text-xs text-slate-500 font-mono">{checkIn.fiscalCode}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-slate-900">{getPropertyName(checkIn)}</p>
+                    <p className="text-xs text-slate-500">{getRoomName(checkIn)}</p>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{formatDate(getCheckInDate(checkIn))}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{formatDate(getCheckOutDate(checkIn))}</td>
+                  <td className="px-4 py-3 text-center">
+                    {checkIn.wantsInvoice ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                        <FileText size={12} />
+                        Sì
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                        No
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {checkIn.wantsInvoice && (
+                      <button
+                        onClick={() => toggleInvoiceIssued(checkIn.id, checkIn.invoiceIssued)}
+                        className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          checkIn.invoiceIssued
+                            ? 'bg-emerald-500 focus:ring-emerald-500'
+                            : 'bg-slate-300 focus:ring-slate-400'
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                          checkIn.invoiceIssued ? 'translate-x-7' : 'translate-x-1'
+                        }`} />
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => {
+                        setSelectedCheckIn(checkIn)
+                        setShowDetailModal(true)
+                      }}
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      title="Visualizza dettagli"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {getAllFilteredCheckIns().length === 0 && (
+            <div className="text-center py-12">
+              <Users className="mx-auto text-slate-300 mb-3" size={48} />
+              <p className="text-slate-500">Nessun check-in trovato</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Modal Dettagli */}
       {showDetailModal && selectedCheckIn && (
@@ -1945,6 +2154,107 @@ function DetailCheckInModal({
                     />
                   </div>
                 ) : null}
+              </div>
+            )}
+
+            {/* Dati Fatturazione */}
+            {checkIn.wantsInvoice && (
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-3 border-b border-blue-200">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <FileText size={16} className="text-blue-600" />
+                    Dati Fatturazione
+                  </h3>
+                </div>
+                <div className="p-5">
+                  {/* Tipo Fattura */}
+                  <div className="mb-4 pb-4 border-b border-slate-100">
+                    <p className="text-xs text-slate-500 mb-1">Tipo Fattura</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      checkIn.invoiceType === 'COMPANY'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {checkIn.invoiceType === 'COMPANY' ? 'Azienda / P.IVA' : 'Persona Fisica'}
+                    </span>
+                  </div>
+
+                  {/* Dati Azienda (se COMPANY) */}
+                  {checkIn.invoiceType === 'COMPANY' && (
+                    <div className="space-y-3 mb-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Building2 size={14} className="text-purple-600" />
+                        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Dati Azienda</span>
+                      </div>
+                      {checkIn.companyName && (
+                        <div>
+                          <p className="text-xs text-slate-500">Ragione Sociale</p>
+                          <p className="font-semibold text-slate-900">{checkIn.companyName}</p>
+                        </div>
+                      )}
+                      {checkIn.vatNumber && (
+                        <div>
+                          <p className="text-xs text-slate-500">Partita IVA</p>
+                          <p className="font-mono font-semibold text-slate-900">{checkIn.vatNumber}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        {checkIn.sdiCode && (
+                          <div>
+                            <p className="text-xs text-slate-500">Codice SDI</p>
+                            <p className="font-mono text-sm font-medium text-slate-900">{checkIn.sdiCode}</p>
+                          </div>
+                        )}
+                        {checkIn.pecEmail && (
+                          <div>
+                            <p className="text-xs text-slate-500">PEC</p>
+                            <p className="text-sm font-medium text-slate-900 break-all">{checkIn.pecEmail}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Indirizzo di Fatturazione */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-blue-600" />
+                      <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Indirizzo Fatturazione</span>
+                    </div>
+                    {checkIn.billingAddress && (
+                      <div>
+                        <p className="text-xs text-slate-500">Indirizzo</p>
+                        <p className="font-medium text-slate-900">{checkIn.billingAddress}</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-3">
+                      {checkIn.billingCity && (
+                        <div>
+                          <p className="text-xs text-slate-500">Città</p>
+                          <p className="font-medium text-slate-900">{checkIn.billingCity}</p>
+                        </div>
+                      )}
+                      {checkIn.billingProvince && (
+                        <div>
+                          <p className="text-xs text-slate-500">Provincia</p>
+                          <p className="font-mono text-sm font-medium text-slate-900">{checkIn.billingProvince}</p>
+                        </div>
+                      )}
+                      {checkIn.billingPostalCode && (
+                        <div>
+                          <p className="text-xs text-slate-500">CAP</p>
+                          <p className="font-mono text-sm font-medium text-slate-900">{checkIn.billingPostalCode}</p>
+                        </div>
+                      )}
+                    </div>
+                    {checkIn.billingCountry && (
+                      <div>
+                        <p className="text-xs text-slate-500">Paese</p>
+                        <p className="font-medium text-slate-900">{checkIn.billingCountry}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

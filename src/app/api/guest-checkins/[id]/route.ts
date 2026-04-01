@@ -224,7 +224,7 @@ export async function DELETE(
   }
 }
 
-// PATCH - Aggiorna stato comunicazione Questura
+// PATCH - Aggiorna stato comunicazione Questura o fattura emessa
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -238,15 +238,25 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { submittedToPolice } = body
+    const { submittedToPolice, invoiceIssued } = body
+
+    // Costruisci l'oggetto di aggiornamento dinamicamente
+    const updateData: any = {}
+
+    if (submittedToPolice !== undefined) {
+      updateData.submittedToPolice = submittedToPolice
+      updateData.submittedToPoliceAt = submittedToPolice ? new Date() : null
+    }
+
+    if (invoiceIssued !== undefined) {
+      updateData.invoiceIssued = invoiceIssued
+      updateData.invoiceIssuedAt = invoiceIssued ? new Date() : null
+    }
 
     // Aggiorna lo stato
     const checkIn = await prisma.guestCheckIn.update({
       where: { id },
-      data: {
-        submittedToPolice,
-        submittedToPoliceAt: submittedToPolice ? new Date() : null,
-      },
+      data: updateData,
     })
 
     return NextResponse.json(checkIn)
