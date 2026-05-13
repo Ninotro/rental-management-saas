@@ -289,8 +289,10 @@ export async function checkTemplateApprovalStatus(contentSid: string): Promise<{
       return { success: false, error: data.message };
     }
 
-    // Cerca lo stato WhatsApp
-    const whatsappApproval = data.whatsapp;
+    // Twilio Content API può restituire lo stato in 2 forme:
+    // - data.whatsapp.status (vecchia)
+    // - data.approval_requests.whatsapp.status (nuova)
+    const whatsappApproval = data?.whatsapp || data?.approval_requests?.whatsapp;
 
     return {
       success: true,

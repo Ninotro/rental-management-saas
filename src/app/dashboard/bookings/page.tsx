@@ -1988,11 +1988,16 @@ interface CheckinPreviewBooking {
   id: string
   guestName: string
   guestEmail: string
+  guestPhone?: string | null
   property: string
   room: string
   checkIn: string
   hasEmail: boolean
+  hasPhone?: boolean
   hasCheckinMessage: boolean
+  templateApproved?: boolean
+  contactPreference?: string
+  plannedChannel?: 'EMAIL' | 'WHATSAPP' | null
   alreadySent: boolean
   willReceive: boolean
 }
@@ -2001,6 +2006,8 @@ interface SendResult {
   bookingId: string
   guestName: string
   guestEmail: string
+  guestPhone?: string
+  channel?: 'EMAIL' | 'WHATSAPP'
   status: 'sent' | 'skipped' | 'failed'
   reason?: string
 }
@@ -2019,10 +2026,12 @@ function CheckinEmailModal({
     targetDate: string
     total: number
     willReceive: number
+    willReceiveEmail?: number
+    willReceiveWhatsApp?: number
     bookings: CheckinPreviewBooking[]
   } | null>(null)
   const [results, setResults] = useState<{
-    summary: { total: number; sent: number; skipped: number; failed: number }
+    summary: { total: number; sent: number; sentEmail?: number; sentWhatsApp?: number; skipped: number; failed: number }
     results: SendResult[]
   } | null>(null)
   const [error, setError] = useState('')
@@ -2226,7 +2235,12 @@ function CheckinEmailModal({
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-blue-700">{preview.willReceive}</p>
-                      <p className="text-xs text-blue-600">email da inviare</p>
+                      <p className="text-xs text-blue-600">messaggi da inviare</p>
+                      {(preview.willReceiveEmail !== undefined || preview.willReceiveWhatsApp !== undefined) && (
+                        <p className="text-[11px] text-blue-500 mt-1">
+                          {preview.willReceiveEmail || 0} email · {preview.willReceiveWhatsApp || 0} WhatsApp
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

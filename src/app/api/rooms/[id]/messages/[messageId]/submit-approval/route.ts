@@ -34,14 +34,20 @@ export async function POST(
 
     const submitResult = await submitTemplateForApproval(message.twilioContentSid)
 
-    if (!submitResult.success) {
+    // "Already submitted" = il template è già in approvazione su Twilio, il nostro DB è solo out-of-sync.
+    // Trattiamolo come successo e sincronizziamo lo stato reale.
+    const alreadySubmitted = !submitResult.success &&
+      typeof submitResult.error === 'string' &&
+      /already been submitted/i.test(submitResult.error)
+
+    if (!submitResult.success && !alreadySubmitted) {
       return NextResponse.json(
         { error: submitResult.error || 'Errore invio per approvazione' },
         { status: 500 }
       )
     }
 
-    // Dopo il submit, controlla lo stato reale su Twilio
+    // Dopo il submit (o se già sottomesso), controlla lo stato reale su Twilio
     const statusResult = await checkTemplateApprovalStatus(message.twilioContentSid)
     const newStatus = statusResult.success ? (statusResult.status || 'pending') : 'pending'
 
@@ -53,7 +59,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       status: newStatus,
-      message: 'Template inviato per approvazione WhatsApp',
+      synced: alreadySubmitted,
+      message: alreadySubmitted
+        ? `Template già sottomesso a Twilio. Stato reale sincronizzato: ${newStatus}`
+        : 'Template inviato per approvazione WhatsApp',
     })
   } catch (error) {
     console.error('Errore submit-approval:', error)
