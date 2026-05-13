@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Clock,
   ShieldCheck,
-  ShieldX
+  ShieldX,
+  Send
 } from 'lucide-react'
 
 interface Property {
@@ -318,6 +319,30 @@ A presto!`,
     }
   }
 
+  const submitForApproval = async (messageId: string) => {
+    setCheckingApproval(messageId)
+    try {
+      const response = await fetch(`/api/rooms/${selectedRoomId}/messages/${messageId}/submit-approval`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setSuccess(`Template inviato per approvazione (stato: ${data.status})`)
+        setTimeout(() => setSuccess(''), 4000)
+        fetchMessages()
+      } else {
+        setError(data.error || 'Errore nel reinvio per approvazione')
+        setTimeout(() => setError(''), 5000)
+      }
+    } catch (err) {
+      console.error('Error submitting for approval:', err)
+      setError('Errore di connessione')
+      setTimeout(() => setError(''), 5000)
+    } finally {
+      setCheckingApproval(null)
+    }
+  }
+
   const getApprovalStatusBadge = (status: string | null) => {
     switch (status) {
       case 'approved':
@@ -348,8 +373,20 @@ A presto!`,
             Errore
           </span>
         )
+      case 'unsubmitted':
+        return (
+          <span className="bg-orange-100 text-orange-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <AlertCircle size={12} className="mr-1" />
+            Non inviato
+          </span>
+        )
       default:
-        return null
+        return status ? (
+          <span className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded-full flex items-center">
+            <AlertCircle size={12} className="mr-1" />
+            {status}
+          </span>
+        ) : null
     }
   }
 
@@ -514,6 +551,18 @@ A presto!`,
                       </p>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
+                      {/* Pulsante per (ri)inviare template per approvazione - se non approvato */}
+                      {(message.channel === 'WHATSAPP' || message.channel === 'BOTH') && message.twilioContentSid &&
+                        message.twilioApprovalStatus !== 'approved' && message.twilioApprovalStatus !== 'pending' && (
+                        <button
+                          onClick={() => submitForApproval(message.id)}
+                          disabled={checkingApproval === message.id}
+                          className="p-2 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Invia per approvazione WhatsApp"
+                        >
+                          <Send size={18} className={checkingApproval === message.id ? 'animate-pulse' : ''} />
+                        </button>
+                      )}
                       {/* Pulsante per controllare stato template WhatsApp */}
                       {(message.channel === 'WHATSAPP' || message.channel === 'BOTH') && message.twilioContentSid && (
                         <button

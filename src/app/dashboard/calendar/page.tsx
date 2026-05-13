@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Calendar from '@/components/Calendar'
-import { Calendar as CalendarIcon, Home, Bed, Plus, X, RefreshCw, User, Mail, Phone, CreditCard, CheckCircle, Clock, AlertCircle, Eye, Copy, DollarSign, Trash2 } from 'lucide-react'
+import { Calendar as CalendarIcon, Home, Bed, Plus, X, RefreshCw, User, Mail, Phone, CreditCard, CheckCircle, Clock, AlertCircle, Eye, Copy, DollarSign, Trash2, Users, FileText, Image as ImageIcon } from 'lucide-react'
 
 interface Property {
   id: string
@@ -605,18 +605,7 @@ interface BookingDetail {
     name: string
     type: string
   } | null
-  guestCheckIns: {
-    id: string
-    firstName: string
-    lastName: string
-    fiscalCode: string
-    dateOfBirth: string
-    documentType: string
-    documentNumber: string
-    status: string
-    submittedAt: string
-    submittedToPolice: boolean
-  }[]
+  guestCheckIns: any[]
 }
 
 function BookingDetailModal({
@@ -1155,44 +1144,236 @@ function BookingDetailModal({
               </h3>
 
               {hasCheckIns ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-slate-600">
-                      {booking.guestCheckIns.length} ospite/i registrato/i
+                      {booking.guestCheckIns.length} check-in registrato/i
                     </span>
                     {allCheckInsComplete && (
-                      <span className="text-sm font-bold text-emerald-600">✓ Tutti completati</span>
+                      <span className="text-sm font-bold text-emerald-600">✓ Tutti approvati</span>
                     )}
                   </div>
 
-                  {booking.guestCheckIns.map((checkIn) => (
-                    <div key={checkIn.id} className="bg-white rounded-xl p-3 border border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {checkIn.firstName} {checkIn.lastName}
-                          </p>
-                          <p className="text-sm text-slate-600 font-mono">{checkIn.fiscalCode}</p>
+                  {booking.guestCheckIns.map((ci: any, ciIdx: number) => {
+                    const additional = Array.isArray(ci.additionalGuests) ? ci.additionalGuests : []
+                    const allGuests = [
+                      {
+                        isPrincipal: true,
+                        firstName: ci.firstName,
+                        lastName: ci.lastName,
+                        sex: ci.sex,
+                        dateOfBirth: ci.dateOfBirth,
+                        nationality: ci.nationality,
+                        birthCity: ci.birthCity,
+                        birthProvince: ci.birthProvince,
+                        birthCountry: ci.birthCountry || null,
+                        residenceCountry: ci.billingCountry || null,
+                        fiscalCode: ci.fiscalCode,
+                        documentType: ci.documentType,
+                        documentNumber: ci.documentNumber,
+                        documentIssuePlace: ci.documentIssuePlace,
+                        documentFrontUrl: ci.documentFrontUrl,
+                        documentBackUrl: ci.documentBackUrl,
+                        selfieUrl: ci.selfieUrl,
+                        isExempt: ci.isExempt,
+                        exemptionReason: ci.exemptionReason,
+                      },
+                      ...additional.map((g: any) => ({ ...g, isPrincipal: false })),
+                    ]
+
+                    return (
+                      <div key={ci.id || ciIdx} className="bg-white rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-center justify-between mb-3">
                           <p className="text-xs text-slate-500">
-                            {checkIn.documentType.replace('_', ' ')} - {checkIn.documentNumber}
+                            Inviato il{' '}
+                            {ci.submittedAt
+                              ? new Date(ci.submittedAt).toLocaleString('it-IT', {
+                                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                              })
+                              : '-'}
                           </p>
+                          <div className="flex items-center gap-2">
+                            {ci.submittedToPolice && (
+                              <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">✓ PS</span>
+                            )}
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${ci.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                              ci.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                                'bg-red-100 text-red-800'}`}>
+                              {ci.status === 'APPROVED' ? 'Approvato' : ci.status === 'PENDING' ? 'In attesa' : 'Rifiutato'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                            checkIn.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
-                            checkIn.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {checkIn.status === 'APPROVED' ? 'Approvato' :
-                             checkIn.status === 'PENDING' ? 'In attesa' : 'Rifiutato'}
-                          </span>
-                          {checkIn.submittedToPolice && (
-                            <p className="text-xs text-emerald-600 mt-1">✓ Comunicato PS</p>
-                          )}
+
+                        <div className="space-y-3">
+                          {allGuests.map((g: any, gIdx: number) => (
+                            <div key={gIdx} className={`rounded-lg p-3 border ${g.isPrincipal ? 'bg-emerald-50/50 border-emerald-200' : 'bg-indigo-50/50 border-indigo-200'}`}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${g.isPrincipal ? 'bg-emerald-600' : 'bg-indigo-600'}`}>
+                                  {(g.firstName?.charAt(0) || '?') + (g.lastName?.charAt(0) || '')}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-slate-900">{g.firstName} {g.lastName}</p>
+                                  <p className="text-xs text-slate-500">
+                                    {g.isPrincipal ? 'Ospite Principale' : `Ospite Aggiuntivo ${gIdx}`}
+                                  </p>
+                                </div>
+                                {g.isExempt && (
+                                  <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+                                    Esente tassa
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Sesso</p>
+                                  <p className="text-slate-900 font-medium">{g.sex === 'M' ? 'Maschio' : g.sex === 'F' ? 'Femmina' : '-'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Data Nascita</p>
+                                  <p className="text-slate-900 font-medium">
+                                    {g.dateOfBirth ? new Date(g.dateOfBirth).toLocaleDateString('it-IT') : '-'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Paese Nascita</p>
+                                  <p className="text-slate-900 font-medium">
+                                    {g.birthCountry || g.nationality || (g.birthCity ? `${g.birthCity}${g.birthProvince ? ` (${g.birthProvince})` : ''}` : '-')}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Paese Residenza</p>
+                                  <p className="text-slate-900 font-medium">{g.residenceCountry || '-'}</p>
+                                </div>
+
+                                {g.fiscalCode && (
+                                  <div className="col-span-2">
+                                    <p className="text-slate-500 text-[11px]">Codice Fiscale</p>
+                                    <p className="text-slate-900 font-medium font-mono">{g.fiscalCode}</p>
+                                  </div>
+                                )}
+                                {g.documentNumber && (
+                                  <>
+                                    <div>
+                                      <p className="text-slate-500 text-[11px]">Tipo Doc.</p>
+                                      <p className="text-slate-900 font-medium">{g.documentType?.replace('_', ' ') || '-'}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-500 text-[11px]">Numero Doc.</p>
+                                      <p className="text-slate-900 font-medium font-mono">{g.documentNumber}</p>
+                                    </div>
+                                  </>
+                                )}
+                                {g.documentIssuePlace && (
+                                  <div className="col-span-2">
+                                    <p className="text-slate-500 text-[11px]">Luogo Rilascio</p>
+                                    <p className="text-slate-900 font-medium">{g.documentIssuePlace}</p>
+                                  </div>
+                                )}
+                                {g.isExempt && g.exemptionReason && (
+                                  <div className="col-span-2">
+                                    <p className="text-slate-500 text-[11px]">Motivo Esenzione</p>
+                                    <p className="text-slate-900 font-medium">{g.exemptionReason}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {(g.documentFrontUrl || g.documentBackUrl || g.selfieUrl) && (
+                                <div className="mt-3 pt-3 border-t border-slate-200">
+                                  <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                                    <ImageIcon size={12} className="mr-1" />
+                                    Foto Caricate
+                                  </p>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {g.documentFrontUrl && (
+                                      <a href={g.documentFrontUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                        <p className="text-[10px] text-slate-400 mb-1">Fronte</p>
+                                        <img src={g.documentFrontUrl} alt="Fronte" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                      </a>
+                                    )}
+                                    {g.documentBackUrl && (
+                                      <a href={g.documentBackUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                        <p className="text-[10px] text-slate-400 mb-1">Retro</p>
+                                        <img src={g.documentBackUrl} alt="Retro" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                      </a>
+                                    )}
+                                    {g.selfieUrl && (
+                                      <a href={g.selfieUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                        <p className="text-[10px] text-slate-400 mb-1">Selfie</p>
+                                        <img src={g.selfieUrl} alt="Selfie" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
+
+                        {ci.touristTaxPaymentProof && (
+                          <div className="mt-3 pt-3 border-t border-slate-100">
+                            <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                              <FileText size={12} className="mr-1" />
+                              Prova Pagamento Tassa
+                            </p>
+                            <a href={ci.touristTaxPaymentProof} target="_blank" rel="noopener noreferrer">
+                              <img src={ci.touristTaxPaymentProof} alt="Prova pagamento" className="max-h-32 rounded-lg border hover:border-emerald-400 transition-colors" />
+                            </a>
+                          </div>
+                        )}
+
+                        {(ci.invoiceType || ci.billingAddress || ci.vatNumber) && (
+                          <div className="mt-3 pt-3 border-t border-slate-100">
+                            <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                              <FileText size={12} className="mr-1" />
+                              Dati Fatturazione
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                              {ci.invoiceType && (
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Tipo</p>
+                                  <p className="text-slate-900 font-medium">{ci.invoiceType === 'COMPANY' ? 'Azienda' : 'Privato'}</p>
+                                </div>
+                              )}
+                              {ci.companyName && (
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">Ragione Sociale</p>
+                                  <p className="text-slate-900 font-medium">{ci.companyName}</p>
+                                </div>
+                              )}
+                              {ci.vatNumber && (
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">P.IVA</p>
+                                  <p className="text-slate-900 font-medium font-mono">{ci.vatNumber}</p>
+                                </div>
+                              )}
+                              {ci.sdiCode && (
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">SDI</p>
+                                  <p className="text-slate-900 font-medium font-mono">{ci.sdiCode}</p>
+                                </div>
+                              )}
+                              {ci.pecEmail && (
+                                <div>
+                                  <p className="text-slate-500 text-[11px]">PEC</p>
+                                  <p className="text-slate-900 font-medium">{ci.pecEmail}</p>
+                                </div>
+                              )}
+                              {ci.billingAddress && (
+                                <div className="col-span-2 md:col-span-3">
+                                  <p className="text-slate-500 text-[11px]">Indirizzo</p>
+                                  <p className="text-slate-900 font-medium">
+                                    {ci.billingAddress}, {ci.billingPostalCode} {ci.billingCity}
+                                    {ci.billingProvince && ` (${ci.billingProvince})`} - {ci.billingCountry || 'Italia'}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-4">
