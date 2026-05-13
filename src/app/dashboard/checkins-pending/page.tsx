@@ -30,12 +30,15 @@ interface AdditionalGuest {
   dateOfBirth: string
   birthCity: string
   birthProvince: string
+  birthCountry?: string | null
+  residenceCountry?: string | null
   fiscalCode: string | null
   documentType: string
   documentNumber: string
   documentIssuePlace: string
   documentFrontUrl: string | null
   documentBackUrl: string | null
+  selfieUrl?: string | null
   isExempt: boolean
   exemptionReason: string | null
 }
@@ -436,7 +439,7 @@ export default function PendingCheckInsPage() {
       {/* Modal Approvazione */}
       {showApproveModal && selectedCheckIn && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
           onClick={() => setShowApproveModal(false)}
         >
           <div
@@ -630,7 +633,7 @@ function DetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
@@ -850,42 +853,55 @@ function DetailModal({
                           <p className="font-medium text-[#3d4a3c]">{guest.sex === 'M' ? 'Maschio' : 'Femmina'}</p>
                         </div>
                         <div>
-                          <p className="text-[#3d4a3c]/60 text-xs">Nazionalità</p>
-                          <p className="font-medium text-[#3d4a3c]">{guest.nationality || '-'}</p>
-                        </div>
-                        <div>
                           <p className="text-[#3d4a3c]/60 text-xs">Data Nascita</p>
                           <p className="font-medium text-[#3d4a3c]">{formatDate(guest.dateOfBirth)}</p>
                         </div>
                         <div>
-                          <p className="text-[#3d4a3c]/60 text-xs">Luogo Nascita</p>
-                          <p className="font-medium text-[#3d4a3c]">{guest.birthCity} ({guest.birthProvince})</p>
+                          <p className="text-[#3d4a3c]/60 text-xs">Paese di Nascita</p>
+                          <p className="font-medium text-[#3d4a3c]">{guest.birthCountry || guest.nationality || (guest.birthCity ? `${guest.birthCity}${guest.birthProvince ? ` (${guest.birthProvince})` : ''}` : '-')}</p>
                         </div>
+                        <div>
+                          <p className="text-[#3d4a3c]/60 text-xs">Paese di Residenza</p>
+                          <p className="font-medium text-[#3d4a3c]">{guest.residenceCountry || '-'}</p>
+                        </div>
+                        {/* Campi legacy mostrati solo se presenti (dati raccolti dal vecchio form) */}
                         {guest.fiscalCode && (
                           <div className="col-span-2">
                             <p className="text-[#3d4a3c]/60 text-xs">Codice Fiscale</p>
                             <p className="font-medium text-[#3d4a3c] font-mono">{guest.fiscalCode}</p>
                           </div>
                         )}
-                        <div>
-                          <p className="text-[#3d4a3c]/60 text-xs">Documento</p>
-                          <p className="font-medium text-[#3d4a3c]">{getDocumentTypeLabel(guest.documentType)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[#3d4a3c]/60 text-xs">Numero Doc.</p>
-                          <p className="font-medium text-[#3d4a3c] font-mono">{guest.documentNumber}</p>
-                        </div>
+                        {guest.documentNumber && (
+                          <>
+                            <div>
+                              <p className="text-[#3d4a3c]/60 text-xs">Documento</p>
+                              <p className="font-medium text-[#3d4a3c]">{getDocumentTypeLabel(guest.documentType)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[#3d4a3c]/60 text-xs">Numero Doc.</p>
+                              <p className="font-medium text-[#3d4a3c] font-mono">{guest.documentNumber}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      {(guest.documentFrontUrl || guest.documentBackUrl) && (
-                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-indigo-100">
+                      {(guest.documentFrontUrl || guest.documentBackUrl || guest.selfieUrl) && (
+                        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-indigo-100">
                           {guest.documentFrontUrl && (
                             <a href={guest.documentFrontUrl} target="_blank" rel="noopener noreferrer">
+                              <p className="text-[#3d4a3c]/60 text-xs mb-1">Fronte</p>
                               <img src={guest.documentFrontUrl} alt="Fronte" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
                             </a>
                           )}
                           {guest.documentBackUrl && (
                             <a href={guest.documentBackUrl} target="_blank" rel="noopener noreferrer">
+                              <p className="text-[#3d4a3c]/60 text-xs mb-1">Retro</p>
                               <img src={guest.documentBackUrl} alt="Retro" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
+                            </a>
+                          )}
+                          {guest.selfieUrl && (
+                            <a href={guest.selfieUrl} target="_blank" rel="noopener noreferrer">
+                              <p className="text-[#3d4a3c]/60 text-xs mb-1">Selfie</p>
+                              <img src={guest.selfieUrl} alt="Selfie" className="w-full h-20 object-cover rounded-lg border hover:border-indigo-400 transition-colors" />
                             </a>
                           )}
                         </div>

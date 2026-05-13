@@ -25,6 +25,8 @@ import {
   MessageSquare,
   Loader2,
   CalendarCheck,
+  FileText,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -813,7 +815,7 @@ function CreateBookingModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -1133,6 +1135,10 @@ function EditBookingModal({
   const [messageSuccess, setMessageSuccess] = useState('')
   const [messageError, setMessageError] = useState('')
 
+  // Stato per check-in ospiti collegati alla prenotazione
+  const [guestCheckIns, setGuestCheckIns] = useState<any[]>([])
+  const [loadingCheckIns, setLoadingCheckIns] = useState(true)
+
   // Carica i messaggi disponibili per questa prenotazione
   useEffect(() => {
     const fetchMessages = async () => {
@@ -1148,6 +1154,25 @@ function EditBookingModal({
       }
     }
     fetchMessages()
+  }, [booking.id])
+
+  // Carica i dati check-in degli ospiti collegati alla prenotazione
+  useEffect(() => {
+    const fetchCheckIns = async () => {
+      setLoadingCheckIns(true)
+      try {
+        const response = await fetch(`/api/bookings/${booking.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setGuestCheckIns(data.guestCheckIns || [])
+        }
+      } catch (err) {
+        console.error('Errore caricamento check-in:', err)
+      } finally {
+        setLoadingCheckIns(false)
+      }
+    }
+    fetchCheckIns()
   }, [booking.id])
 
   // Funzione per inviare un messaggio
@@ -1250,7 +1275,7 @@ function EditBookingModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -1561,6 +1586,251 @@ function EditBookingModal({
             </div>
           </div>
 
+          {/* Sezione Dati Check-in Ospiti */}
+          <div className="border-t pt-6 bg-emerald-50/40 p-4 rounded-xl">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center space-x-2">
+              <Users size={20} className="text-emerald-600" />
+              <span>Dati Check-in Ospiti</span>
+              {!loadingCheckIns && guestCheckIns.length > 0 && (
+                <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
+                  {guestCheckIns.length} check-in{guestCheckIns.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </h3>
+
+            {loadingCheckIns ? (
+              <div className="flex items-center text-slate-500 text-sm">
+                <Loader2 size={16} className="animate-spin mr-2" />
+                Caricamento dati check-in...
+              </div>
+            ) : guestCheckIns.length === 0 ? (
+              <p className="text-slate-500 text-sm">Nessun check-in collegato a questa prenotazione.</p>
+            ) : (
+              <div className="space-y-6">
+                {guestCheckIns.map((ci: any, ciIdx: number) => {
+                  const additional = Array.isArray(ci.additionalGuests) ? ci.additionalGuests : []
+                  // L'ospite principale (record root) + eventuali aggiuntivi (JSON)
+                  const allGuests = [
+                    {
+                      isPrincipal: true,
+                      firstName: ci.firstName,
+                      lastName: ci.lastName,
+                      sex: ci.sex,
+                      dateOfBirth: ci.dateOfBirth,
+                      nationality: ci.nationality,
+                      birthCity: ci.birthCity,
+                      birthProvince: ci.birthProvince,
+                      birthCountry: ci.birthCountry || null,
+                      residenceCountry: ci.billingCountry || null,
+                      fiscalCode: ci.fiscalCode,
+                      documentType: ci.documentType,
+                      documentNumber: ci.documentNumber,
+                      documentIssuePlace: ci.documentIssuePlace,
+                      documentFrontUrl: ci.documentFrontUrl,
+                      documentBackUrl: ci.documentBackUrl,
+                      selfieUrl: ci.selfieUrl,
+                      isExempt: ci.isExempt,
+                      exemptionReason: ci.exemptionReason,
+                    },
+                    ...additional.map((g: any) => ({ ...g, isPrincipal: false })),
+                  ]
+
+                  return (
+                    <div key={ci.id || ciIdx} className="bg-white rounded-xl p-4 border border-emerald-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-slate-500">
+                          Check-in inviato il{' '}
+                          {ci.submittedAt
+                            ? new Date(ci.submittedAt).toLocaleString('it-IT', {
+                              day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })
+                            : '-'}
+                        </p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ci.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                          ci.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'}`}>
+                          {ci.status === 'APPROVED' ? 'Approvato' : ci.status === 'REJECTED' ? 'Rifiutato' : 'In attesa'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-4">
+                        {allGuests.map((g: any, gIdx: number) => (
+                          <div key={gIdx} className={`rounded-lg p-3 border ${g.isPrincipal ? 'bg-emerald-50/50 border-emerald-200' : 'bg-indigo-50/50 border-indigo-200'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${g.isPrincipal ? 'bg-emerald-600' : 'bg-indigo-600'}`}>
+                                {(g.firstName?.charAt(0) || '?') + (g.lastName?.charAt(0) || '')}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-slate-900">{g.firstName} {g.lastName}</p>
+                                <p className="text-xs text-slate-500">
+                                  {g.isPrincipal ? 'Ospite Principale' : `Ospite Aggiuntivo ${gIdx}`}
+                                </p>
+                              </div>
+                              {g.isExempt && (
+                                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+                                  Esente tassa
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Sesso</p>
+                                <p className="text-slate-900 font-medium">{g.sex === 'M' ? 'Maschio' : g.sex === 'F' ? 'Femmina' : '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Data Nascita</p>
+                                <p className="text-slate-900 font-medium">
+                                  {g.dateOfBirth ? new Date(g.dateOfBirth).toLocaleDateString('it-IT') : '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Paese Nascita</p>
+                                <p className="text-slate-900 font-medium">
+                                  {g.birthCountry || g.nationality || (g.birthCity ? `${g.birthCity}${g.birthProvince ? ` (${g.birthProvince})` : ''}` : '-')}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Paese Residenza</p>
+                                <p className="text-slate-900 font-medium">{g.residenceCountry || '-'}</p>
+                              </div>
+
+                              {/* Campi legacy mostrati solo se valorizzati */}
+                              {g.fiscalCode && (
+                                <div className="col-span-2">
+                                  <p className="text-slate-500 text-[11px]">Codice Fiscale</p>
+                                  <p className="text-slate-900 font-medium font-mono">{g.fiscalCode}</p>
+                                </div>
+                              )}
+                              {g.documentNumber && (
+                                <>
+                                  <div>
+                                    <p className="text-slate-500 text-[11px]">Tipo Doc.</p>
+                                    <p className="text-slate-900 font-medium">{g.documentType?.replace('_', ' ') || '-'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-[11px]">Numero Doc.</p>
+                                    <p className="text-slate-900 font-medium font-mono">{g.documentNumber}</p>
+                                  </div>
+                                </>
+                              )}
+                              {g.documentIssuePlace && (
+                                <div className="col-span-2">
+                                  <p className="text-slate-500 text-[11px]">Luogo Rilascio</p>
+                                  <p className="text-slate-900 font-medium">{g.documentIssuePlace}</p>
+                                </div>
+                              )}
+                              {g.isExempt && g.exemptionReason && (
+                                <div className="col-span-2">
+                                  <p className="text-slate-500 text-[11px]">Motivo Esenzione</p>
+                                  <p className="text-slate-900 font-medium">{g.exemptionReason}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Foto caricate */}
+                            {(g.documentFrontUrl || g.documentBackUrl || g.selfieUrl) && (
+                              <div className="mt-3 pt-3 border-t border-slate-200">
+                                <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                                  <ImageIcon size={12} className="mr-1" />
+                                  Foto Caricate
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {g.documentFrontUrl && (
+                                    <a href={g.documentFrontUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                      <p className="text-[10px] text-slate-400 mb-1">Fronte</p>
+                                      <img src={g.documentFrontUrl} alt="Fronte documento" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                    </a>
+                                  )}
+                                  {g.documentBackUrl && (
+                                    <a href={g.documentBackUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                      <p className="text-[10px] text-slate-400 mb-1">Retro</p>
+                                      <img src={g.documentBackUrl} alt="Retro documento" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                    </a>
+                                  )}
+                                  {g.selfieUrl && (
+                                    <a href={g.selfieUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                      <p className="text-[10px] text-slate-400 mb-1">Selfie</p>
+                                      <img src={g.selfieUrl} alt="Selfie" className="w-full h-20 object-cover rounded-lg border hover:border-emerald-400 transition-colors" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Prova pagamento tassa di soggiorno */}
+                      {ci.touristTaxPaymentProof && (
+                        <div className="mt-3 pt-3 border-t border-emerald-100">
+                          <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                            <FileText size={12} className="mr-1" />
+                            Prova Pagamento Tassa di Soggiorno
+                          </p>
+                          <a href={ci.touristTaxPaymentProof} target="_blank" rel="noopener noreferrer">
+                            <img src={ci.touristTaxPaymentProof} alt="Prova pagamento" className="max-h-32 rounded-lg border hover:border-emerald-400 transition-colors" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Dati fatturazione */}
+                      {(ci.invoiceType || ci.billingAddress || ci.vatNumber) && (
+                        <div className="mt-3 pt-3 border-t border-emerald-100">
+                          <p className="text-slate-500 text-[11px] mb-2 flex items-center">
+                            <FileText size={12} className="mr-1" />
+                            Dati Fatturazione
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            {ci.invoiceType && (
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Tipo</p>
+                                <p className="text-slate-900 font-medium">{ci.invoiceType === 'COMPANY' ? 'Azienda' : 'Privato'}</p>
+                              </div>
+                            )}
+                            {ci.companyName && (
+                              <div>
+                                <p className="text-slate-500 text-[11px]">Ragione Sociale</p>
+                                <p className="text-slate-900 font-medium">{ci.companyName}</p>
+                              </div>
+                            )}
+                            {ci.vatNumber && (
+                              <div>
+                                <p className="text-slate-500 text-[11px]">P.IVA</p>
+                                <p className="text-slate-900 font-medium font-mono">{ci.vatNumber}</p>
+                              </div>
+                            )}
+                            {ci.sdiCode && (
+                              <div>
+                                <p className="text-slate-500 text-[11px]">SDI</p>
+                                <p className="text-slate-900 font-medium font-mono">{ci.sdiCode}</p>
+                              </div>
+                            )}
+                            {ci.pecEmail && (
+                              <div>
+                                <p className="text-slate-500 text-[11px]">PEC</p>
+                                <p className="text-slate-900 font-medium">{ci.pecEmail}</p>
+                              </div>
+                            )}
+                            {ci.billingAddress && (
+                              <div className="col-span-2 md:col-span-3">
+                                <p className="text-slate-500 text-[11px]">Indirizzo</p>
+                                <p className="text-slate-900 font-medium">
+                                  {ci.billingAddress}, {ci.billingPostalCode} {ci.billingCity}
+                                  {ci.billingProvince && ` (${ci.billingProvince})`} - {ci.billingCountry || 'Italia'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Sezione Invio Messaggi */}
           <div className="border-t pt-6 bg-blue-50/50 p-4 rounded-xl">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center space-x-2">
@@ -1808,7 +2078,7 @@ function CheckinEmailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
       onClick={onClose}
     >
       <div

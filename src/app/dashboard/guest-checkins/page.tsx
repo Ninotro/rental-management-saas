@@ -24,12 +24,15 @@ interface AdditionalGuest {
   dateOfBirth: string
   birthCity: string
   birthProvince: string
+  birthCountry?: string | null      // Nuovo: paese di nascita per ospiti aggiuntivi
+  residenceCountry?: string | null  // Nuovo: paese di residenza per ospiti aggiuntivi
   fiscalCode: string | null
   documentType: string
   documentNumber: string
   documentIssuePlace: string
   documentFrontUrl: string | null
   documentBackUrl: string | null
+  selfieUrl?: string | null
   isExempt: boolean
   exemptionReason: string | null
 }
@@ -1117,7 +1120,7 @@ export default function GuestCheckInsPage() {
       {/* Modal Pulizia GDPR */}
       {showCleanupModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 animate-in fade-in duration-200"
           onClick={() => { setShowCleanupModal(false); setCleanupResult(null); }}
         >
           <div
@@ -1222,7 +1225,7 @@ function EditCheckInModal({
 }) {
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -1579,12 +1582,15 @@ function EditCheckInModal({
                       dateOfBirth: '',
                       birthCity: '',
                       birthProvince: '',
+                      birthCountry: 'Italia',
+                      residenceCountry: 'Italia',
                       fiscalCode: null,
                       documentType: 'CARTA_IDENTITA',
                       documentNumber: '',
                       documentIssuePlace: '',
                       documentFrontUrl: null,
                       documentBackUrl: null,
+                      selfieUrl: null,
                       isExempt: false,
                       exemptionReason: null,
                     }
@@ -1671,26 +1677,6 @@ function EditCheckInModal({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Nazionalità</label>
-                          <select
-                            value={guest.nationality || 'Italia'}
-                            onChange={(e) => {
-                              const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], nationality: e.target.value }
-                              setCheckIn({ ...checkIn, additionalGuests: updated })
-                            }}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
-                          >
-                            <option value="Italia">Italia</option>
-                            <option value="Germania">Germania</option>
-                            <option value="Francia">Francia</option>
-                            <option value="Spagna">Spagna</option>
-                            <option value="Regno Unito">Regno Unito</option>
-                            <option value="Stati Uniti">Stati Uniti</option>
-                            <option value="Altro">Altro</option>
-                          </select>
-                        </div>
-                        <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Data di Nascita</label>
                           <input
                             type="date"
@@ -1704,74 +1690,86 @@ function EditCheckInModal({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Città Nascita</label>
-                          <input
-                            type="text"
-                            value={guest.birthCity}
-                            onChange={(e) => {
-                              const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], birthCity: e.target.value }
-                              setCheckIn({ ...checkIn, additionalGuests: updated })
-                            }}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Provincia</label>
-                          <input
-                            type="text"
-                            value={guest.birthProvince}
-                            onChange={(e) => {
-                              const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], birthProvince: e.target.value.toUpperCase() }
-                              setCheckIn({ ...checkIn, additionalGuests: updated })
-                            }}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
-                            maxLength={2}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Codice Fiscale</label>
-                          <input
-                            type="text"
-                            value={guest.fiscalCode || ''}
-                            onChange={(e) => {
-                              const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], fiscalCode: e.target.value.toUpperCase() || null }
-                              setCheckIn({ ...checkIn, additionalGuests: updated })
-                            }}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase font-mono focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Tipo Documento</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Paese di Nascita</label>
                           <select
-                            value={guest.documentType}
+                            value={guest.birthCountry || guest.nationality || 'Italia'}
                             onChange={(e) => {
                               const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], documentType: e.target.value }
+                              updated[index] = { ...updated[index], birthCountry: e.target.value, nationality: e.target.value }
                               setCheckIn({ ...checkIn, additionalGuests: updated })
                             }}
                             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
                           >
-                            <option value="CARTA_IDENTITA">Carta d'Identità</option>
-                            <option value="PASSAPORTO">Passaporto</option>
-                            <option value="PATENTE">Patente</option>
+                            <option value="Italia">Italia</option>
+                            <option value="Germania">Germania</option>
+                            <option value="Francia">Francia</option>
+                            <option value="Spagna">Spagna</option>
+                            <option value="Regno Unito">Regno Unito</option>
+                            <option value="Stati Uniti">Stati Uniti</option>
+                            <option value="Paesi Bassi">Paesi Bassi</option>
+                            <option value="Belgio">Belgio</option>
+                            <option value="Austria">Austria</option>
+                            <option value="Svizzera">Svizzera</option>
+                            <option value="Polonia">Polonia</option>
+                            <option value="Portogallo">Portogallo</option>
+                            <option value="Romania">Romania</option>
+                            <option value="Altro">Altro</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Numero Documento</label>
-                          <input
-                            type="text"
-                            value={guest.documentNumber}
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Paese di Residenza</label>
+                          <select
+                            value={guest.residenceCountry || 'Italia'}
                             onChange={(e) => {
                               const updated = [...checkIn.additionalGuests!]
-                              updated[index] = { ...updated[index], documentNumber: e.target.value.toUpperCase() }
+                              updated[index] = { ...updated[index], residenceCountry: e.target.value }
                               setCheckIn({ ...checkIn, additionalGuests: updated })
                             }}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 uppercase font-mono focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
-                          />
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-transparent"
+                          >
+                            <option value="Italia">Italia</option>
+                            <option value="Germania">Germania</option>
+                            <option value="Francia">Francia</option>
+                            <option value="Spagna">Spagna</option>
+                            <option value="Regno Unito">Regno Unito</option>
+                            <option value="Stati Uniti">Stati Uniti</option>
+                            <option value="Paesi Bassi">Paesi Bassi</option>
+                            <option value="Belgio">Belgio</option>
+                            <option value="Austria">Austria</option>
+                            <option value="Svizzera">Svizzera</option>
+                            <option value="Polonia">Polonia</option>
+                            <option value="Portogallo">Portogallo</option>
+                            <option value="Romania">Romania</option>
+                            <option value="Altro">Altro</option>
+                          </select>
                         </div>
+
+                        {/* Foto documento (read-only viewer) */}
+                        {(guest.documentFrontUrl || guest.documentBackUrl || guest.selfieUrl) && (
+                          <div className="col-span-2 mt-2 pt-2 border-t border-slate-100">
+                            <p className="text-xs font-medium text-slate-500 mb-2">Foto Documento</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {guest.documentFrontUrl && (
+                                <a href={guest.documentFrontUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                  <span className="text-[10px] text-slate-400">Fronte</span>
+                                  <img src={guest.documentFrontUrl} alt="Fronte" className="w-full h-20 object-cover rounded-lg border" />
+                                </a>
+                              )}
+                              {guest.documentBackUrl && (
+                                <a href={guest.documentBackUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                  <span className="text-[10px] text-slate-400">Retro</span>
+                                  <img src={guest.documentBackUrl} alt="Retro" className="w-full h-20 object-cover rounded-lg border" />
+                                </a>
+                              )}
+                              {guest.selfieUrl && (
+                                <a href={guest.selfieUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                  <span className="text-[10px] text-slate-400">Selfie</span>
+                                  <img src={guest.selfieUrl} alt="Selfie" className="w-full h-20 object-cover rounded-lg border" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Esenzione ospite */}
                         <div className="col-span-2 bg-amber-50 rounded-lg p-3 border border-amber-100">
@@ -1921,7 +1919,7 @@ function DetailCheckInModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div

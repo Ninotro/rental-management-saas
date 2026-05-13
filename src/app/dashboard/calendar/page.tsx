@@ -386,7 +386,7 @@ export default function CalendarPage() {
 
         return (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50"
             onClick={() => setSelectedDate(undefined)}
           >
             <div
@@ -834,7 +834,7 @@ function BookingDetailModal({
   if (loading) {
     return (
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50"
         onClick={onClose}
       >
         <div className="bg-white rounded-3xl p-8" onClick={(e) => e.stopPropagation()}>
@@ -847,7 +847,7 @@ function BookingDetailModal({
   if (!booking) {
     return (
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50"
         onClick={onClose}
       >
         <div className="bg-white rounded-3xl p-8 text-center" onClick={(e) => e.stopPropagation()}>
@@ -866,7 +866,7 @@ function BookingDetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -1377,7 +1377,7 @@ function BlockDateModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 z-50"
       onClick={onClose}
     >
       <div

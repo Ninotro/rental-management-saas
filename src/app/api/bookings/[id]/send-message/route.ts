@@ -115,8 +115,32 @@ export async function POST(
     }
 
     if (!useWhatsApp && !useEmail) {
+      const reasons: string[] = []
+      if (!booking.guestEmail) reasons.push('email ospite mancante')
+      if (!booking.guestPhone) reasons.push('telefono ospite mancante')
+      if (!templateSupportsEmail && !templateSupportsWhatsApp) {
+        reasons.push(`canale template non valido (channel: ${messageTemplate.channel})`)
+      }
+      if (templateSupportsWhatsApp && !templateApproved) {
+        reasons.push(`template WhatsApp non approvato (stato: ${messageTemplate.twilioApprovalStatus || 'mai inviato'})`)
+      }
+      if (templateSupportsWhatsApp && !messageTemplate.twilioContentSid) {
+        reasons.push('template WhatsApp senza Content SID (mai creato su Twilio)')
+      }
       return NextResponse.json(
-        { error: 'Impossibile inviare: nessun canale disponibile. Verifica email/telefono e stato template.' },
+        {
+          error: reasons.length > 0
+            ? `Impossibile inviare. Problemi rilevati: ${reasons.join('; ')}.`
+            : 'Impossibile inviare: nessun canale disponibile. Verifica email/telefono e stato template.',
+          debug: {
+            contactPreference,
+            templateChannel: messageTemplate.channel,
+            templateApprovalStatus: messageTemplate.twilioApprovalStatus,
+            hasContentSid: !!messageTemplate.twilioContentSid,
+            hasEmail: !!booking.guestEmail,
+            hasPhone: !!booking.guestPhone,
+          },
+        },
         { status: 400 }
       )
     }

@@ -37,6 +37,7 @@ interface GuestFormData {
   birthCity: string
   birthProvince: string
   birthCountry: string // Paese di nascita (richiesto solo per ospiti aggiuntivi)
+  residenceCountry: string // Paese di residenza (richiesto solo per ospiti aggiuntivi)
   fiscalCode: string // Opzionale, necessario se fattura
   documentType: string
   documentNumber: string
@@ -109,6 +110,7 @@ export default function PublicCheckInPage() {
       birthCity: '',
       birthProvince: '',
       birthCountry: 'Italia',
+      residenceCountry: 'Italia',
       fiscalCode: '',
       documentType: 'CARTA_IDENTITA',
       documentNumber: '',
@@ -260,6 +262,7 @@ export default function PublicCheckInPage() {
       birthCity: 'Città di nascita',
       birthProvince: 'Provincia di nascita',
       birthCountry: 'Paese di nascita',
+      residenceCountry: 'Paese di residenza',
       documentNumber: 'Numero documento',
       documentIssuePlace: 'Luogo rilascio documento',
     } : {
@@ -270,15 +273,16 @@ export default function PublicCheckInPage() {
       birthCity: 'Birth city',
       birthProvince: 'Birth province',
       birthCountry: 'Country of birth',
+      residenceCountry: 'Country of residence',
       documentNumber: 'Document number',
       documentIssuePlace: 'Document issue place',
     }
 
     // L'ospite principale (index 0) richiede tutti i campi.
-    // Gli ospiti aggiuntivi richiedono solo: firstName, lastName, sex, dateOfBirth, birthCountry.
+    // Gli ospiti aggiuntivi richiedono solo: firstName, lastName, sex, dateOfBirth, birthCountry, residenceCountry.
     const requiredFields: (keyof GuestFormData)[] = index === 0
       ? ['firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCity', 'birthProvince', 'documentNumber', 'documentIssuePlace']
-      : ['firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCountry']
+      : ['firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCountry', 'residenceCountry']
 
     for (const field of requiredFields) {
       if (!guest[field] || (typeof guest[field] === 'string' && guest[field].toString().trim() === '')) {
@@ -388,7 +392,7 @@ export default function PublicCheckInPage() {
       // Ospite principale (primo)
       const mainGuest = guests[0]
       // Ospiti aggiuntivi (dal secondo in poi) - dati ridotti: nome, cognome, sesso,
-      // data nascita, paese di nascita, foto documento + esenzione tassa.
+      // data nascita, paese di nascita, paese di residenza, foto documento + esenzione tassa.
       // I campi non chiesti vengono inviati vuoti per mantenere compatibilità con la dashboard admin.
       const additionalGuests = guests.slice(1).map(g => ({
         firstName: g.firstName,
@@ -396,6 +400,7 @@ export default function PublicCheckInPage() {
         sex: g.sex,
         dateOfBirth: g.dateOfBirth,
         birthCountry: g.birthCountry,
+        residenceCountry: g.residenceCountry,
         nationality: g.birthCountry,
         birthCity: '',
         birthProvince: '',
@@ -1028,54 +1033,104 @@ export default function PublicCheckInPage() {
                         </>
                       )}
                       {index > 0 && (
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCountry} *</label>
-                          <select required value={guest.birthCountry} onChange={(e) => updateGuest(index, 'birthCountry', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
-                            <option value="Italia">Italia</option>
-                            <option value="Germania">Germania</option>
-                            <option value="Francia">Francia</option>
-                            <option value="Spagna">Spagna</option>
-                            <option value="Regno Unito">Regno Unito</option>
-                            <option value="Stati Uniti">Stati Uniti</option>
-                            <option value="Paesi Bassi">Paesi Bassi</option>
-                            <option value="Belgio">Belgio</option>
-                            <option value="Austria">Austria</option>
-                            <option value="Svizzera">Svizzera</option>
-                            <option value="Polonia">Polonia</option>
-                            <option value="Portogallo">Portogallo</option>
-                            <option value="Grecia">Grecia</option>
-                            <option value="Svezia">Svezia</option>
-                            <option value="Norvegia">Norvegia</option>
-                            <option value="Danimarca">Danimarca</option>
-                            <option value="Finlandia">Finlandia</option>
-                            <option value="Irlanda">Irlanda</option>
-                            <option value="Repubblica Ceca">Repubblica Ceca</option>
-                            <option value="Romania">Romania</option>
-                            <option value="Ungheria">Ungheria</option>
-                            <option value="Croazia">Croazia</option>
-                            <option value="Slovenia">Slovenia</option>
-                            <option value="Slovacchia">Slovacchia</option>
-                            <option value="Bulgaria">Bulgaria</option>
-                            <option value="Lituania">Lituania</option>
-                            <option value="Lettonia">Lettonia</option>
-                            <option value="Estonia">Estonia</option>
-                            <option value="Lussemburgo">Lussemburgo</option>
-                            <option value="Malta">Malta</option>
-                            <option value="Cipro">Cipro</option>
-                            <option value="Australia">Australia</option>
-                            <option value="Canada">Canada</option>
-                            <option value="Brasile">Brasile</option>
-                            <option value="Argentina">Argentina</option>
-                            <option value="Giappone">Giappone</option>
-                            <option value="Cina">Cina</option>
-                            <option value="Corea del Sud">Corea del Sud</option>
-                            <option value="India">India</option>
-                            <option value="Russia">Russia</option>
-                            <option value="Messico">Messico</option>
-                            <option value="Altro">Altro</option>
-                          </select>
-                        </div>
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCountry} *</label>
+                            <select required value={guest.birthCountry} onChange={(e) => updateGuest(index, 'birthCountry', e.target.value)}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                              <option value="Italia">Italia</option>
+                              <option value="Germania">Germania</option>
+                              <option value="Francia">Francia</option>
+                              <option value="Spagna">Spagna</option>
+                              <option value="Regno Unito">Regno Unito</option>
+                              <option value="Stati Uniti">Stati Uniti</option>
+                              <option value="Paesi Bassi">Paesi Bassi</option>
+                              <option value="Belgio">Belgio</option>
+                              <option value="Austria">Austria</option>
+                              <option value="Svizzera">Svizzera</option>
+                              <option value="Polonia">Polonia</option>
+                              <option value="Portogallo">Portogallo</option>
+                              <option value="Grecia">Grecia</option>
+                              <option value="Svezia">Svezia</option>
+                              <option value="Norvegia">Norvegia</option>
+                              <option value="Danimarca">Danimarca</option>
+                              <option value="Finlandia">Finlandia</option>
+                              <option value="Irlanda">Irlanda</option>
+                              <option value="Repubblica Ceca">Repubblica Ceca</option>
+                              <option value="Romania">Romania</option>
+                              <option value="Ungheria">Ungheria</option>
+                              <option value="Croazia">Croazia</option>
+                              <option value="Slovenia">Slovenia</option>
+                              <option value="Slovacchia">Slovacchia</option>
+                              <option value="Bulgaria">Bulgaria</option>
+                              <option value="Lituania">Lituania</option>
+                              <option value="Lettonia">Lettonia</option>
+                              <option value="Estonia">Estonia</option>
+                              <option value="Lussemburgo">Lussemburgo</option>
+                              <option value="Malta">Malta</option>
+                              <option value="Cipro">Cipro</option>
+                              <option value="Australia">Australia</option>
+                              <option value="Canada">Canada</option>
+                              <option value="Brasile">Brasile</option>
+                              <option value="Argentina">Argentina</option>
+                              <option value="Giappone">Giappone</option>
+                              <option value="Cina">Cina</option>
+                              <option value="Corea del Sud">Corea del Sud</option>
+                              <option value="India">India</option>
+                              <option value="Russia">Russia</option>
+                              <option value="Messico">Messico</option>
+                              <option value="Altro">Altro</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t.residenceCountry} *</label>
+                            <select required value={guest.residenceCountry} onChange={(e) => updateGuest(index, 'residenceCountry', e.target.value)}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                              <option value="Italia">Italia</option>
+                              <option value="Germania">Germania</option>
+                              <option value="Francia">Francia</option>
+                              <option value="Spagna">Spagna</option>
+                              <option value="Regno Unito">Regno Unito</option>
+                              <option value="Stati Uniti">Stati Uniti</option>
+                              <option value="Paesi Bassi">Paesi Bassi</option>
+                              <option value="Belgio">Belgio</option>
+                              <option value="Austria">Austria</option>
+                              <option value="Svizzera">Svizzera</option>
+                              <option value="Polonia">Polonia</option>
+                              <option value="Portogallo">Portogallo</option>
+                              <option value="Grecia">Grecia</option>
+                              <option value="Svezia">Svezia</option>
+                              <option value="Norvegia">Norvegia</option>
+                              <option value="Danimarca">Danimarca</option>
+                              <option value="Finlandia">Finlandia</option>
+                              <option value="Irlanda">Irlanda</option>
+                              <option value="Repubblica Ceca">Repubblica Ceca</option>
+                              <option value="Romania">Romania</option>
+                              <option value="Ungheria">Ungheria</option>
+                              <option value="Croazia">Croazia</option>
+                              <option value="Slovenia">Slovenia</option>
+                              <option value="Slovacchia">Slovacchia</option>
+                              <option value="Bulgaria">Bulgaria</option>
+                              <option value="Lituania">Lituania</option>
+                              <option value="Lettonia">Lettonia</option>
+                              <option value="Estonia">Estonia</option>
+                              <option value="Lussemburgo">Lussemburgo</option>
+                              <option value="Malta">Malta</option>
+                              <option value="Cipro">Cipro</option>
+                              <option value="Australia">Australia</option>
+                              <option value="Canada">Canada</option>
+                              <option value="Brasile">Brasile</option>
+                              <option value="Argentina">Argentina</option>
+                              <option value="Giappone">Giappone</option>
+                              <option value="Cina">Cina</option>
+                              <option value="Corea del Sud">Corea del Sud</option>
+                              <option value="India">India</option>
+                              <option value="Russia">Russia</option>
+                              <option value="Messico">Messico</option>
+                              <option value="Altro">Altro</option>
+                            </select>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
