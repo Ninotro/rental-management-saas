@@ -36,6 +36,7 @@ interface GuestFormData {
   dateOfBirth: string
   birthCity: string
   birthProvince: string
+  birthCountry: string // Paese di nascita (richiesto solo per ospiti aggiuntivi)
   fiscalCode: string // Opzionale, necessario se fattura
   documentType: string
   documentNumber: string
@@ -107,6 +108,7 @@ export default function PublicCheckInPage() {
       dateOfBirth: '',
       birthCity: '',
       birthProvince: '',
+      birthCountry: 'Italia',
       fiscalCode: '',
       documentType: 'CARTA_IDENTITA',
       documentNumber: '',
@@ -257,6 +259,7 @@ export default function PublicCheckInPage() {
       dateOfBirth: 'Data di nascita',
       birthCity: 'Città di nascita',
       birthProvince: 'Provincia di nascita',
+      birthCountry: 'Paese di nascita',
       documentNumber: 'Numero documento',
       documentIssuePlace: 'Luogo rilascio documento',
     } : {
@@ -266,14 +269,16 @@ export default function PublicCheckInPage() {
       dateOfBirth: 'Date of birth',
       birthCity: 'Birth city',
       birthProvince: 'Birth province',
+      birthCountry: 'Country of birth',
       documentNumber: 'Document number',
       documentIssuePlace: 'Document issue place',
     }
 
-    const requiredFields: (keyof GuestFormData)[] = [
-      'firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCity', 'birthProvince',
-      'documentNumber', 'documentIssuePlace'
-    ]
+    // L'ospite principale (index 0) richiede tutti i campi.
+    // Gli ospiti aggiuntivi richiedono solo: firstName, lastName, sex, dateOfBirth, birthCountry.
+    const requiredFields: (keyof GuestFormData)[] = index === 0
+      ? ['firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCity', 'birthProvince', 'documentNumber', 'documentIssuePlace']
+      : ['firstName', 'lastName', 'sex', 'dateOfBirth', 'birthCountry']
 
     for (const field of requiredFields) {
       if (!guest[field] || (typeof guest[field] === 'string' && guest[field].toString().trim() === '')) {
@@ -382,19 +387,22 @@ export default function PublicCheckInPage() {
     try {
       // Ospite principale (primo)
       const mainGuest = guests[0]
-      // Ospiti aggiuntivi (dal secondo in poi)
+      // Ospiti aggiuntivi (dal secondo in poi) - dati ridotti: nome, cognome, sesso,
+      // data nascita, paese di nascita, foto documento + esenzione tassa.
+      // I campi non chiesti vengono inviati vuoti per mantenere compatibilità con la dashboard admin.
       const additionalGuests = guests.slice(1).map(g => ({
         firstName: g.firstName,
         lastName: g.lastName,
         sex: g.sex,
-        nationality: g.nationality,
         dateOfBirth: g.dateOfBirth,
-        birthCity: g.birthCity,
-        birthProvince: g.birthProvince,
-        fiscalCode: g.fiscalCode || null,
-        documentType: g.documentType,
-        documentNumber: g.documentNumber,
-        documentIssuePlace: g.documentIssuePlace,
+        birthCountry: g.birthCountry,
+        nationality: g.birthCountry,
+        birthCity: '',
+        birthProvince: '',
+        fiscalCode: null,
+        documentType: 'CARTA_IDENTITA',
+        documentNumber: '',
+        documentIssuePlace: '',
         documentFrontUrl: g.documentFrontUrl,
         documentBackUrl: g.documentBackUrl,
         selfieUrl: g.selfieUrl,
@@ -944,109 +952,165 @@ export default function PublicCheckInPage() {
                         <input type="date" required value={guest.dateOfBirth} onChange={(e) => updateGuest(index, 'dateOfBirth', e.target.value)}
                           className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.nationality} *</label>
-                        <select required value={guest.nationality} onChange={(e) => updateGuest(index, 'nationality', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
-                          <option value="Italia">Italia</option>
-                          <option value="Germania">Germania</option>
-                          <option value="Francia">Francia</option>
-                          <option value="Spagna">Spagna</option>
-                          <option value="Regno Unito">Regno Unito</option>
-                          <option value="Stati Uniti">Stati Uniti</option>
-                          <option value="Paesi Bassi">Paesi Bassi</option>
-                          <option value="Belgio">Belgio</option>
-                          <option value="Austria">Austria</option>
-                          <option value="Svizzera">Svizzera</option>
-                          <option value="Polonia">Polonia</option>
-                          <option value="Portogallo">Portogallo</option>
-                          <option value="Grecia">Grecia</option>
-                          <option value="Svezia">Svezia</option>
-                          <option value="Norvegia">Norvegia</option>
-                          <option value="Danimarca">Danimarca</option>
-                          <option value="Finlandia">Finlandia</option>
-                          <option value="Irlanda">Irlanda</option>
-                          <option value="Repubblica Ceca">Repubblica Ceca</option>
-                          <option value="Romania">Romania</option>
-                          <option value="Ungheria">Ungheria</option>
-                          <option value="Croazia">Croazia</option>
-                          <option value="Slovenia">Slovenia</option>
-                          <option value="Slovacchia">Slovacchia</option>
-                          <option value="Bulgaria">Bulgaria</option>
-                          <option value="Lituania">Lituania</option>
-                          <option value="Lettonia">Lettonia</option>
-                          <option value="Estonia">Estonia</option>
-                          <option value="Lussemburgo">Lussemburgo</option>
-                          <option value="Malta">Malta</option>
-                          <option value="Cipro">Cipro</option>
-                          <option value="Australia">Australia</option>
-                          <option value="Canada">Canada</option>
-                          <option value="Brasile">Brasile</option>
-                          <option value="Argentina">Argentina</option>
-                          <option value="Giappone">Giappone</option>
-                          <option value="Cina">Cina</option>
-                          <option value="Corea del Sud">Corea del Sud</option>
-                          <option value="India">India</option>
-                          <option value="Russia">Russia</option>
-                          <option value="Messico">Messico</option>
-                          <option value="Altro">Altro</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCity} *</label>
-                        <input type="text" required value={guest.birthCity} onChange={(e) => updateGuest(index, 'birthCity', e.target.value)}
-                          placeholder={language === 'it' ? 'es. Roma' : 'e.g. Rome'}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthProvince} *</label>
-                        <input type="text" required maxLength={2} value={guest.birthProvince} onChange={(e) => updateGuest(index, 'birthProvince', e.target.value.toUpperCase())}
-                          placeholder={language === 'it' ? 'es. RM' : 'e.g. RM'}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          {t.fiscalCode}
-                          <span className="text-slate-500 text-xs ml-2">
-                            {language === 'it' ? '(necessario se richiesta fattura)' : '(required if invoice needed)'}
-                          </span>
-                        </label>
-                        <input type="text" maxLength={16} value={guest.fiscalCode} onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
-                          placeholder="RSSMRA80A01H501U"
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
-                      </div>
+                      {index === 0 && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t.nationality} *</label>
+                            <select required value={guest.nationality} onChange={(e) => updateGuest(index, 'nationality', e.target.value)}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                              <option value="Italia">Italia</option>
+                              <option value="Germania">Germania</option>
+                              <option value="Francia">Francia</option>
+                              <option value="Spagna">Spagna</option>
+                              <option value="Regno Unito">Regno Unito</option>
+                              <option value="Stati Uniti">Stati Uniti</option>
+                              <option value="Paesi Bassi">Paesi Bassi</option>
+                              <option value="Belgio">Belgio</option>
+                              <option value="Austria">Austria</option>
+                              <option value="Svizzera">Svizzera</option>
+                              <option value="Polonia">Polonia</option>
+                              <option value="Portogallo">Portogallo</option>
+                              <option value="Grecia">Grecia</option>
+                              <option value="Svezia">Svezia</option>
+                              <option value="Norvegia">Norvegia</option>
+                              <option value="Danimarca">Danimarca</option>
+                              <option value="Finlandia">Finlandia</option>
+                              <option value="Irlanda">Irlanda</option>
+                              <option value="Repubblica Ceca">Repubblica Ceca</option>
+                              <option value="Romania">Romania</option>
+                              <option value="Ungheria">Ungheria</option>
+                              <option value="Croazia">Croazia</option>
+                              <option value="Slovenia">Slovenia</option>
+                              <option value="Slovacchia">Slovacchia</option>
+                              <option value="Bulgaria">Bulgaria</option>
+                              <option value="Lituania">Lituania</option>
+                              <option value="Lettonia">Lettonia</option>
+                              <option value="Estonia">Estonia</option>
+                              <option value="Lussemburgo">Lussemburgo</option>
+                              <option value="Malta">Malta</option>
+                              <option value="Cipro">Cipro</option>
+                              <option value="Australia">Australia</option>
+                              <option value="Canada">Canada</option>
+                              <option value="Brasile">Brasile</option>
+                              <option value="Argentina">Argentina</option>
+                              <option value="Giappone">Giappone</option>
+                              <option value="Cina">Cina</option>
+                              <option value="Corea del Sud">Corea del Sud</option>
+                              <option value="India">India</option>
+                              <option value="Russia">Russia</option>
+                              <option value="Messico">Messico</option>
+                              <option value="Altro">Altro</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCity} *</label>
+                            <input type="text" required value={guest.birthCity} onChange={(e) => updateGuest(index, 'birthCity', e.target.value)}
+                              placeholder={language === 'it' ? 'es. Roma' : 'e.g. Rome'}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthProvince} *</label>
+                            <input type="text" required maxLength={2} value={guest.birthProvince} onChange={(e) => updateGuest(index, 'birthProvince', e.target.value.toUpperCase())}
+                              placeholder={language === 'it' ? 'es. RM' : 'e.g. RM'}
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              {t.fiscalCode}
+                              <span className="text-slate-500 text-xs ml-2">
+                                {language === 'it' ? '(necessario se richiesta fattura)' : '(required if invoice needed)'}
+                              </span>
+                            </label>
+                            <input type="text" maxLength={16} value={guest.fiscalCode} onChange={(e) => updateGuest(index, 'fiscalCode', e.target.value.toUpperCase())}
+                              placeholder="RSSMRA80A01H501U"
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                        </>
+                      )}
+                      {index > 0 && (
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-2">{t.birthCountry} *</label>
+                          <select required value={guest.birthCountry} onChange={(e) => updateGuest(index, 'birthCountry', e.target.value)}
+                            className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                            <option value="Italia">Italia</option>
+                            <option value="Germania">Germania</option>
+                            <option value="Francia">Francia</option>
+                            <option value="Spagna">Spagna</option>
+                            <option value="Regno Unito">Regno Unito</option>
+                            <option value="Stati Uniti">Stati Uniti</option>
+                            <option value="Paesi Bassi">Paesi Bassi</option>
+                            <option value="Belgio">Belgio</option>
+                            <option value="Austria">Austria</option>
+                            <option value="Svizzera">Svizzera</option>
+                            <option value="Polonia">Polonia</option>
+                            <option value="Portogallo">Portogallo</option>
+                            <option value="Grecia">Grecia</option>
+                            <option value="Svezia">Svezia</option>
+                            <option value="Norvegia">Norvegia</option>
+                            <option value="Danimarca">Danimarca</option>
+                            <option value="Finlandia">Finlandia</option>
+                            <option value="Irlanda">Irlanda</option>
+                            <option value="Repubblica Ceca">Repubblica Ceca</option>
+                            <option value="Romania">Romania</option>
+                            <option value="Ungheria">Ungheria</option>
+                            <option value="Croazia">Croazia</option>
+                            <option value="Slovenia">Slovenia</option>
+                            <option value="Slovacchia">Slovacchia</option>
+                            <option value="Bulgaria">Bulgaria</option>
+                            <option value="Lituania">Lituania</option>
+                            <option value="Lettonia">Lettonia</option>
+                            <option value="Estonia">Estonia</option>
+                            <option value="Lussemburgo">Lussemburgo</option>
+                            <option value="Malta">Malta</option>
+                            <option value="Cipro">Cipro</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Brasile">Brasile</option>
+                            <option value="Argentina">Argentina</option>
+                            <option value="Giappone">Giappone</option>
+                            <option value="Cina">Cina</option>
+                            <option value="Corea del Sud">Corea del Sud</option>
+                            <option value="India">India</option>
+                            <option value="Russia">Russia</option>
+                            <option value="Messico">Messico</option>
+                            <option value="Altro">Altro</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Document */}
-                  <div className="border-t pt-6 mb-6">
-                    <h3 className="font-semibold text-slate-900 mb-4">{t.identityDocument}</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentType} *</label>
-                        <select required value={guest.documentType} onChange={(e) => updateGuest(index, 'documentType', e.target.value)}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
-                          <option value="CARTA_IDENTITA">{t.idCard}</option>
-                          <option value="PASSAPORTO">{t.passport}</option>
-                          <option value="PATENTE">{t.drivingLicense}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentNumber} *</label>
-                        <input type="text" required value={guest.documentNumber} onChange={(e) => updateGuest(index, 'documentNumber', e.target.value.toUpperCase())}
-                          placeholder={language === 'it' ? 'es. AA1234567' : 'e.g. AA1234567'}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          {language === 'it' ? 'Luogo rilascio documento' : 'Document issue place'} *
-                        </label>
-                        <input type="text" required value={guest.documentIssuePlace} onChange={(e) => updateGuest(index, 'documentIssuePlace', e.target.value)}
-                          placeholder={language === 'it' ? 'es. Comune di Roma' : 'e.g. Municipality of Rome'}
-                          className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                  {/* Document - solo ospite principale */}
+                  {index === 0 && (
+                    <div className="border-t pt-6 mb-6">
+                      <h3 className="font-semibold text-slate-900 mb-4">{t.identityDocument}</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentType} *</label>
+                          <select required value={guest.documentType} onChange={(e) => updateGuest(index, 'documentType', e.target.value)}
+                            className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500">
+                            <option value="CARTA_IDENTITA">{t.idCard}</option>
+                            <option value="PASSAPORTO">{t.passport}</option>
+                            <option value="PATENTE">{t.drivingLicense}</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">{t.documentNumber} *</label>
+                          <input type="text" required value={guest.documentNumber} onChange={(e) => updateGuest(index, 'documentNumber', e.target.value.toUpperCase())}
+                            placeholder={language === 'it' ? 'es. AA1234567' : 'e.g. AA1234567'}
+                            className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 uppercase focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {language === 'it' ? 'Luogo rilascio documento' : 'Document issue place'} *
+                          </label>
+                          <input type="text" required value={guest.documentIssuePlace} onChange={(e) => updateGuest(index, 'documentIssuePlace', e.target.value)}
+                            placeholder={language === 'it' ? 'es. Comune di Roma' : 'e.g. Municipality of Rome'}
+                            className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500" />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Upload */}
                   <div className="border-t pt-6">

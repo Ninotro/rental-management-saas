@@ -37,7 +37,9 @@
       "Bash(node check-message-status.js:*)",
       "Bash(node:*)",
       "Bash(git diff:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(npx --no-install tsc --noEmit -p .)",
+      "Bash(git config *)"
     ]
   }
 }
